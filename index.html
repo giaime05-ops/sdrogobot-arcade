@@ -16,7 +16,7 @@
 <main id="app" aria-live="polite">
 
   <!-- ===== SCENA DEL SALOON (SVG a livelli) ===== -->
-  <svg id="scene" viewBox="0 0 390 780" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Il saloon dello Sdrogo Arcade">
+  <svg id="scene" viewBox="0 0 390 780" preserveAspectRatio="xMidYMid meet" style="overflow:visible" role="img" aria-label="Il saloon dello Sdrogo Arcade">
     <defs>
       <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#1a0d09"/><stop offset=".55" stop-color="#2a140c"/><stop offset="1" stop-color="#150a07"/>
@@ -60,22 +60,22 @@
     </defs>
 
     <!-- parete di fondo -->
-    <rect width="390" height="780" fill="url(#wall)"/>
-    <rect width="390" height="780" fill="url(#planks)" opacity=".55"/>
+    <rect x="-400" y="-400" width="1190" height="1600" fill="url(#wall)"/>
+    <rect x="-400" y="-400" width="1190" height="1600" fill="url(#planks)" opacity=".55"/>
 
     <!-- travi del soffitto -->
     <g>
-      <rect x="0" y="0" width="390" height="46" fill="url(#beam)"/>
-      <rect x="0" y="40" width="390" height="6" fill="#0c0604" opacity=".7"/>
-      <rect x="-10" y="64" width="410" height="14" fill="url(#beam)" opacity=".9"/>
+      <rect x="-400" y="-400" width="1190" height="446" fill="url(#beam)"/>
+      <rect x="-400" y="40" width="1190" height="6" fill="#0c0604" opacity=".7"/>
+      <rect x="-400" y="64" width="1190" height="14" fill="url(#beam)" opacity=".9"/>
       <rect x="60" y="0" width="14" height="78" fill="url(#beam)"/>
       <rect x="316" y="0" width="14" height="78" fill="url(#beam)"/>
     </g>
 
     <!-- bancone e mensole sul fondo -->
     <g opacity=".95">
-      <rect x="0" y="236" width="390" height="22" fill="url(#wood)"/>
-      <rect x="0" y="256" width="390" height="5" fill="#000" opacity=".4"/>
+      <rect x="-400" y="236" width="1190" height="22" fill="url(#wood)"/>
+      <rect x="-400" y="256" width="1190" height="5" fill="#000" opacity=".4"/>
       <g fill="#0d0605" opacity=".85">
         <rect x="14" y="196" width="10" height="40" rx="3"/><rect x="28" y="204" width="9" height="32" rx="3"/>
         <rect x="42" y="192" width="11" height="44" rx="3"/>
@@ -122,13 +122,13 @@
 
     <!-- pavimento in legno in prospettiva -->
     <g>
-      <path d="M0 262 L390 262 L390 780 L0 780 Z" fill="url(#floor)"/>
+      <path d="M-400 262 L790 262 L790 1300 L-400 1300 Z" fill="url(#floor)"/>
       <g stroke="#000" stroke-opacity=".3" stroke-width="1.2">
         <path d="M195 262 L-120 780"/><path d="M195 262 L-10 780"/><path d="M195 262 L100 780"/>
         <path d="M195 262 L195 780"/><path d="M195 262 L290 780"/><path d="M195 262 L400 780"/><path d="M195 262 L510 780"/>
       </g>
       <g stroke="#000" stroke-opacity=".18">
-        <path d="M0 300H390"/><path d="M0 350H390"/><path d="M0 420H390"/><path d="M0 520H390"/><path d="M0 650H390"/>
+        <path d="M-400 300H790"/><path d="M-400 350H790"/><path d="M-400 420H790"/><path d="M-400 520H790"/><path d="M-400 650H790"/><path d="M-400 800H790"/><path d="M-400 1000H790"/>
       </g>
       <ellipse cx="195" cy="560" rx="190" ry="150" fill="url(#lampGlow)" opacity=".22"/>
     </g>
@@ -258,7 +258,7 @@
       <circle cx="310" cy="470" r="1"/><circle cx="90" cy="540" r="1.2"/><circle cx="350" cy="260" r="1"/>
     </g>
 
-    <rect width="390" height="780" fill="url(#vignette)" pointer-events="none"/>
+    <rect x="-400" y="-400" width="1190" height="1600" fill="url(#vignette)" pointer-events="none"/>
   </svg>
 
   <!-- ===== INTESTAZIONE (HTML sopra la scena) ===== -->
@@ -268,6 +268,7 @@
       <div class="avatar" id="avatar">?</div>
       <div class="who">
         <div class="name" id="pname">Caricamento…</div>
+        <div class="detail" id="pdetail" hidden></div>
         <div class="bal" id="pbal"><span class="coin">💳</span> <b id="pcoins">—</b> <i>$SDG</i></div>
       </div>
     </div>
