@@ -240,17 +240,24 @@
     var g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, "#07060f"); g.addColorStop(0.6, "#160a1f"); g.addColorStop(1, "#2a0e16");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    var scrolling = (p === "flying" || p === "cashing");
     for (var i = 0; i < stars.length; i++) {
       var s = stars[i];
+      var sx = s.x * W;
+      if (scrolling) sx = (((sx - t * 9 * (0.4 + s.r)) % W) + W) % W;     // le stelle scorrono: si "sente" il movimento
       ctx.globalAlpha = 0.35 + 0.35 * Math.sin(tt * 1.5 + s.p);
-      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, 7); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sx, s.y * H, s.r, 0, 7); ctx.fill();
     }
     ctx.globalAlpha = 1;
 
     var padL = 38, padR = 26, padT = 96, padB = 34;
     var gw = W - padL - padR, gh = H - padT - padB;
-    var tMax = Math.max(6, t * 1.15), yMax = Math.max(2, m * 1.2);
-    function X(tv) { return padL + (tv / tMax) * gw; }
+    // Asse orizzontale: l'aereo avanza fino a ~80% dello schermo (8 s), poi resta lì e a scorrere è il mondo
+    // (curva e tacche del tempo vanno a sinistra a velocità costante): il volo non si "pianta" mai.
+    var yMax = Math.max(2, m * 1.2);
+    var pps = gw * 0.78 / 8;
+    var x0 = padL + Math.min(t, 8) * pps;
+    function X(tv) { return x0 - (t - tv) * pps; }
     function Y(mv) { return padT + gh - ((mv - 1) / (yMax - 1)) * gh; }
 
     // griglia
@@ -261,10 +268,19 @@
       ctx.fillStyle = "rgba(246,234,214,.45)"; ctx.fillText(mv.toFixed(mv < 10 ? 1 : 0) + "x", padL - 6, y + 4);
     }
 
+    if (t > 0) {
+      ctx.strokeStyle = "rgba(232,195,106,.07)";
+      for (var kk = Math.max(0, Math.floor(t - 10)); kk <= Math.floor(t); kk++) {
+        var gx = X(kk); if (gx < padL || gx > W - padR) continue;
+        ctx.beginPath(); ctx.moveTo(gx, padT); ctx.lineTo(gx, padT + gh); ctx.stroke();
+      }
+    }
+
     var showCurve = p === "flying" || p === "cashing" || ended;
     if (showCurve && t > 0) {
-      var pts = [], n = 60;
-      for (var j = 0; j <= n; j++) { var tj = t * j / n; pts.push([X(tj), Y(Math.exp(S.rate * tj))]); }
+      var pts = [], n = 60, tS = Math.max(0, t - 10);
+      for (var j = 0; j <= n; j++) { var tj = tS + (t - tS) * j / n; pts.push([X(tj), Y(Math.exp(S.rate * tj))]); }
+      ctx.save(); ctx.beginPath(); ctx.rect(padL - 2, 0, W, H); ctx.clip();
       var ex = pts[n][0], ey = pts[n][1];
       // area
       var fg = ctx.createLinearGradient(0, padT, 0, padT + gh);
@@ -277,11 +293,13 @@
       ctx.strokeStyle = ended && S.res && S.res.result === "crash" ? "#ff2e4d" : "#ffb45a"; ctx.lineWidth = 3; ctx.lineJoin = "round";
       ctx.beginPath(); pts.forEach(function (q, idx) { idx ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.stroke();
       ctx.shadowBlur = 0;
+      ctx.restore();
       var pa = pts[n - 3 > 0 ? n - 3 : 0];
       var ang = Math.atan2(ey - pa[1], ex - pa[0]);
       var since = ended ? (now() - S.endAt) / 1000 : 0;
       if (!ended) {
-        plane(ex, ey, ang * 0.9, 1, 1);
+        var bob = t > 8 ? Math.sin(tt * 2.6) * 3.5 : 0;     // oscillazione leggera quando è a quota di crociera
+        plane(ex, ey + bob, ang * 0.9 + (t > 8 ? Math.sin(tt * 2.1) * 0.05 : 0), 1, 1);
       } else if (S.res && S.res.result === "cashout") {
         // l'aereo prosegue e esce dallo schermo
         plane(ex + since * 260, ey - since * 140 * (1 + since), ang * 0.9, 1, Math.max(0, 1 - since * 1.2));
