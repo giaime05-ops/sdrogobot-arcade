@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Rye&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3a">
+<link rel="stylesheet" href="style.css?v=4a">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -318,7 +318,22 @@
     </div>
   </section>
 
-  <div id="ver" aria-hidden="true"></div>
+  <!-- ===== GIOCHI A PIÙ MOSSE: Blackjack, Wordle, Mastermind, Poker ===== -->
+  <section id="g4" hidden aria-label="Gioco">
+    <div class="avi-top">
+      <button id="g4Back" type="button" class="avi-back">‹ Saloon</button>
+      <div class="avi-title" id="g4Title">—</div>
+      <div class="avi-bal">💳 <b id="g4Bal">—</b></div>
+    </div>
+    <div class="g4-stage" id="g4Stage"></div>
+    <div class="gm-msg" id="g4Msg"></div>
+    <div class="avi-panel">
+      <div class="avi-bets" id="g4Bets"></div>
+      <div class="g4-pad" id="g4Pad"></div>
+      <div class="g4-acts" id="g4Acts"></div>
+      <div class="avi-notes" id="g4Notes"></div>
+    </div>
+  </section>
 
   <!-- ===== MESSAGGIO RAPIDO ===== -->
   <div id="toast" role="status" hidden></div>
@@ -333,9 +348,10 @@
   </div>
 </main>
 
-<script src="config.js?v=3a"></script>
-<script src="app.js?v=3a"></script>
-<script src="aviator.js?v=3a"></script>
-<script src="games3.js?v=3a"></script>
+<script src="config.js?v=4a"></script>
+<script src="app.js?v=4a"></script>
+<script src="aviator.js?v=4a"></script>
+<script src="games3.js?v=4a"></script>
+<script src="games4.js?v=4a"></script>
 </body>
 </html>
