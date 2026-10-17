@@ -183,7 +183,9 @@
     } else if (window.ArcadeGames && window.ArcadeGames[key]) {
       window.ArcadeGames[key].open();
     } else {
-      toast(g.name + ": in arrivo");
+      // il gioco è pronto ma il suo file non è stato caricato (o è vecchio): lo si dice chiaramente
+      var file = key === "aviator" ? "aviator.js" : "games3.js";
+      sheet(g.name, "Il gioco è pronto, ma manca il file " + file + " nel repo della mini app (o la pagina è ancora quella vecchia: chiudi e riapri l'app).");
     }
   }
 
@@ -198,6 +200,13 @@
   $("wheelChip").addEventListener("click", function () {
     haptic("light");
     if (window.ArcadeGames && window.ArcadeGames.wheel) window.ArcadeGames.wheel.open();
+    else sheet("Ruota Daily", "Manca il file games3.js nel repo della mini app.");
+  });
+
+  // etichetta di versione in basso a sinistra: mostra quali giochi sono stati davvero caricati
+  window.addEventListener("load", function () {
+    var v = $("ver"); if (!v) return;
+    v.textContent = "build 3a · giochi: " + (Object.keys(window.ArcadeGames || {}).join(" ") || "nessuno");
   });
 
   loadMe();
