@@ -281,6 +281,25 @@
     <div class="chip demo" id="demoChip" hidden>DEMO</div>
   </footer>
 
+  <!-- ===== AVIATOR ===== -->
+  <section id="avi" hidden aria-label="Aviator">
+    <div class="avi-top">
+      <button id="aviBack" type="button" class="avi-back">‹ Saloon</button>
+      <div class="avi-title">✈ AVIATOR</div>
+      <div class="avi-bal">💳 <b id="aviBal">—</b></div>
+    </div>
+    <div class="avi-stage">
+      <canvas id="aviCanvas"></canvas>
+      <div class="avi-mult" id="aviMult">1.00x</div>
+      <div class="avi-msg" id="aviMsg"></div>
+    </div>
+    <div class="avi-panel">
+      <div class="avi-bets" id="aviBets"></div>
+      <button id="aviGo" type="button" class="avi-go">DECOLLA</button>
+      <div class="avi-notes" id="aviNotes"></div>
+    </div>
+  </section>
+
   <!-- ===== MESSAGGIO RAPIDO ===== -->
   <div id="toast" role="status" hidden></div>
 
@@ -296,5 +315,6 @@
 
 <script src="config.js"></script>
 <script src="app.js"></script>
+<script src="aviator.js"></script>
 </body>
 </html>
