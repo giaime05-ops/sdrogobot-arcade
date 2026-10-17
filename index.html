@@ -2,20 +2,96 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Sdrogo Arcade</title>
+  <!-- Script Ufficiale Telegram WebApp -->
+  <script src="https://telegram.org/js/telegram-web_app.js"></script>
   <style>
     body {
-      background-color: #121212;
+      background-color: #0f0f1a;
       color: #00ffcc;
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       text-align: center;
-      padding-top: 50px;
+      padding: 20px;
+      margin: 0;
+    }
+    .card {
+      background: #1a1a2e;
+      border: 2px solid #00ffcc;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+    }
+    .balance {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff007f;
+    }
+    .status {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
+
   <h1>🎰 SDROGO ARCADE 🎰</h1>
-  <p>Mini App in arrivo...</p>
+  
+  <div class="card" id="user-card">
+    <h2 id="username">Caricamento...</h2>
+    <p>Saldo $SDG: <span class="balance" id="balance">---</span></p>
+    <p id="follia-status"></p>
+  </div>
+
+  <div class="status" id="debug-status">Connessione al server in corso...</div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Espande la WebApp a schermo intero
+
+    // Sostituisci questo URL con l'URL pubblico del tuo bot / webhook su Northflank se diverso
+    const BACKEND_URL = window.location.origin; 
+
+    async function loadUserData() {
+      const initData = tg.initData;
+      const statusEl = document.getElementById('debug-status');
+
+      if (!initData) {
+        statusEl.innerText = "Attenzione: Apri la Mini App direttamente da Telegram!";
+        return;
+      }
+
+      try {
+        // Inviamo initData nelle intestazioni per autenticazione sicura
+        const response = await fetch('/api/me', {
+          headers: {
+            'X-Telegram-Init-Data': initData
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('username').innerText = "Ciao, " + data.user.first_name + "!";
+          document.getElementById('balance').innerText = data.user.balance.toLocaleString() + " $SDG";
+          
+          if (data.economy.follia_active) {
+            document.getElementById('follia-status').innerText = "🔥 FOLLIA SDROGO ATTIVA (Moltiplicatori x1.5 / x2)!";
+          }
+          
+          statusEl.innerText = "Connessione riusciuta ed autenticata!";
+        } else {
+          statusEl.innerText = "Errore: " + data.error;
+        }
+      } catch (err) {
+        statusEl.innerText = "Impossibile collegarsi al backend API.";
+        console.error(err);
+      }
+    }
+
+    loadUserData();
+  </script>
 </body>
 </html>
