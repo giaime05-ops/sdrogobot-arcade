@@ -1,97 +1,299 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Sdrogo Arcade</title>
-  <!-- Script Ufficiale Telegram WebApp -->
-  <script src="https://telegram.org/js/telegram-web_app.js"></script>
-  <style>
-    body {
-      background-color: #0f0f1a;
-      color: #00ffcc;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      padding: 20px;
-      margin: 0;
-    }
-    .card {
-      background: #1a1a2e;
-      border: 2px solid #00ffcc;
-      border-radius: 15px;
-      padding: 20px;
-      margin-top: 20px;
-      box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
-    }
-    .balance {
-      font-size: 24px;
-      font-weight: bold;
-      color: #ff007f;
-    }
-    .status {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #aaa;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d0706">
+<title>Sdrogo Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Rye&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
-  <h1>🎰 SDROGO ARCADE 🎰</h1>
-  
-  <div class="card" id="user-card">
-    <h2 id="username">Caricamento...</h2>
-    <p>Saldo $SDG: <span class="balance" id="balance">---</span></p>
-    <p id="follia-status"></p>
+<main id="app" aria-live="polite">
+
+  <!-- ===== SCENA DEL SALOON (SVG a livelli) ===== -->
+  <svg id="scene" viewBox="0 0 390 780" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Il saloon dello Sdrogo Arcade">
+    <defs>
+      <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1a0d09"/><stop offset=".55" stop-color="#2a140c"/><stop offset="1" stop-color="#150a07"/>
+      </linearGradient>
+      <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3a2013"/><stop offset="1" stop-color="#160b06"/>
+      </linearGradient>
+      <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3b2114"/><stop offset="1" stop-color="#1a0d07"/>
+      </linearGradient>
+      <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1c7a4a"/><stop offset="1" stop-color="#0d4a2b"/>
+      </linearGradient>
+      <linearGradient id="feltRed" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#8e1f2b"/><stop offset="1" stop-color="#5a0f19"/>
+      </linearGradient>
+      <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#5a3420"/><stop offset=".5" stop-color="#7a4a2d"/><stop offset="1" stop-color="#4a2a19"/>
+      </linearGradient>
+      <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#3b3f46"/><stop offset=".5" stop-color="#6a7078"/><stop offset="1" stop-color="#32363c"/>
+      </linearGradient>
+      <radialGradient id="lampGlow" cx=".5" cy=".5" r=".5">
+        <stop offset="0" stop-color="#ffcf7a" stop-opacity=".85"/><stop offset=".45" stop-color="#ff9a3c" stop-opacity=".25"/><stop offset="1" stop-color="#ff7a1c" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="neonGlowRed" cx=".5" cy=".5" r=".5">
+        <stop offset="0" stop-color="#ff2e4d" stop-opacity=".55"/><stop offset="1" stop-color="#ff2e4d" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
+        <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".8"/>
+      </radialGradient>
+      <pattern id="planks" width="26" height="60" patternUnits="userSpaceOnUse">
+        <rect width="26" height="60" fill="none"/>
+        <path d="M0 0H26M0 30H26" stroke="#000" stroke-opacity=".22" stroke-width="1"/>
+        <path d="M13 0V30M0 30V60" stroke="#000" stroke-opacity=".14" stroke-width="1"/>
+      </pattern>
+      <filter id="neon" x="-30%" y="-60%" width="160%" height="220%">
+        <feGaussianBlur stdDeviation="2.2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- parete di fondo -->
+    <rect width="390" height="780" fill="url(#wall)"/>
+    <rect width="390" height="780" fill="url(#planks)" opacity=".55"/>
+
+    <!-- travi del soffitto -->
+    <g>
+      <rect x="0" y="0" width="390" height="46" fill="url(#beam)"/>
+      <rect x="0" y="40" width="390" height="6" fill="#0c0604" opacity=".7"/>
+      <rect x="-10" y="64" width="410" height="14" fill="url(#beam)" opacity=".9"/>
+      <rect x="60" y="0" width="14" height="78" fill="url(#beam)"/>
+      <rect x="316" y="0" width="14" height="78" fill="url(#beam)"/>
+    </g>
+
+    <!-- bancone e mensole sul fondo -->
+    <g opacity=".95">
+      <rect x="0" y="236" width="390" height="22" fill="url(#wood)"/>
+      <rect x="0" y="256" width="390" height="5" fill="#000" opacity=".4"/>
+      <g fill="#0d0605" opacity=".85">
+        <rect x="14" y="196" width="10" height="40" rx="3"/><rect x="28" y="204" width="9" height="32" rx="3"/>
+        <rect x="42" y="192" width="11" height="44" rx="3"/>
+        <rect x="337" y="200" width="10" height="36" rx="3"/><rect x="351" y="192" width="11" height="44" rx="3"/>
+        <rect x="366" y="204" width="9" height="32" rx="3"/>
+      </g>
+    </g>
+
+    <!-- arco circolare con insegna al neon -->
+    <g id="sign">
+      <circle cx="195" cy="168" r="78" fill="url(#neonGlowRed)" class="flick-slow"/>
+      <circle cx="195" cy="168" r="66" fill="#0a0504" stroke="#3b2114" stroke-width="10"/>
+      <circle cx="195" cy="168" r="60" fill="none" stroke="#ff2e4d" stroke-width="2.4" filter="url(#neon)" class="flick"/>
+      <g filter="url(#neon)" class="flick">
+        <text x="195" y="160" text-anchor="middle" class="neonSmall" fill="none" stroke="#ffb15c" stroke-width="1.4">SDROGO'S</text>
+      </g>
+      <g filter="url(#neon)" class="flick-b">
+        <text x="195" y="190" text-anchor="middle" class="neonBig" fill="none" stroke="#ff2e4d" stroke-width="1.8">ARCADE</text>
+      </g>
+      <path d="M150 204 Q195 222 240 204" fill="none" stroke="#25e1d3" stroke-width="2" stroke-linecap="round" filter="url(#neon)" class="flick-slow"/>
+    </g>
+
+    <!-- lampade appese -->
+    <g id="lamps">
+      <g class="lamp" style="--d:0s">
+        <line x1="62" y1="78" x2="62" y2="104" stroke="#1a0d07" stroke-width="2"/>
+        <circle cx="62" cy="116" r="52" fill="url(#lampGlow)"/>
+        <path d="M48 118 Q62 98 76 118 Z" fill="#2b1a10" stroke="#0c0604"/>
+        <circle cx="62" cy="120" r="4" fill="#ffe3a0"/>
+      </g>
+      <g class="lamp" style="--d:-1.2s">
+        <line x1="323" y1="78" x2="323" y2="102" stroke="#1a0d07" stroke-width="2"/>
+        <circle cx="323" cy="114" r="52" fill="url(#lampGlow)"/>
+        <path d="M309 116 Q323 96 337 116 Z" fill="#2b1a10" stroke="#0c0604"/>
+        <circle cx="323" cy="118" r="4" fill="#ffe3a0"/>
+      </g>
+      <g class="lamp" style="--d:-.6s">
+        <line x1="195" y1="46" x2="195" y2="60" stroke="#1a0d07" stroke-width="2"/>
+        <circle cx="195" cy="68" r="34" fill="url(#lampGlow)" opacity=".7"/>
+        <path d="M185 70 Q195 56 205 70 Z" fill="#2b1a10" stroke="#0c0604"/>
+        <circle cx="195" cy="73" r="3" fill="#ffe3a0"/>
+      </g>
+    </g>
+
+    <!-- pavimento in legno in prospettiva -->
+    <g>
+      <path d="M0 262 L390 262 L390 780 L0 780 Z" fill="url(#floor)"/>
+      <g stroke="#000" stroke-opacity=".3" stroke-width="1.2">
+        <path d="M195 262 L-120 780"/><path d="M195 262 L-10 780"/><path d="M195 262 L100 780"/>
+        <path d="M195 262 L195 780"/><path d="M195 262 L290 780"/><path d="M195 262 L400 780"/><path d="M195 262 L510 780"/>
+      </g>
+      <g stroke="#000" stroke-opacity=".18">
+        <path d="M0 300H390"/><path d="M0 350H390"/><path d="M0 420H390"/><path d="M0 520H390"/><path d="M0 650H390"/>
+      </g>
+      <ellipse cx="195" cy="560" rx="190" ry="150" fill="url(#lampGlow)" opacity=".22"/>
+    </g>
+
+    <!-- ================= STAZIONI (giochi) ================= -->
+
+    <!-- AVIATOR: manifesto sul muro (sinistra) -->
+    <g class="station" data-game="aviator" transform="translate(80 168) scale(.88) translate(-62 -168)" tabindex="0" role="button" aria-label="Aviator">
+      <rect x="14" y="112" width="96" height="96" rx="6" fill="#102a44" stroke="#c9a15a" stroke-width="3"/>
+      <rect x="20" y="118" width="84" height="84" rx="3" fill="#143a5e"/>
+      <path d="M20 190 Q50 180 70 150 T104 128" stroke="#ffd37a" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+      <g transform="translate(60 150) rotate(-28)">
+        <path d="M-22 4 L18 -2 L26 0 L18 2 L-22 8 Z" fill="#ff2e4d"/>
+        <path d="M-6 3 L-14 -10 L-8 -10 L4 2 Z M-6 5 L-14 18 L-8 18 L4 6 Z" fill="#ffe3a0"/>
+      </g>
+      <text x="62" y="196" text-anchor="middle" class="posterTxt">AVIATOR</text>
+      <rect class="hit" x="8" y="106" width="108" height="124" rx="10"/>
+      <g class="tag" transform="translate(62 224)"><rect x="-34" y="-11" width="68" height="20" rx="10"/><text y="4" text-anchor="middle">Aviator</text></g>
+    </g>
+
+    <!-- WORDLE: lavagna sul muro (destra) -->
+    <g class="station" data-game="wordle" transform="translate(310 168) scale(.88) translate(-328 -168)" tabindex="0" role="button" aria-label="Wordle">
+      <rect x="280" y="112" width="96" height="96" rx="6" fill="#2a1a10" stroke="#c9a15a" stroke-width="3"/>
+      <rect x="286" y="118" width="84" height="84" rx="3" fill="#10241c"/>
+      <g>
+        <rect x="292" y="126" width="16" height="16" rx="2" fill="#2f9e5b"/><rect x="311" y="126" width="16" height="16" rx="2" fill="#c9a23a"/>
+        <rect x="330" y="126" width="16" height="16" rx="2" fill="#3a4a42"/><rect x="349" y="126" width="16" height="16" rx="2" fill="#2f9e5b"/>
+        <rect x="292" y="146" width="16" height="16" rx="2" fill="#3a4a42"/><rect x="311" y="146" width="16" height="16" rx="2" fill="#2f9e5b"/>
+        <rect x="330" y="146" width="16" height="16" rx="2" fill="#c9a23a"/><rect x="349" y="146" width="16" height="16" rx="2" fill="#3a4a42"/>
+        <rect x="292" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/><rect x="311" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/>
+        <rect x="330" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/><rect x="349" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/>
+      </g>
+      <text x="328" y="196" text-anchor="middle" class="posterTxt">WORDLE</text>
+      <rect class="hit" x="274" y="106" width="108" height="124" rx="10"/>
+      <g class="tag" transform="translate(328 224)"><rect x="-34" y="-11" width="68" height="20" rx="10"/><text y="4" text-anchor="middle">Wordle</text></g>
+    </g>
+
+    <!-- SLOT: due macchine (sinistra, centro scena) -->
+    <g class="station" data-game="slot" transform="translate(92 360) scale(.9) translate(-76 -360)" tabindex="0" role="button" aria-label="Slot 777">
+      <g>
+        <rect x="14" y="300" width="58" height="104" rx="8" fill="#7a1220" stroke="#e8c36a" stroke-width="2.5"/>
+        <rect x="20" y="310" width="46" height="34" rx="4" fill="#0b0b10"/>
+        <g font-size="16" text-anchor="middle"><text x="29" y="334">7</text><text x="43" y="334">7</text><text x="57" y="334">7</text></g>
+        <rect x="20" y="352" width="46" height="20" rx="3" fill="#2a0a10"/>
+        <circle cx="30" cy="388" r="5" fill="#ffd34d"/><circle cx="43" cy="388" r="5" fill="#25e1d3"/><circle cx="56" cy="388" r="5" fill="#ff2e4d"/>
+        <rect x="72" y="320" width="6" height="40" rx="3" fill="url(#metal)"/><circle cx="75" cy="318" r="7" fill="#ff2e4d"/>
+      </g>
+      <g>
+        <rect x="86" y="318" width="52" height="92" rx="8" fill="#12406a" stroke="#e8c36a" stroke-width="2.5"/>
+        <rect x="92" y="327" width="40" height="30" rx="4" fill="#0b0b10"/>
+        <g font-size="14" text-anchor="middle" fill="#ffd34d"><text x="100" y="348">7</text><text x="112" y="348">7</text><text x="124" y="348">7</text></g>
+        <circle cx="100" cy="392" r="4.5" fill="#ffd34d"/><circle cx="112" cy="392" r="4.5" fill="#ff2e4d"/><circle cx="124" cy="392" r="4.5" fill="#25e1d3"/>
+      </g>
+      <rect class="hit" x="8" y="292" width="138" height="132" rx="12"/>
+      <g class="tag" transform="translate(76 438)"><rect x="-38" y="-11" width="76" height="20" rx="10"/><text y="4" text-anchor="middle">Slot 777</text></g>
+    </g>
+
+    <!-- GRATTA E VINCI: chiosco centrale -->
+    <g class="station" data-game="scratch" transform="translate(195 360) scale(.9) translate(-196 -360)" tabindex="0" role="button" aria-label="Gratta e Vinci">
+      <rect x="156" y="318" width="80" height="86" rx="6" fill="url(#wood)" stroke="#e8c36a" stroke-width="2.5"/>
+      <rect x="163" y="326" width="66" height="22" rx="3" fill="#0b0b10"/>
+      <text x="196" y="342" text-anchor="middle" class="kioskTxt">GRATTA</text>
+      <g transform="rotate(-8 180 372)"><rect x="166" y="356" width="34" height="42" rx="3" fill="#f2d16b"/><rect x="171" y="368" width="24" height="12" rx="2" fill="#a8a8b0"/><text x="183" y="364" text-anchor="middle" font-size="6" fill="#7a1220" font-weight="700">VINCI</text></g>
+      <g transform="rotate(7 214 374)"><rect x="200" y="358" width="34" height="42" rx="3" fill="#ff7aa0"/><rect x="205" y="370" width="24" height="12" rx="2" fill="#c9cdd6"/></g>
+      <rect class="hit" x="150" y="310" width="92" height="106" rx="10"/>
+      <g class="tag" transform="translate(196 438)"><rect x="-44" y="-11" width="88" height="20" rx="10"/><text y="4" text-anchor="middle">Gratta e Vinci</text></g>
+    </g>
+
+    <!-- MASTERMIND: cassaforte (destra) -->
+    <g class="station" data-game="mastermind" transform="translate(304 360) scale(.9) translate(-290 -360)" tabindex="0" role="button" aria-label="Mastermind">
+      <rect x="256" y="296" width="62" height="108" rx="6" fill="url(#metal)" stroke="#1a1c20" stroke-width="3"/>
+      <rect x="264" y="304" width="46" height="92" rx="4" fill="#4a4f57"/>
+      <circle cx="287" cy="338" r="14" fill="#2a2d33" stroke="#9aa0a8" stroke-width="2"/>
+      <path d="M287 326 V350 M275 338 H299" stroke="#c9ced6" stroke-width="2"/>
+      <g><circle cx="274" cy="374" r="4.5" fill="#ff2e4d"/><circle cx="287" cy="374" r="4.5" fill="#ffd34d"/><circle cx="300" cy="374" r="4.5" fill="#25e1d3"/></g>
+      <rect x="318" y="326" width="6" height="22" rx="2" fill="#6a7078"/>
+      <rect class="hit" x="250" y="290" width="80" height="122" rx="10"/>
+      <g class="tag" transform="translate(287 438)"><rect x="-42" y="-11" width="84" height="20" rx="10"/><text y="4" text-anchor="middle">Mastermind</text></g>
+    </g>
+
+    <!-- ROULETTE: tavolo (destra) -->
+    <g class="station" data-game="roulette" transform="translate(195 498) scale(1.1) translate(-350 -372)" tabindex="0" role="button" aria-label="Roulette">
+      <ellipse cx="350" cy="372" rx="54" ry="30" fill="url(#wood)" stroke="#e8c36a" stroke-width="2.5"/>
+      <ellipse cx="350" cy="368" rx="46" ry="24" fill="url(#feltRed)"/>
+      <g class="wheelspin">
+        <ellipse cx="350" cy="366" rx="24" ry="13" fill="#1a1a1f" stroke="#e8c36a" stroke-width="2"/>
+        <ellipse cx="350" cy="366" rx="15" ry="8" fill="#0d6b3c"/>
+        <path d="M350 358 V374 M335 366 H365 M340 360 L360 372 M360 360 L340 372" stroke="#f4f0e6" stroke-width="1.2"/>
+        <circle cx="350" cy="366" r="2.6" fill="#ffd34d"/>
+      </g>
+      <rect class="hit" x="296" y="334" width="94" height="72" rx="12"/>
+      <g class="tag" transform="translate(348 438)"><rect x="-40" y="-11" width="80" height="20" rx="10"/><text y="4" text-anchor="middle">Roulette</text></g>
+    </g>
+
+    <!-- BLACKJACK: tavolo in primo piano (sinistra) -->
+    <g class="station" data-game="blackjack" transform="translate(112 652) scale(.7) translate(-108 -615)" tabindex="0" role="button" aria-label="Blackjack">
+      <ellipse cx="108" cy="624" rx="112" ry="62" fill="#000" opacity=".35"/>
+      <path d="M0 586 Q108 520 216 586 L216 626 Q108 700 0 626 Z" fill="url(#wood)" stroke="#e8c36a" stroke-width="3"/>
+      <path d="M12 590 Q108 536 204 590 L204 618 Q108 684 12 618 Z" fill="url(#felt)"/>
+      <path d="M40 584 Q108 548 176 584" stroke="#e8c36a" stroke-opacity=".6" stroke-width="1.5" fill="none"/>
+      <text x="108" y="574" text-anchor="middle" class="feltTxt">BLACKJACK PAYS 3 TO 2</text>
+      <g transform="translate(78 596) rotate(-10)"><rect width="30" height="42" rx="4" fill="#f6f1e4"/><text x="5" y="14" font-size="12" fill="#c8182b" font-weight="700">A</text><text x="15" y="32" font-size="15" fill="#c8182b" text-anchor="middle">♥</text></g>
+      <g transform="translate(106 598) rotate(8)"><rect width="30" height="42" rx="4" fill="#f6f1e4"/><text x="5" y="14" font-size="12" fill="#14141a" font-weight="700">K</text><text x="15" y="32" font-size="15" fill="#14141a" text-anchor="middle">♠</text></g>
+      <circle cx="40" cy="618" r="9" fill="#c8182b" stroke="#f6f1e4" stroke-dasharray="3 3"/><circle cx="46" cy="624" r="9" fill="#14141a" stroke="#f6f1e4" stroke-dasharray="3 3"/>
+      <rect class="hit" x="-4" y="520" width="226" height="190" rx="14"/>
+      <g class="tag" transform="translate(108 700) scale(1.4)"><rect x="-42" y="-11" width="84" height="20" rx="10"/><text y="4" text-anchor="middle">Blackjack</text></g>
+    </g>
+
+    <!-- POKER: tavolo rotondo in primo piano (destra) -->
+    <g class="station" data-game="poker" transform="translate(276 652) scale(.7) translate(-296 -615)" tabindex="0" role="button" aria-label="Poker">
+      <ellipse cx="296" cy="626" rx="106" ry="64" fill="#000" opacity=".35"/>
+      <ellipse cx="296" cy="600" rx="96" ry="52" fill="url(#wood)" stroke="#e8c36a" stroke-width="3"/>
+      <ellipse cx="296" cy="598" rx="84" ry="43" fill="url(#felt)"/>
+      <ellipse cx="296" cy="598" rx="70" ry="33" fill="none" stroke="#e8c36a" stroke-opacity=".5"/>
+      <g transform="translate(250 586)"><rect width="22" height="32" rx="3" fill="#f6f1e4" transform="rotate(-12)"/><text x="3" y="12" font-size="9" fill="#c8182b" font-weight="700" transform="rotate(-12)">Q♦</text></g>
+      <g transform="translate(274 584)"><rect width="22" height="32" rx="3" fill="#f6f1e4"/><text x="3" y="12" font-size="9" fill="#14141a" font-weight="700">J♣</text></g>
+      <g transform="translate(298 584)"><rect width="22" height="32" rx="3" fill="#f6f1e4"/><text x="3" y="12" font-size="9" fill="#c8182b" font-weight="700">10♥</text></g>
+      <g transform="translate(322 586)"><rect width="22" height="32" rx="3" fill="#f6f1e4" transform="rotate(10)"/><text x="3" y="12" font-size="9" fill="#14141a" font-weight="700" transform="rotate(10)">A♠</text></g>
+      <circle cx="262" cy="624" r="8" fill="#ffd34d" stroke="#7a1220" stroke-dasharray="3 3"/><circle cx="330" cy="620" r="8" fill="#25e1d3" stroke="#0a3f3a" stroke-dasharray="3 3"/>
+      <rect class="hit" x="188" y="540" width="216" height="150" rx="14"/>
+      <g class="tag" transform="translate(296 700) scale(1.4)"><rect x="-34" y="-11" width="68" height="20" rx="10"/><text y="4" text-anchor="middle">Poker</text></g>
+    </g>
+
+    <!-- polvere nell'aria -->
+    <g id="dust" fill="#ffd9a0">
+      <circle cx="40" cy="300" r="1.2"/><circle cx="130" cy="460" r="1"/><circle cx="220" cy="280" r="1.3"/>
+      <circle cx="310" cy="470" r="1"/><circle cx="90" cy="540" r="1.2"/><circle cx="350" cy="260" r="1"/>
+    </g>
+
+    <rect width="390" height="780" fill="url(#vignette)" pointer-events="none"/>
+  </svg>
+
+  <!-- ===== INTESTAZIONE (HTML sopra la scena) ===== -->
+  <header id="top">
+    <div class="brand">SDROGOBOT <span>ARCADE HUB</span></div>
+    <div class="player" id="player">
+      <div class="avatar" id="avatar">?</div>
+      <div class="who">
+        <div class="name" id="pname">Caricamento…</div>
+        <div class="bal" id="pbal"><span class="coin">💳</span> <b id="pcoins">—</b> <i>$SDG</i></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== STRISCIA IN BASSO: Banco e Follia ===== -->
+  <footer id="bottom">
+    <div class="chip" id="bancoChip" hidden>🏦 Banco <b id="bancoVal">—</b></div>
+    <div class="chip hot" id="folliaChip" hidden>🔥 Follia Sdrogo attiva</div>
+    <div class="chip demo" id="demoChip" hidden>DEMO</div>
+  </footer>
+
+  <!-- ===== MESSAGGIO RAPIDO ===== -->
+  <div id="toast" role="status" hidden></div>
+
+  <!-- ===== FOGLIO "IN COSTRUZIONE" / ERRORI ===== -->
+  <div id="sheet" hidden>
+    <div class="card">
+      <h2 id="sheetTitle">—</h2>
+      <p id="sheetText">—</p>
+      <button id="sheetClose" type="button">Ok</button>
+    </div>
   </div>
+</main>
 
-  <div class="status" id="debug-status">Connessione al server in corso...</div>
-
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand(); // Espande la WebApp a schermo intero
-
-    // Sostituisci questo URL con l'URL pubblico del tuo bot / webhook su Northflank se diverso
-    const BACKEND_URL = window.location.origin; 
-
-    async function loadUserData() {
-      const initData = tg.initData;
-      const statusEl = document.getElementById('debug-status');
-
-      if (!initData) {
-        statusEl.innerText = "Attenzione: Apri la Mini App direttamente da Telegram!";
-        return;
-      }
-
-      try {
-        // Inviamo initData nelle intestazioni per autenticazione sicura
-        const response = await fetch('/api/me', {
-          headers: {
-            'X-Telegram-Init-Data': initData
-          }
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          document.getElementById('username').innerText = "Ciao, " + data.user.first_name + "!";
-          document.getElementById('balance').innerText = data.user.balance.toLocaleString() + " $SDG";
-          
-          if (data.economy.follia_active) {
-            document.getElementById('follia-status').innerText = "🔥 FOLLIA SDROGO ATTIVA (Moltiplicatori x1.5 / x2)!";
-          }
-          
-          statusEl.innerText = "Connessione riusciuta ed autenticata!";
-        } else {
-          statusEl.innerText = "Errore: " + data.error;
-        }
-      } catch (err) {
-        statusEl.innerText = "Impossibile collegarsi al backend API.";
-        console.error(err);
-      }
-    }
-
-    loadUserData();
-  </script>
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
