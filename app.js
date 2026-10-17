@@ -14,9 +14,9 @@
   // ---------- Giochi ----------
   var GAMES = {
     aviator:    { name: "Aviator",         ready: true },
-    slot:       { name: "Slot 777",        ready: false },
-    roulette:   { name: "Roulette",        ready: false },
-    scratch:    { name: "Gratta e Vinci",  ready: false },
+    slot:       { name: "Slot 777",        ready: true },
+    roulette:   { name: "Roulette",        ready: true },
+    scratch:    { name: "Gratta e Vinci",  ready: true },
     wordle:     { name: "Wordle",          ready: false },
     mastermind: { name: "Mastermind",      ready: false },
     blackjack:  { name: "Blackjack",       ready: false },
@@ -78,7 +78,8 @@
       name:   pick(u, ["name", "first_name", "nome", "display_name"], null),
       coins:  pick(u, ["coins", "balance", "saldo", "sdg"], pick(j, ["coins", "balance", "saldo"], null)),
       banco:  banco,
-      follia: !!follia
+      follia: !!follia,
+      daily:  !!pick(pick(j, ["daily"], {}), ["available"], false)
     };
   }
 
@@ -90,6 +91,7 @@
     $("pcoins").textContent = me.coins === null || me.coins === undefined ? "—" : fmt(me.coins);
     if (me.banco !== null && me.banco !== undefined) { $("bancoVal").textContent = fmt(me.banco); $("bancoChip").hidden = false; }
     $("folliaChip").hidden = !me.follia;
+    $("wheelChip").hidden = !(me.daily && !opts.demo);
     $("demoChip").hidden = !opts.demo;
   }
 
@@ -191,6 +193,11 @@
     if (GAMES[key] && !GAMES[key].ready) el.classList.add("soon");
     el.addEventListener("click", function () { onStation(key, el); });
     el.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onStation(key, el); } });
+  });
+
+  $("wheelChip").addEventListener("click", function () {
+    haptic("light");
+    if (window.ArcadeGames && window.ArcadeGames.wheel) window.ArcadeGames.wheel.open();
   });
 
   loadMe();
