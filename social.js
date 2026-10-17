@@ -21,6 +21,7 @@
   function show(name, fromUser) {
     if (ORDER.indexOf(name) < 0) return;
     cur = name;
+    if (name !== "lead") cat = "coins";                 // uscendo dalla classifica, al ritorno si riparte dai Ricconi
     $("pgLead").hidden = name !== "lead";
     $("pgDiary").hidden = name !== "diary";
     Array.prototype.forEach.call(tabs, function (t) { t.classList.toggle("on", t.getAttribute("data-tab") === name); });
