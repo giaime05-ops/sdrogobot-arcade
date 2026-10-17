@@ -12,7 +12,7 @@ renderer.setClearColor(0x0d0706);
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x0d0706, 16, 30);
 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 60);
-const TARGET = new THREE.Vector3(0, 1.4, -0.5);
+const TARGET = new THREE.Vector3(0, 2.15, 0);
 const QUAL = [{ n: "alta", pr: 2 }, { n: "media", pr: 1.5 }, { n: "bassa", pr: 1 }];
 let qi = 0, animOn = true, yaw = 0, yawTarget = 0;
 
@@ -67,10 +67,10 @@ const wallTex = tex(1024, 512, (g, w, h) => {
 });
 wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping; wallTex.repeat.set(1.4, 1);
 const wallMat = new THREE.MeshLambertMaterial({ map: wallTex });
-const back = new THREE.Mesh(new THREE.PlaneGeometry(14, 6.4), wallMat); back.position.set(0, 3.2, -4.6); scene.add(back);
+const back = new THREE.Mesh(new THREE.PlaneGeometry(14, 12), wallMat); back.position.set(0, 5.8, -4.6); scene.add(back);
 for (const s of [-1, 1]) {
-  const w = new THREE.Mesh(new THREE.PlaneGeometry(14, 6.4), wallMat);
-  w.rotation.y = -s * Math.PI / 2; w.position.set(s * 4.4, 3.2, 2.4); scene.add(w);
+  const w = new THREE.Mesh(new THREE.PlaneGeometry(14, 12), wallMat);
+  w.rotation.y = -s * Math.PI / 2; w.position.set(s * 4.4, 5.8, 2.4); scene.add(w);
 }
 B(14, 1.5, 0.12, 0x1c0e08, 0, 0.75, -4.52); B(14, 0.12, 0.2, WOOD, 0, 1.52, -4.5);
 const ledA = B(8.8, 0.07, 0.07, new THREE.MeshBasicMaterial({ color: 0xff3d8b }), 0, 6.2, -4.5);
@@ -87,10 +87,10 @@ const signTex = tex(1024, 400, (g, w, h) => {
   g.font = "120px Rye, Georgia, serif"; g.shadowColor = "#8f7bff"; g.fillStyle = "rgba(143,123,255,.35)"; g.strokeStyle = "#b8abff";
   g.fillText("ARCADE", w / 2, 300); g.strokeText("ARCADE", w / 2, 300);
 });
-const signBoard = B(5.0, 1.95, 0.12, 0x120707, 0, 4.55, -4.5);
+const signBoard = B(5.9, 2.3, 0.12, 0x120707, 0, 4.2, -4.5);
 const signMat = new THREE.MeshBasicMaterial({ map: signTex, transparent: true, depthWrite: false });
-const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 1.87), signMat); sign.position.set(0, 4.55, -4.42); scene.add(sign);
-B(5.2, 0.08, 0.16, GOLD, 0, 5.56, -4.45); B(5.2, 0.08, 0.16, GOLD, 0, 3.54, -4.45);
+const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.7, 2.22), signMat); sign.position.set(0, 4.2, -4.42); scene.add(sign);
+B(6.1, 0.08, 0.16, GOLD, 0, 5.4, -4.45); B(6.1, 0.08, 0.16, GOLD, 0, 3.0, -4.45);
 
 // cono di luce
 const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 3.2, 7, 28, 1, true),
@@ -111,24 +111,26 @@ function card(rank, suit, red, x, y, z, rot, parent) {
   m.rotation.set(-Math.PI / 2, 0, rot || 0); m.position.set(x, y, z); (parent || scene).add(m); return m;
 }
 function chips(x, y, z, colors) {
-  colors.forEach((c, i) => C(0.1, 0.1, 0.035, M(c), x, y + i * 0.037, z, null, 18));
+  colors.forEach((c, i) => C(0.1, 0.1, 0.035, M(c), x, y + i * 0.037, z, table, 18));
 }
 
-// ---------- tavolo lungo: blackjack (sinistra) e poker (destra) ----------
+// ---------- tavolo centrale ovale: blackjack (verde, sinistra) e poker (rosso, destra) ----------
 const TY = 0.98;
-B(4.2, 0.2, 1.8, WOOD, 0, 0.9, 0.4);
-B(3.9, 0.04, 1.5, new THREE.MeshLambertMaterial({ color: 0x1f8350 }), 0, 1.01, 0.4);
-B(0.03, 0.05, 1.5, GOLD, 0, 1.03, 0.4);
-for (const sx of [-1.6, 1.6]) { C(0.2, 0.28, 0.82, M(0x4a2a19), sx, 0.41, 0.4); C(0.38, 0.38, 0.06, M(0x3a2013), sx, 0.03, 0.4); }
-card("A", "♥", true, -1.35, TY + 0.06, 0.25, 0.15); card("K", "♠", false, -1.05, TY + 0.065, 0.28, -0.1);
-card("9", "♦", true, -1.15, TY + 0.06, 0.78, 0.05); card("Q", "♣", false, -0.85, TY + 0.065, 0.8, 0.2);
-chips(-1.6, 1.03, 0.75, [0xc8182b, 0xc8182b, 0x14141a]); chips(-1.5, 1.03, 0.9, [0x14141a, 0xc8182b]);
-[["Q", "♦", 1], ["J", "♣", 0], ["10", "♥", 1], ["A", "♠", 0], ["7", "♦", 1]].forEach((c, i) => card(c[0], c[1], !!c[2], 0.35 + i * 0.4, TY + 0.06, 0.28, 0));
-card("K", "♥", true, 0.95, TY + 0.06, 0.82, 0.1); card("K", "♦", true, 1.25, TY + 0.065, 0.84, -0.12);
-chips(1.7, 1.03, 0.8, [0xffd34d, 0xffd34d, 0x25e1d3]); chips(1.8, 1.03, 0.65, [0x25e1d3]);
+const table = new THREE.Group(); table.position.set(0, 0, -0.3); scene.add(table);
+const ell = new THREE.Group(); ell.scale.set(1.75, 1, 1.0); table.add(ell);
+C(0.95, 0.95, 0.2, M(WOOD), 0, 0.9, 0, ell, 40);
+C(0.88, 0.88, 0.02, M(GOLD), 0, 1.005, 0, ell, 40);
+const half = (col, start) => { const m = new THREE.Mesh(new THREE.CircleGeometry(0.84, 36, start, Math.PI), new THREE.MeshLambertMaterial({ color: col })); m.rotation.x = -Math.PI / 2; m.position.y = 1.02; ell.add(m); };
+half(0x1f8350, Math.PI / 2); half(0xa8202c, -Math.PI / 2);
+B(0.03, 0.03, 1.66, GOLD, 0, 1.035, 0, table);
+C(0.22, 0.3, 0.8, M(0x4a2a19), 0, 0.4, 0, table); C(0.7, 0.7, 0.06, M(0x3a2013), 0, 0.03, 0, table, 28);
+const tc = (r, su, rd, x, z, rot) => card(r, su, rd, x, TY + 0.06, z, rot, table);
+tc("A", "♥", true, -1.0, -0.15, 0.2); tc("K", "♠", false, -0.7, -0.1, -0.1); tc("9", "♦", true, -0.95, 0.35, 0.05);
+[["Q", "♦", 1], ["J", "♣", 0], ["10", "♥", 1], ["A", "♠", 0], ["7", "♦", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], 0.35 + i * 0.36, -0.1, 0));
+chips(-1.3, 1.03, 0.4, [0xc8182b, 0xc8182b, 0x14141a]); chips(1.35, 1.03, 0.4, [0xffd34d, 0xffd34d, 0x25e1d3]);
 
 // ---------- slot machine (fondo a destra) ----------
-const slot = new THREE.Group(); slot.position.set(3.0, 0, -3.2); scene.add(slot);
+const slot = new THREE.Group(); slot.position.set(2.5, 0, -1.9); scene.add(slot);
 B(1.0, 1.9, 0.85, 0x7a1220, 0, 0.95, 0, slot); B(0.9, 0.34, 0.8, 0xa31a2c, 0, 2.05, 0, slot);
 const reelTex = tex(512, 192, (g, w, h) => {
   g.fillStyle = "#0b0b10"; g.fillRect(0, 0, w, h);
@@ -145,7 +147,7 @@ const bulbs = [];
 for (const sx of [-0.52, 0.52]) for (let i = 0; i < 6; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffd34d })); b.position.set(sx, 0.25 + i * 0.3, 0.38); slot.add(b); bulbs.push(b); }
 
 // ---------- cassaforte / Mastermind (fondo a sinistra) ----------
-const safe = new THREE.Group(); safe.position.set(-3.0, 0, -3.3); scene.add(safe);
+const safe = new THREE.Group(); safe.position.set(-2.6, 0, -3.4); safe.scale.setScalar(1.25); scene.add(safe);
 const metal = new THREE.MeshLambertMaterial({ color: 0x70767e });
 B(1.15, 1.35, 0.9, metal, 0, 0.675, 0, safe); B(0.95, 1.15, 0.06, 0x4b5058, 0, 0.7, 0.47, safe);
 const dial = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.04, 10, 28), M(0xb6bcc5)); dial.position.set(0, 0.85, 0.52); safe.add(dial);
@@ -155,7 +157,7 @@ B(0.1, 0.3, 0.07, 0x8a9099, 0.38, 0.75, 0.52, safe);
 [[-0.2, 0xff2e4d], [0, 0xffd34d], [0.2, 0x25e1d3]].forEach(([x, c]) => { const s = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), new THREE.MeshBasicMaterial({ color: c })); s.position.set(x, 0.38, 0.52); safe.add(s); });
 
 // ---------- roulette (a sinistra, a metà sala) ----------
-const roul = new THREE.Group(); roul.position.set(-3.0, 0, -1.3); scene.add(roul);
+const roul = new THREE.Group(); roul.position.set(-1.3, 0, 1.9); roul.scale.setScalar(0.7); scene.add(roul);
 C(0.12, 0.2, 0.8, M(0x4a2a19), 0, 0.4, 0, roul); C(0.7, 0.7, 0.12, M(WOOD), 0, 0.86, 0, roul, 32);
 C(0.62, 0.62, 0.03, M(0x9a2230), 0, 0.93, 0, roul, 32);
 const wheel = new THREE.Group(); wheel.position.set(0, 0.97, 0); roul.add(wheel);
@@ -166,7 +168,7 @@ C(0.04, 0.04, 0.1, M(GOLD), 0, 0.1, 0, wheel, 12);
 const rball = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff })); roul.add(rball);
 
 // ---------- Gratta e Vinci (a destra, a metà sala) ----------
-const kiosk = new THREE.Group(); kiosk.position.set(3.0, 0, -1.3); scene.add(kiosk);
+const kiosk = new THREE.Group(); kiosk.position.set(0, 0, -4.1); kiosk.scale.setScalar(1.2); scene.add(kiosk);
 const kTex = tex(256, 400, (g, w, h) => {
   g.fillStyle = "#f2c94c"; g.fillRect(0, 0, w, h); g.fillStyle = "#b3121f"; g.font = "54px Rye, serif"; g.textAlign = "center"; g.textBaseline = "middle";
   g.fillText("GRATTA", w / 2, 50); g.font = "34px Rye, serif"; g.fillStyle = "#7a1220"; g.fillText("E VINCI", w / 2, 100);
@@ -180,9 +182,9 @@ const kface = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 1.22), new THREE.Mesh
 [[0xf2d16b, -0.05], [0xff7aa0, 0.05], [0x7ad7ff, 0.13]].forEach(([c, x], i) => { const t = B(0.22, 0.3, 0.015, c, x, 0.62 + i * 0.02, 0.45 + i * 0.03, kiosk); t.rotation.z = (i - 1) * 0.15; });
 
 // ---------- tavolino con l'aeroplano (davanti a sinistra) ----------
-const ptab = new THREE.Group(); ptab.position.set(-2.5, 0, 2.9); scene.add(ptab);
-C(0.1, 0.16, 0.75, M(0x4a2a19), 0, 0.375, 0, ptab); C(0.55, 0.55, 0.08, M(WOOD), 0, 0.78, 0, ptab, 32);
-const plane = new THREE.Group(); plane.position.set(0, 1.2, 0); ptab.add(plane);
+const ptab = new THREE.Group(); ptab.position.set(-2.3, 0, -1.6); scene.add(ptab);
+const plane = new THREE.Group(); plane.position.set(0, 2.5, 0); plane.scale.setScalar(1.15); ptab.add(plane);
+for (const cz of [-0.25, 0.25]) C(0.012, 0.012, 4.0, M(0x9aa0a8), 0.08, 4.5, cz, ptab, 6);
 const red = M(0xff2e4d), cream = M(0xffe9b0);
 const fus = C(0.09, 0.09, 0.9, red, 0, 0, 0, plane, 16); fus.rotation.z = Math.PI / 2;
 const nose = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 16), red); nose.rotation.z = -Math.PI / 2; nose.position.x = 0.55; plane.add(nose);
@@ -191,7 +193,7 @@ const prop = B(0.015, 0.34, 0.03, 0xc9ced6, 0.66, 0, 0, plane);
 C(0.012, 0.012, 0.35, M(0x9aa0a8), 0, -0.2, 0, plane, 8);
 
 // ---------- tavolino con il quaderno Wordle (davanti a destra) ----------
-const wtab = new THREE.Group(); wtab.position.set(2.5, 0, 2.9); scene.add(wtab);
+const wtab = new THREE.Group(); wtab.position.set(1.3, 0, 1.9); wtab.scale.setScalar(0.75); scene.add(wtab);
 C(0.1, 0.16, 0.75, M(0x4a2a19), 0, 0.375, 0, wtab); B(1.0, 0.07, 0.8, WOOD, 0, 0.78, 0, wtab);
 const nbTex = tex(300, 400, (g, w, h) => {
   g.fillStyle = "#efe6cf"; g.fillRect(0, 0, w, h); g.fillStyle = "#b3121f"; g.font = "bold 34px Oswald, sans-serif"; g.textAlign = "center"; g.fillText("WORDLE", w / 2, 44);
@@ -207,28 +209,28 @@ const pencil = C(0.012, 0.012, 0.5, M(0xffd34d), 0.38, 0.04, 0.1, wtab, 6); penc
 const hits = [];
 const labelsEl = $("labs");
 const LABELS = [];
-function hit(game, label, w, h, d, x, y, z, ly) {
+function hit(game, label, w, h, d, x, y, z, ly, lz, lx) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
   m.position.set(x, y, z); m.userData.game = game; m.userData.label = label; scene.add(m); hits.push(m);
   const el = document.createElement("div"); el.className = "lab"; el.textContent = label; labelsEl.appendChild(el);
-  LABELS.push({ el, pos: new THREE.Vector3(x, ly, z + (ly < 0.5 ? 0.9 : 0)) });
+  LABELS.push({ el, pos: new THREE.Vector3(x + (lx || 0), ly, z + (lz || 0)) });
 }
-hit("blackjack", "Blackjack", 1.95, 0.7, 1.7, -1.0, 1.15, 0.4, 0.3);
-hit("poker", "Poker", 1.95, 0.7, 1.7, 1.0, 1.15, 0.4, 0.3);
-hit("slot", "Slot 777", 1.1, 2.4, 0.95, 3.0, 1.2, -3.2, 2.55);
-hit("mastermind", "Mastermind", 1.2, 1.5, 1.0, -3.0, 0.75, -3.3, 1.65);
-hit("roulette", "Roulette", 1.5, 0.9, 1.5, -3.0, 0.7, -1.3, 0.3);
-hit("scratch", "Gratta e Vinci", 1.0, 1.9, 0.7, 3.0, 0.95, -1.3, 0.3);
-hit("aviator", "Aviator", 1.2, 1.2, 1.2, -2.5, 0.9, 2.9, 0.3);
-hit("wordle", "Wordle", 1.2, 0.6, 1.0, 2.5, 0.95, 2.9, 0.3);
+hit("blackjack", "Blackjack", 2.0, 0.7, 2.0, -1.25, 1.15, -0.3, 0.45, 1.3, 0.75);
+hit("poker", "Poker", 2.0, 0.7, 2.0, 1.25, 1.15, -0.3, 0.45, 1.3, -0.75);
+hit("slot", "Slot 777", 1.1, 2.4, 0.95, 2.5, 1.2, -1.9, 2.5, 0);
+hit("mastermind", "Mastermind", 1.4, 1.7, 1.2, -2.6, 0.85, -3.4, 1.85, 0.6);
+hit("roulette", "Roulette", 1.2, 0.9, 1.2, -1.3, 0.7, 1.9, 0.1, 0.9);
+hit("scratch", "Gratta e Vinci", 1.2, 2.1, 0.8, 0, 1.05, -4.1, 2.4, 0.3);
+hit("aviator", "Aviator", 1.6, 0.8, 1.2, -2.3, 2.5, -1.6, 2.95, 0.2);
+hit("wordle", "Wordle", 1.0, 0.6, 0.9, 1.3, 0.95, 1.9, 0.1, 0.9);
 
 // ---------- camera ----------
-const CAM = { dist: 12.5, height: 5.6 };
-const WANT_W = 9.6;
+const CAM = { dist: 7.2, height: 2.6 };
+const WANT_W = 6.4;
 function fitCamera() {
   const w = innerWidth, h = innerHeight, asp = w / h;
   const vf = 2 * Math.atan((WANT_W / 2 / CAM.dist) / asp) * 180 / Math.PI;
-  camera.fov = Math.max(34, Math.min(70, vf)); camera.aspect = asp; camera.updateProjectionMatrix();
+  camera.fov = Math.max(40, Math.min(75, vf)); camera.aspect = asp; camera.updateProjectionMatrix();
 }
 function placeCamera() {
   const a = yaw, dx = Math.sin(a) * CAM.dist * 0.5;
@@ -280,7 +282,7 @@ function frame(now) {
   if (bench) { bench.frames.push(1 / Math.max(dt, 0.001)); if (now - bench.t0 > 10000) { const a = bench.frames; bench.res = { avg: a.reduce((x, y) => x + y, 0) / a.length, min: Math.min(...a.slice(5)) }; $("bT").textContent = "Test 10 s"; lastBench = bench.res; bench = null; } }
   yaw += (yawTarget - yaw) * Math.min(1, dt * 6);
   if (animOn) {
-    plane.rotation.y += dt * 0.7; plane.position.y = 1.2 + Math.sin(time * 1.6) * 0.04; plane.rotation.z = Math.sin(time * 1.1) * 0.08; prop.rotation.x += dt * 30;
+    plane.rotation.y = -0.55 + Math.sin(time * 0.6) * 0.15; plane.position.y = 2.5 + Math.sin(time * 1.6) * 0.04; plane.rotation.z = Math.sin(time * 1.1) * 0.05; prop.rotation.x += dt * 30;
     wheel.rotation.y += dt * 1.2; rball.position.set(Math.cos(-time * 3.1) * 0.38, 1.06, Math.sin(-time * 3.1) * 0.38);
     bulbs.forEach((b, i) => { b.material.color.setHex(((Math.floor(time * 4) + i) % 3) ? 0x6a5410 : 0xffd34d); });
     const fl = Math.sin(time * 37) * Math.sin(time * 5.3) > 0.93 ? 0.45 : 1; signMat.opacity = 0.9 * fl + 0.1; neonL.intensity = 1.1 * Math.PI * (0.6 + 0.4 * fl);
