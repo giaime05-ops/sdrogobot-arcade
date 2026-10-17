@@ -9,7 +9,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
   font-family:"Oswald",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   overscroll-behavior:none;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 #app{position:fixed;inset:0}
-#scene{position:absolute;left:0;right:0;top:calc(100px + var(--safe-top));bottom:0;width:100%;height:calc(100% - 100px - var(--safe-top));display:block}
+#scene{position:absolute;left:0;right:0;top:calc(116px + var(--safe-top));bottom:calc(52px + var(--safe-bottom));width:100%;height:calc(100% - 168px - var(--safe-top) - var(--safe-bottom));display:block}
 
 /* testo dentro la scena */
 .neonSmall{font-family:"Rye",Georgia,serif;font-size:20px;letter-spacing:1px}
