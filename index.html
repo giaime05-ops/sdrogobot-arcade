@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Rye&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=5b">
+<link rel="stylesheet" href="style.css?v=5c">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -16,250 +16,166 @@
 <main id="app" aria-live="polite">
 
   <!-- ===== SCENA DEL SALOON (SVG a livelli) ===== -->
-  <svg id="scene" viewBox="0 0 390 780" preserveAspectRatio="xMidYMid meet" style="overflow:visible" role="img" aria-label="Il saloon dello Sdrogo Arcade">
-    <defs>
-      <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#1a0d09"/><stop offset=".55" stop-color="#2a140c"/><stop offset="1" stop-color="#150a07"/>
-      </linearGradient>
-      <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#3a2013"/><stop offset="1" stop-color="#160b06"/>
-      </linearGradient>
-      <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#3b2114"/><stop offset="1" stop-color="#1a0d07"/>
-      </linearGradient>
-      <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#1c7a4a"/><stop offset="1" stop-color="#0d4a2b"/>
-      </linearGradient>
-      <linearGradient id="feltRed" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#8e1f2b"/><stop offset="1" stop-color="#5a0f19"/>
-      </linearGradient>
-      <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#5a3420"/><stop offset=".5" stop-color="#7a4a2d"/><stop offset="1" stop-color="#4a2a19"/>
-      </linearGradient>
-      <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#3b3f46"/><stop offset=".5" stop-color="#6a7078"/><stop offset="1" stop-color="#32363c"/>
-      </linearGradient>
-      <radialGradient id="lampGlow" cx=".5" cy=".5" r=".5">
-        <stop offset="0" stop-color="#ffcf7a" stop-opacity=".85"/><stop offset=".45" stop-color="#ff9a3c" stop-opacity=".25"/><stop offset="1" stop-color="#ff7a1c" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="neonGlowRed" cx=".5" cy=".5" r=".5">
-        <stop offset="0" stop-color="#ff2e4d" stop-opacity=".55"/><stop offset="1" stop-color="#ff2e4d" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
-        <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".8"/>
-      </radialGradient>
-      <pattern id="planks" width="26" height="60" patternUnits="userSpaceOnUse">
-        <rect width="26" height="60" fill="none"/>
-        <path d="M0 0H26M0 30H26" stroke="#000" stroke-opacity=".22" stroke-width="1"/>
-        <path d="M13 0V30M0 30V60" stroke="#000" stroke-opacity=".14" stroke-width="1"/>
-      </pattern>
-      <filter id="neon" x="-30%" y="-60%" width="160%" height="220%">
-        <feGaussianBlur stdDeviation="2.2" result="b"/>
-        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-    </defs>
+  <svg id="scene" viewBox="0 0 390 606" preserveAspectRatio="xMidYMin meet" style="overflow:visible" role="img" aria-label="La sala dello Sdrogo Arcade">
+<defs>
+ <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2113"/><stop offset="1" stop-color="#110803"/></linearGradient>
+ <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f8350"/><stop offset="1" stop-color="#0d4a2b"/></linearGradient>
+ <linearGradient id="feltRed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a2230"/><stop offset="1" stop-color="#5a0f19"/></linearGradient>
+ <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a3420"/><stop offset=".5" stop-color="#85502f"/><stop offset="1" stop-color="#4a2a19"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3b3f46"/><stop offset=".5" stop-color="#7a8088"/><stop offset="1" stop-color="#32363c"/></linearGradient>
+ <linearGradient id="led" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a5cff"/><stop offset=".5" stop-color="#ff3d8b"/><stop offset="1" stop-color="#7a5cff"/></linearGradient>
+ <linearGradient id="ledGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff3d8b" stop-opacity=".32"/><stop offset="1" stop-color="#ff3d8b" stop-opacity="0"/></linearGradient>
+ <linearGradient id="spot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9c0" stop-opacity=".42"/><stop offset=".6" stop-color="#ffd9a0" stop-opacity=".12"/><stop offset="1" stop-color="#ffd9a0" stop-opacity=".04"/></linearGradient>
+ <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+ <radialGradient id="signGlow" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#ff3d8b" stop-opacity=".30"/><stop offset="1" stop-color="#ff3d8b" stop-opacity="0"/></radialGradient>
+ <radialGradient id="pool" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd9a0" stop-opacity=".40"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></radialGradient>
+ <radialGradient id="vignette" cx=".5" cy=".45" r=".78"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".78"/></radialGradient>
+ <pattern id="boards" width="102" height="600" patternUnits="userSpaceOnUse">
+  <rect width="34" height="600" fill="#3a1f12"/><rect x="34" width="34" height="600" fill="#2f190f"/><rect x="68" width="34" height="600" fill="#36190f"/>
+  <path d="M0 0V600M34 0V600M68 0V600M102 0V600" stroke="#000" stroke-opacity=".5"/><path d="M8 0V600M42 0V600M76 0V600" stroke="#fff" stroke-opacity=".035"/>
+ </pattern>
+ <filter id="neon" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<!-- soffitto, striscia LED -->
+<rect x="-400" y="-400" width="1190" height="428" fill="#130809"/>
+<rect x="-400" y="20" width="1190" height="9" fill="#1d0e0a"/>
+<rect x="-400" y="29" width="1190" height="60" fill="url(#ledGlow)" class="flick-slow"/>
+<rect x="-400" y="27" width="1190" height="4" fill="url(#led)" filter="url(#neon)" class="flick-slow"/>
 
-    <!-- parete di fondo -->
-    <rect x="-400" y="-400" width="1190" height="1600" fill="url(#wall)"/>
-    <rect x="-400" y="-400" width="1190" height="1600" fill="url(#planks)" opacity=".55"/>
+<!-- parete di legno + boiserie -->
+<rect x="-400" y="31" width="1190" height="315" fill="url(#boards)"/>
+<rect x="-400" y="31" width="1190" height="315" fill="url(#shade)"/>
+<rect x="-400" y="276" width="1190" height="70" fill="#1c0e08"/>
+<rect x="-400" y="272" width="1190" height="7" fill="url(#wood)"/><rect x="-400" y="279" width="1190" height="3" fill="#000" opacity=".4"/>
+<g fill="none" stroke="#000" stroke-opacity=".38" stroke-width="1.4"><rect x="-320" y="288" width="66" height="46" rx="3"/><rect x="-242" y="288" width="66" height="46" rx="3"/><rect x="-164" y="288" width="66" height="46" rx="3"/><rect x="-86" y="288" width="66" height="46" rx="3"/><rect x="-8" y="288" width="66" height="46" rx="3"/><rect x="70" y="288" width="66" height="46" rx="3"/><rect x="148" y="288" width="66" height="46" rx="3"/><rect x="226" y="288" width="66" height="46" rx="3"/><rect x="304" y="288" width="66" height="46" rx="3"/><rect x="382" y="288" width="66" height="46" rx="3"/><rect x="460" y="288" width="66" height="46" rx="3"/><rect x="538" y="288" width="66" height="46" rx="3"/><rect x="616" y="288" width="66" height="46" rx="3"/><rect x="694" y="288" width="66" height="46" rx="3"/><rect x="772" y="288" width="66" height="46" rx="3"/></g>
+<rect x="-400" y="338" width="1190" height="8" fill="#0f0704"/>
 
-    <!-- travi del soffitto -->
-    <g>
-      <rect x="-400" y="-400" width="1190" height="446" fill="url(#beam)"/>
-      <rect x="-400" y="40" width="1190" height="6" fill="#0c0604" opacity=".7"/>
-      <rect x="-400" y="64" width="1190" height="14" fill="url(#beam)" opacity=".9"/>
-      <rect x="60" y="0" width="14" height="78" fill="url(#beam)"/>
-      <rect x="316" y="0" width="14" height="78" fill="url(#beam)"/>
-    </g>
+<!-- pavimento -->
+<rect x="-400" y="346" width="1190" height="900" fill="url(#floor)"/>
+<g stroke="#000" stroke-opacity=".32" stroke-width="1.2">
+ <path d="M195 346 L-200 700"/><path d="M195 346 L-60 700"/><path d="M195 346 L70 700"/><path d="M195 346 L195 700"/><path d="M195 346 L320 700"/><path d="M195 346 L450 700"/><path d="M195 346 L590 700"/>
+</g>
+<g stroke="#000" stroke-opacity=".2"><path d="M-400 352H790"/><path d="M-400 380H790"/><path d="M-400 420H790"/><path d="M-400 470H790"/><path d="M-400 535H790"/><path d="M-400 620H790"/><path d="M-400 740H790"/></g>
+<ellipse cx="195" cy="480" rx="200" ry="110" fill="url(#pool)" class="flick-slow"/>
 
-    <!-- bancone e mensole sul fondo -->
-    <g opacity=".95">
-      <rect x="-400" y="236" width="1190" height="22" fill="url(#wood)"/>
-      <rect x="-400" y="256" width="1190" height="5" fill="#000" opacity=".4"/>
-      <g fill="#0d0605" opacity=".85">
-        <rect x="14" y="196" width="10" height="40" rx="3"/><rect x="28" y="204" width="9" height="32" rx="3"/>
-        <rect x="42" y="192" width="11" height="44" rx="3"/>
-        <rect x="337" y="200" width="10" height="36" rx="3"/><rect x="351" y="192" width="11" height="44" rx="3"/>
-        <rect x="366" y="204" width="9" height="32" rx="3"/>
-      </g>
-    </g>
+<!-- faretto e cono di luce -->
+<polygon points="181,29 209,29 322,510 68,510" fill="url(#spot)" class="flick-slow"/>
+<path d="M180 29 L210 29 L203 19 L187 19 Z" fill="#2b1a10" stroke="#0c0604"/>
+<ellipse cx="195" cy="30" rx="10" ry="3.2" fill="#fff2c4"/>
 
-    <!-- arco circolare con insegna al neon -->
-    <g id="sign">
-      <circle cx="195" cy="168" r="78" fill="url(#neonGlowRed)" class="flick-slow"/>
-      <circle cx="195" cy="168" r="66" fill="#0a0504" stroke="#3b2114" stroke-width="10"/>
-      <circle cx="195" cy="168" r="60" fill="none" stroke="#ff2e4d" stroke-width="2.4" filter="url(#neon)" class="flick"/>
-      <g filter="url(#neon)" class="flick">
-        <text x="195" y="160" text-anchor="middle" class="neonSmall" fill="none" stroke="#ffb15c" stroke-width="1.4">SDROGO'S</text>
-      </g>
-      <g filter="url(#neon)" class="flick-b">
-        <text x="195" y="190" text-anchor="middle" class="neonBig" fill="none" stroke="#ff2e4d" stroke-width="1.8">ARCADE</text>
-      </g>
-      <path d="M150 204 Q195 222 240 204" fill="none" stroke="#25e1d3" stroke-width="2" stroke-linecap="round" filter="url(#neon)" class="flick-slow"/>
-    </g>
+<g id="sign">
+ <rect x="50" y="40" width="290" height="104" rx="16" fill="#110707" stroke="#3b2114" stroke-width="6"/>
+ <rect x="30" y="20" width="330" height="144" fill="url(#signGlow)" class="flick-slow"/>
+ <g filter="url(#neon)" class="flick"><text x="195" y="97" text-anchor="middle" textLength="246" lengthAdjust="spacingAndGlyphs" class="neonBig" style="font-size:42px" fill="#ff3d8b" fill-opacity=".22" stroke="#ff7db0" stroke-width="1.7">SDROGO'S</text></g>
+ <g filter="url(#neon)" class="flick-b"><text x="195" y="130" text-anchor="middle" textLength="170" lengthAdjust="spacingAndGlyphs" class="neonBig" style="font-size:27px" fill="#8f7bff" fill-opacity=".2" stroke="#a99bff" stroke-width="1.5">ARCADE</text></g>
+ <path d="M80 107 H310" stroke="#ff3d8b" stroke-width="1.6" stroke-linecap="round" opacity=".0"/>
+</g>
+<g class="station" data-game="scratch" tabindex="0" role="button" aria-label="Gratta e Vinci" transform="translate(0 14)">
 
-    <!-- lampade appese -->
-    <g id="lamps">
-      <g class="lamp" style="--d:0s">
-        <line x1="62" y1="78" x2="62" y2="104" stroke="#1a0d07" stroke-width="2"/>
-        <circle cx="62" cy="116" r="52" fill="url(#lampGlow)"/>
-        <path d="M48 118 Q62 98 76 118 Z" fill="#2b1a10" stroke="#0c0604"/>
-        <circle cx="62" cy="120" r="4" fill="#ffe3a0"/>
-      </g>
-      <g class="lamp" style="--d:-1.2s">
-        <line x1="323" y1="78" x2="323" y2="102" stroke="#1a0d07" stroke-width="2"/>
-        <circle cx="323" cy="114" r="52" fill="url(#lampGlow)"/>
-        <path d="M309 116 Q323 96 337 116 Z" fill="#2b1a10" stroke="#0c0604"/>
-        <circle cx="323" cy="118" r="4" fill="#ffe3a0"/>
-      </g>
-      <g class="lamp" style="--d:-.6s">
-        <line x1="195" y1="46" x2="195" y2="60" stroke="#1a0d07" stroke-width="2"/>
-        <circle cx="195" cy="68" r="34" fill="url(#lampGlow)" opacity=".7"/>
-        <path d="M185 70 Q195 56 205 70 Z" fill="#2b1a10" stroke="#0c0604"/>
-        <circle cx="195" cy="73" r="3" fill="#ffe3a0"/>
-      </g>
-    </g>
+<rect x="24" y="140" width="74" height="72" rx="4" fill="#241209" stroke="#c9a15a" stroke-width="3"/>
+<rect x="29" y="145" width="64" height="62" rx="2" fill="#f2c94c"/>
+<text x="61" y="162" text-anchor="middle" class="posterTxt" style="fill:#b3121f;font-size:13px">GRATTA</text>
+<rect x="36" y="168" width="50" height="22" rx="3" fill="#b9bdc6"/>
+<path d="M40 186 L48 172 M52 188 L62 172 M66 188 L76 172" stroke="#eceff4" stroke-width="2.4" stroke-linecap="round"/>
+<circle cx="74" cy="179" r="6" fill="#ffd34d" stroke="#a37a12" stroke-width="1.2"/><text x="74" y="183" text-anchor="middle" font-size="9" font-weight="700" fill="#7a1220">7</text>
+<text x="61" y="202" text-anchor="middle" class="posterTxt" style="fill:#7a1220;font-size:9px">E VINCI</text>
+<rect class="hit" x="14" y="134" width="94" height="100" rx="12"/>
+<g class="tag" transform="translate(61 224)"><rect x="-56" y="-12" width="112" height="24" rx="12"/><text y="5" text-anchor="middle">Gratta e Vinci</text></g>
+</g>
+<g class="station" data-game="wordle" tabindex="0" role="button" aria-label="Wordle" transform="translate(0 14)">
 
-    <!-- pavimento in legno in prospettiva -->
-    <g>
-      <path d="M-400 262 L790 262 L790 1300 L-400 1300 Z" fill="url(#floor)"/>
-      <g stroke="#000" stroke-opacity=".3" stroke-width="1.2">
-        <path d="M195 262 L-120 780"/><path d="M195 262 L-10 780"/><path d="M195 262 L100 780"/>
-        <path d="M195 262 L195 780"/><path d="M195 262 L290 780"/><path d="M195 262 L400 780"/><path d="M195 262 L510 780"/>
-      </g>
-      <g stroke="#000" stroke-opacity=".18">
-        <path d="M-400 300H790"/><path d="M-400 350H790"/><path d="M-400 420H790"/><path d="M-400 520H790"/><path d="M-400 650H790"/><path d="M-400 800H790"/><path d="M-400 1000H790"/>
-      </g>
-      <ellipse cx="195" cy="560" rx="190" ry="150" fill="url(#lampGlow)" opacity=".22"/>
-    </g>
+<rect x="292" y="140" width="74" height="72" rx="4" fill="#241209" stroke="#c9a15a" stroke-width="3"/>
+<rect x="297" y="145" width="64" height="62" rx="2" fill="#0f241b"/>
+<rect x="299" y="150" width="13" height="13" rx="2" fill="#2f9e5b"/><rect x="314.5" y="150" width="13" height="13" rx="2" fill="#c9a23a"/><rect x="330" y="150" width="13" height="13" rx="2" fill="#3a4a42"/><rect x="345.5" y="150" width="13" height="13" rx="2" fill="#2f9e5b"/><rect x="299" y="165.5" width="13" height="13" rx="2" fill="#3a4a42"/><rect x="314.5" y="165.5" width="13" height="13" rx="2" fill="#2f9e5b"/><rect x="330" y="165.5" width="13" height="13" rx="2" fill="#c9a23a"/><rect x="345.5" y="165.5" width="13" height="13" rx="2" fill="#3a4a42"/><rect x="299" y="181" width="13" height="13" rx="2" fill="#2f9e5b"/><rect x="314.5" y="181" width="13" height="13" rx="2" fill="#2f9e5b"/><rect x="330" y="181" width="13" height="13" rx="2" fill="#2f9e5b"/><rect x="345.5" y="181" width="13" height="13" rx="2" fill="#2f9e5b"/>
+<text x="329" y="203" text-anchor="middle" class="posterTxt" style="font-size:9px">WORDLE</text>
+<rect class="hit" x="284" y="134" width="90" height="100" rx="12"/>
+<g class="tag" transform="translate(329 224)"><rect x="-31" y="-12" width="62" height="24" rx="12"/><text y="5" text-anchor="middle">Wordle</text></g>
+</g>
+<g class="station" data-game="aviator" tabindex="0" role="button" aria-label="Aviator" transform="translate(0 14)">
 
-    <!-- ================= STAZIONI (giochi) ================= -->
+<ellipse cx="56" cy="331" rx="40" ry="6" fill="#000" opacity=".4"/>
+<rect x="20" y="318" width="72" height="13" rx="2" fill="url(#wood)" stroke="#c9a15a" stroke-width="1.5"/>
+<rect x="24" y="246" width="64" height="72" rx="3" fill="#9ec7ff" fill-opacity=".11" stroke="#bcdcff" stroke-opacity=".7" stroke-width="1.6"/>
+<rect x="22" y="241" width="68" height="7" rx="2" fill="url(#wood)" stroke="#c9a15a" stroke-width="1.2"/>
+<path d="M56 318 V298" stroke="#9aa0a8" stroke-width="3"/><ellipse cx="56" cy="318" rx="10" ry="2.6" fill="#6a7078"/>
+<g transform="translate(56 284) rotate(-22)">
+ <path d="M-26 0 Q-4 -7 22 -1 L26 0 L22 2 Q-4 7 -26 3 Z" fill="#ff2e4d"/>
+ <path d="M-6 1 L-16 -17 L-9 -17 L6 0 Z M-6 3 L-16 21 L-9 21 L6 4 Z" fill="#ffe9b0" stroke="#c9a15a" stroke-width=".8"/>
+ <path d="M-26 -1 L-30 -9 L-25 -9 L-21 0 Z" fill="#ffe9b0"/><ellipse cx="27" cy="1" rx="2" ry="7" fill="#c9ced6" opacity=".8"/>
+</g>
+<path d="M30 252 L44 252 L30 280 Z" fill="#fff" opacity=".1"/>
+<rect class="hit" x="12" y="234" width="88" height="126" rx="12"/>
+<g class="tag" transform="translate(56 348)"><rect x="-34" y="-12" width="68" height="24" rx="12"/><text y="5" text-anchor="middle">Aviator</text></g>
+</g>
+<g class="station" data-game="mastermind" tabindex="0" role="button" aria-label="Mastermind" transform="translate(0 14)">
 
-    <!-- AVIATOR: manifesto sul muro (sinistra) -->
-    <g class="station" data-game="aviator" transform="translate(80 168) scale(.88) translate(-62 -168)" tabindex="0" role="button" aria-label="Aviator">
-      <rect x="14" y="112" width="96" height="96" rx="6" fill="#102a44" stroke="#c9a15a" stroke-width="3"/>
-      <rect x="20" y="118" width="84" height="84" rx="3" fill="#143a5e"/>
-      <path d="M20 190 Q50 180 70 150 T104 128" stroke="#ffd37a" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
-      <g transform="translate(60 150) rotate(-28)">
-        <path d="M-22 4 L18 -2 L26 0 L18 2 L-22 8 Z" fill="#ff2e4d"/>
-        <path d="M-6 3 L-14 -10 L-8 -10 L4 2 Z M-6 5 L-14 18 L-8 18 L4 6 Z" fill="#ffe3a0"/>
-      </g>
-      <text x="62" y="196" text-anchor="middle" class="posterTxt">AVIATOR</text>
-      <rect class="hit" x="8" y="106" width="108" height="124" rx="10"/>
-      <g class="tag" transform="translate(62 224)"><rect x="-34" y="-11" width="68" height="20" rx="10"/><text y="4" text-anchor="middle">Aviator</text></g>
-    </g>
+<ellipse cx="335" cy="331" rx="42" ry="6" fill="#000" opacity=".4"/>
+<rect x="298" y="244" width="74" height="86" rx="5" fill="url(#metal)" stroke="#14161a" stroke-width="3"/>
+<rect x="306" y="252" width="58" height="70" rx="3" fill="#4b5058"/>
+<circle cx="335" cy="283" r="17" fill="#2a2d33" stroke="#b6bcc5" stroke-width="2.2"/>
+<g stroke="#c9ced6" stroke-width="1.6"><path d="M335 269 v4" transform="rotate(0 335 283)"/><path d="M335 269 v4" transform="rotate(45 335 283)"/><path d="M335 269 v4" transform="rotate(90 335 283)"/><path d="M335 269 v4" transform="rotate(135 335 283)"/><path d="M335 269 v4" transform="rotate(180 335 283)"/><path d="M335 269 v4" transform="rotate(225 335 283)"/><path d="M335 269 v4" transform="rotate(270 335 283)"/><path d="M335 269 v4" transform="rotate(315 335 283)"/></g>
+<path d="M335 270 V283" stroke="#ff2e4d" stroke-width="2.4" stroke-linecap="round"/>
+<rect x="354" y="276" width="8" height="16" rx="2" fill="#8a9099"/>
+<circle cx="321" cy="311" r="4.6" fill="#ff2e4d"/><circle cx="335" cy="311" r="4.6" fill="#ffd34d"/><circle cx="349" cy="311" r="4.6" fill="#25e1d3"/>
+<rect x="302" y="328" width="10" height="4" fill="#14161a"/><rect x="358" y="328" width="10" height="4" fill="#14161a"/>
+<rect class="hit" x="290" y="236" width="90" height="126" rx="12"/>
+<g class="tag" transform="translate(335 348)"><rect x="-43.5" y="-12" width="87" height="24" rx="12"/><text y="5" text-anchor="middle">Mastermind</text></g>
+</g>
+<g id="tableArt" transform="translate(0 34)">
+<ellipse cx="195" cy="505" rx="112" ry="14" fill="#000" opacity=".42"/>
+<path d="M179 466 L211 466 L217 496 L173 496 Z" fill="url(#wood)"/><ellipse cx="195" cy="498" rx="46" ry="9" fill="#4a2a19" stroke="#c9a15a" stroke-opacity=".6"/>
+<ellipse cx="195" cy="450" rx="92" ry="34" fill="#3a2013"/>
+<ellipse cx="195" cy="442" rx="92" ry="34" fill="url(#wood)" stroke="#e8c36a" stroke-width="2.6"/>
+<ellipse cx="195" cy="440" rx="82" ry="27" fill="url(#felt)"/>
+<ellipse cx="195" cy="440" rx="70" ry="21" fill="none" stroke="#e8c36a" stroke-opacity=".4"/>
+<path d="M195 421 V458" stroke="#e8c36a" stroke-opacity=".45" stroke-dasharray="3 3"/>
+</g>
+<g class="station" data-game="slot" tabindex="0" role="button" aria-label="Slot 777" transform="translate(0 34)">
 
-    <!-- WORDLE: lavagna sul muro (destra) -->
-    <g class="station" data-game="wordle" transform="translate(310 168) scale(.88) translate(-328 -168)" tabindex="0" role="button" aria-label="Wordle">
-      <rect x="280" y="112" width="96" height="96" rx="6" fill="#2a1a10" stroke="#c9a15a" stroke-width="3"/>
-      <rect x="286" y="118" width="84" height="84" rx="3" fill="#10241c"/>
-      <g>
-        <rect x="292" y="126" width="16" height="16" rx="2" fill="#2f9e5b"/><rect x="311" y="126" width="16" height="16" rx="2" fill="#c9a23a"/>
-        <rect x="330" y="126" width="16" height="16" rx="2" fill="#3a4a42"/><rect x="349" y="126" width="16" height="16" rx="2" fill="#2f9e5b"/>
-        <rect x="292" y="146" width="16" height="16" rx="2" fill="#3a4a42"/><rect x="311" y="146" width="16" height="16" rx="2" fill="#2f9e5b"/>
-        <rect x="330" y="146" width="16" height="16" rx="2" fill="#c9a23a"/><rect x="349" y="146" width="16" height="16" rx="2" fill="#3a4a42"/>
-        <rect x="292" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/><rect x="311" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/>
-        <rect x="330" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/><rect x="349" y="166" width="16" height="16" rx="2" fill="none" stroke="#5b7a6a"/>
-      </g>
-      <text x="328" y="196" text-anchor="middle" class="posterTxt">WORDLE</text>
-      <rect class="hit" x="274" y="106" width="108" height="124" rx="10"/>
-      <g class="tag" transform="translate(328 224)"><rect x="-34" y="-11" width="68" height="20" rx="10"/><text y="4" text-anchor="middle">Wordle</text></g>
-    </g>
+<ellipse cx="332" cy="487" rx="48" ry="7" fill="#000" opacity=".45"/>
+<rect x="294" y="360" width="76" height="126" rx="9" fill="#7a1220" stroke="#e8c36a" stroke-width="3"/>
+<rect x="300" y="346" width="64" height="22" rx="6" fill="#a31a2c" stroke="#e8c36a" stroke-width="2.5"/>
+<text x="332" y="363" text-anchor="middle" font-family="Rye,serif" font-size="16" fill="#ffe08a" class="flick-b">777</text>
+<rect x="301" y="377" width="62" height="42" rx="4" fill="#0b0b10" stroke="#e8c36a" stroke-width="1.5"/>
+<g font-family="Rye,serif" font-size="25" text-anchor="middle" fill="#d11a2d">
+ <rect x="304" y="381" width="17" height="34" rx="2" fill="#f4efe2"/><rect x="323" y="381" width="17" height="34" rx="2" fill="#f4efe2"/><rect x="342" y="381" width="17" height="34" rx="2" fill="#f4efe2"/>
+ <text x="312.5" y="406">7</text><text x="331.5" y="406">7</text><text x="350.5" y="406">7</text></g>
+<rect x="301" y="426" width="62" height="18" rx="3" fill="#2a0a10"/>
+<circle cx="312" cy="435" r="4.5" fill="#ffd34d"/><circle cx="332" cy="435" r="4.5" fill="#25e1d3"/><circle cx="352" cy="435" r="4.5" fill="#ff2e4d"/>
+<rect x="305" y="458" width="54" height="16" rx="3" fill="#1b060a" stroke="#e8c36a" stroke-opacity=".6"/>
+<circle cx="320" cy="468" r="3.5" fill="#ffd34d"/><circle cx="330" cy="470" r="3.5" fill="#ffd34d"/><circle cx="341" cy="468" r="3.5" fill="#ffd34d"/>
+<rect x="371" y="382" width="7" height="48" rx="3" fill="url(#metal)"/><circle cx="374.5" cy="378" r="8" fill="#ff2e4d" stroke="#7a0f1c" stroke-width="1.5"/>
+<g fill="#ffd34d" class="flick"><circle cx="297" cy="372" r="1.8"/><circle cx="297" cy="390" r="1.8"/><circle cx="297" cy="408" r="1.8"/><circle cx="297" cy="426" r="1.8"/><circle cx="297" cy="444" r="1.8"/><circle cx="297" cy="462" r="1.8"/><circle cx="297" cy="480" r="1.8"/><circle cx="367" cy="372" r="1.8"/><circle cx="367" cy="390" r="1.8"/><circle cx="367" cy="408" r="1.8"/><circle cx="367" cy="426" r="1.8"/><circle cx="367" cy="444" r="1.8"/><circle cx="367" cy="462" r="1.8"/><circle cx="367" cy="480" r="1.8"/></g>
+<rect class="hit" x="286" y="340" width="100" height="182" rx="12"/>
+<g class="tag" transform="translate(332 506)"><rect x="-37" y="-12" width="74" height="24" rx="12"/><text y="5" text-anchor="middle">Slot 777</text></g>
+</g>
+<g class="station" data-game="roulette" tabindex="0" role="button" aria-label="Roulette" transform="translate(0 34)">
 
-    <!-- SLOT: due macchine (sinistra, centro scena) -->
-    <g class="station" data-game="slot" transform="translate(92 360) scale(.9) translate(-76 -360)" tabindex="0" role="button" aria-label="Slot 777">
-      <g>
-        <rect x="14" y="300" width="58" height="104" rx="8" fill="#7a1220" stroke="#e8c36a" stroke-width="2.5"/>
-        <rect x="20" y="310" width="46" height="34" rx="4" fill="#0b0b10"/>
-        <g font-size="16" text-anchor="middle"><text x="29" y="334">7</text><text x="43" y="334">7</text><text x="57" y="334">7</text></g>
-        <rect x="20" y="352" width="46" height="20" rx="3" fill="#2a0a10"/>
-        <circle cx="30" cy="388" r="5" fill="#ffd34d"/><circle cx="43" cy="388" r="5" fill="#25e1d3"/><circle cx="56" cy="388" r="5" fill="#ff2e4d"/>
-        <rect x="72" y="320" width="6" height="40" rx="3" fill="url(#metal)"/><circle cx="75" cy="318" r="7" fill="#ff2e4d"/>
-      </g>
-      <g>
-        <rect x="86" y="318" width="52" height="92" rx="8" fill="#12406a" stroke="#e8c36a" stroke-width="2.5"/>
-        <rect x="92" y="327" width="40" height="30" rx="4" fill="#0b0b10"/>
-        <g font-size="14" text-anchor="middle" fill="#ffd34d"><text x="100" y="348">7</text><text x="112" y="348">7</text><text x="124" y="348">7</text></g>
-        <circle cx="100" cy="392" r="4.5" fill="#ffd34d"/><circle cx="112" cy="392" r="4.5" fill="#ff2e4d"/><circle cx="124" cy="392" r="4.5" fill="#25e1d3"/>
-      </g>
-      <rect class="hit" x="8" y="292" width="138" height="132" rx="12"/>
-      <g class="tag" transform="translate(76 438)"><rect x="-38" y="-11" width="76" height="20" rx="10"/><text y="4" text-anchor="middle">Slot 777</text></g>
-    </g>
-
-    <!-- GRATTA E VINCI: chiosco centrale -->
-    <g class="station" data-game="scratch" transform="translate(195 360) scale(.9) translate(-196 -360)" tabindex="0" role="button" aria-label="Gratta e Vinci">
-      <rect x="156" y="318" width="80" height="86" rx="6" fill="url(#wood)" stroke="#e8c36a" stroke-width="2.5"/>
-      <rect x="163" y="326" width="66" height="22" rx="3" fill="#0b0b10"/>
-      <text x="196" y="342" text-anchor="middle" class="kioskTxt">GRATTA</text>
-      <g transform="rotate(-8 180 372)"><rect x="166" y="356" width="34" height="42" rx="3" fill="#f2d16b"/><rect x="171" y="368" width="24" height="12" rx="2" fill="#a8a8b0"/><text x="183" y="364" text-anchor="middle" font-size="6" fill="#7a1220" font-weight="700">VINCI</text></g>
-      <g transform="rotate(7 214 374)"><rect x="200" y="358" width="34" height="42" rx="3" fill="#ff7aa0"/><rect x="205" y="370" width="24" height="12" rx="2" fill="#c9cdd6"/></g>
-      <rect class="hit" x="150" y="310" width="92" height="106" rx="10"/>
-      <g class="tag" transform="translate(196 438)"><rect x="-44" y="-11" width="88" height="20" rx="10"/><text y="4" text-anchor="middle">Gratta e Vinci</text></g>
-    </g>
-
-    <!-- MASTERMIND: cassaforte (destra) -->
-    <g class="station" data-game="mastermind" transform="translate(304 360) scale(.9) translate(-290 -360)" tabindex="0" role="button" aria-label="Mastermind">
-      <rect x="256" y="296" width="62" height="108" rx="6" fill="url(#metal)" stroke="#1a1c20" stroke-width="3"/>
-      <rect x="264" y="304" width="46" height="92" rx="4" fill="#4a4f57"/>
-      <circle cx="287" cy="338" r="14" fill="#2a2d33" stroke="#9aa0a8" stroke-width="2"/>
-      <path d="M287 326 V350 M275 338 H299" stroke="#c9ced6" stroke-width="2"/>
-      <g><circle cx="274" cy="374" r="4.5" fill="#ff2e4d"/><circle cx="287" cy="374" r="4.5" fill="#ffd34d"/><circle cx="300" cy="374" r="4.5" fill="#25e1d3"/></g>
-      <rect x="318" y="326" width="6" height="22" rx="2" fill="#6a7078"/>
-      <rect class="hit" x="250" y="290" width="80" height="122" rx="10"/>
-      <g class="tag" transform="translate(287 438)"><rect x="-42" y="-11" width="84" height="20" rx="10"/><text y="4" text-anchor="middle">Mastermind</text></g>
-    </g>
-
-    <!-- ROULETTE: tavolo (destra) -->
-    <g class="station" data-game="roulette" transform="translate(195 498) scale(1.1) translate(-350 -372)" tabindex="0" role="button" aria-label="Roulette">
-      <ellipse cx="350" cy="372" rx="54" ry="30" fill="url(#wood)" stroke="#e8c36a" stroke-width="2.5"/>
-      <ellipse cx="350" cy="368" rx="46" ry="24" fill="url(#feltRed)"/>
-      <g class="wheelspin">
-        <ellipse cx="350" cy="366" rx="24" ry="13" fill="#1a1a1f" stroke="#e8c36a" stroke-width="2"/>
-        <ellipse cx="350" cy="366" rx="15" ry="8" fill="#0d6b3c"/>
-        <path d="M350 358 V374 M335 366 H365 M340 360 L360 372 M360 360 L340 372" stroke="#f4f0e6" stroke-width="1.2"/>
-        <circle cx="350" cy="366" r="2.6" fill="#ffd34d"/>
-      </g>
-      <rect class="hit" x="296" y="334" width="94" height="72" rx="12"/>
-      <g class="tag" transform="translate(348 438)"><rect x="-40" y="-11" width="80" height="20" rx="10"/><text y="4" text-anchor="middle">Roulette</text></g>
-    </g>
-
-    <!-- BLACKJACK: tavolo in primo piano (sinistra) -->
-    <g class="station" data-game="blackjack" transform="translate(112 652) scale(.7) translate(-108 -615)" tabindex="0" role="button" aria-label="Blackjack">
-      <ellipse cx="108" cy="624" rx="112" ry="62" fill="#000" opacity=".35"/>
-      <path d="M0 586 Q108 520 216 586 L216 626 Q108 700 0 626 Z" fill="url(#wood)" stroke="#e8c36a" stroke-width="3"/>
-      <path d="M12 590 Q108 536 204 590 L204 618 Q108 684 12 618 Z" fill="url(#felt)"/>
-      <path d="M40 584 Q108 548 176 584" stroke="#e8c36a" stroke-opacity=".6" stroke-width="1.5" fill="none"/>
-      <text x="108" y="574" text-anchor="middle" class="feltTxt">BLACKJACK PAYS 3 TO 2</text>
-      <g transform="translate(78 596) rotate(-10)"><rect width="30" height="42" rx="4" fill="#f6f1e4"/><text x="5" y="14" font-size="12" fill="#c8182b" font-weight="700">A</text><text x="15" y="32" font-size="15" fill="#c8182b" text-anchor="middle">♥</text></g>
-      <g transform="translate(106 598) rotate(8)"><rect width="30" height="42" rx="4" fill="#f6f1e4"/><text x="5" y="14" font-size="12" fill="#14141a" font-weight="700">K</text><text x="15" y="32" font-size="15" fill="#14141a" text-anchor="middle">♠</text></g>
-      <circle cx="40" cy="618" r="9" fill="#c8182b" stroke="#f6f1e4" stroke-dasharray="3 3"/><circle cx="46" cy="624" r="9" fill="#14141a" stroke="#f6f1e4" stroke-dasharray="3 3"/>
-      <rect class="hit" x="-4" y="520" width="226" height="190" rx="14"/>
-      <g class="tag" transform="translate(108 700) scale(1.4)"><rect x="-42" y="-11" width="84" height="20" rx="10"/><text y="4" text-anchor="middle">Blackjack</text></g>
-    </g>
-
-    <!-- POKER: tavolo rotondo in primo piano (destra) -->
-    <g class="station" data-game="poker" transform="translate(276 652) scale(.7) translate(-296 -615)" tabindex="0" role="button" aria-label="Poker">
-      <ellipse cx="296" cy="626" rx="106" ry="64" fill="#000" opacity=".35"/>
-      <ellipse cx="296" cy="600" rx="96" ry="52" fill="url(#wood)" stroke="#e8c36a" stroke-width="3"/>
-      <ellipse cx="296" cy="598" rx="84" ry="43" fill="url(#felt)"/>
-      <ellipse cx="296" cy="598" rx="70" ry="33" fill="none" stroke="#e8c36a" stroke-opacity=".5"/>
-      <g transform="translate(250 586)"><rect width="22" height="32" rx="3" fill="#f6f1e4" transform="rotate(-12)"/><text x="3" y="12" font-size="9" fill="#c8182b" font-weight="700" transform="rotate(-12)">Q♦</text></g>
-      <g transform="translate(274 584)"><rect width="22" height="32" rx="3" fill="#f6f1e4"/><text x="3" y="12" font-size="9" fill="#14141a" font-weight="700">J♣</text></g>
-      <g transform="translate(298 584)"><rect width="22" height="32" rx="3" fill="#f6f1e4"/><text x="3" y="12" font-size="9" fill="#c8182b" font-weight="700">10♥</text></g>
-      <g transform="translate(322 586)"><rect width="22" height="32" rx="3" fill="#f6f1e4" transform="rotate(10)"/><text x="3" y="12" font-size="9" fill="#14141a" font-weight="700" transform="rotate(10)">A♠</text></g>
-      <circle cx="262" cy="624" r="8" fill="#ffd34d" stroke="#7a1220" stroke-dasharray="3 3"/><circle cx="330" cy="620" r="8" fill="#25e1d3" stroke="#0a3f3a" stroke-dasharray="3 3"/>
-      <rect class="hit" x="188" y="540" width="216" height="150" rx="14"/>
-      <g class="tag" transform="translate(296 700) scale(1.4)"><rect x="-34" y="-11" width="68" height="20" rx="10"/><text y="4" text-anchor="middle">Poker</text></g>
-    </g>
-
-    <!-- polvere nell'aria -->
-    <g id="dust" fill="#ffd9a0">
-      <circle cx="40" cy="300" r="1.2"/><circle cx="130" cy="460" r="1"/><circle cx="220" cy="280" r="1.3"/>
-      <circle cx="310" cy="470" r="1"/><circle cx="90" cy="540" r="1.2"/><circle cx="350" cy="260" r="1"/>
-    </g>
-
-    <rect x="-400" y="-400" width="1190" height="1600" fill="url(#vignette)" pointer-events="none"/>
-  </svg>
+<ellipse cx="56" cy="486" rx="40" ry="7" fill="#000" opacity=".45"/>
+<path d="M46 452 L66 452 L70 482 L42 482 Z" fill="url(#wood)"/><ellipse cx="56" cy="484" rx="26" ry="6" fill="#4a2a19" stroke="#c9a15a" stroke-opacity=".6"/>
+<ellipse cx="56" cy="446" rx="44" ry="18" fill="#3a2013"/>
+<ellipse cx="56" cy="440" rx="44" ry="18" fill="url(#wood)" stroke="#e8c36a" stroke-width="2.2"/>
+<ellipse cx="56" cy="439" rx="37" ry="14" fill="url(#feltRed)"/>
+<ellipse cx="56" cy="437" rx="27" ry="10.5" fill="#15151a" stroke="#e8c36a" stroke-width="1.8"/>
+<ellipse cx="56" cy="437" rx="19" ry="7" fill="#0d6b3c"/>
+<path d="M56 430 V444 M42 437 H70 M46 432 L66 442 M66 432 L46 442" stroke="#f4f0e6" stroke-width="1"/>
+<circle cx="56" cy="437" r="2.6" fill="#ffd34d"/><circle cx="70" cy="433" r="2.2" fill="#fff"/>
+<rect class="hit" x="8" y="396" width="96" height="126" rx="12"/>
+<g class="tag" transform="translate(56 506)"><rect x="-37" y="-12" width="74" height="24" rx="12"/><text y="5" text-anchor="middle">Roulette</text></g>
+</g>
+<g class="station" data-game="blackjack" tabindex="0" role="button" aria-label="Blackjack" transform="translate(0 34)">
+<g><g transform="translate(144 424) rotate(-10)"><rect width="16" height="23" rx="2.5" fill="#f6f1e4" stroke="#00000033" stroke-width=".6"/><text x="2.4" y="10" font-size="8" fill="#c8182b" font-weight="700">A♥</text></g><g transform="translate(158 427) rotate(7)"><rect width="16" height="23" rx="2.5" fill="#f6f1e4" stroke="#00000033" stroke-width=".6"/><text x="2.4" y="10" font-size="8" fill="#14141a" font-weight="700">K♠</text></g><circle cx="136" cy="449" r="6.5" fill="#c8182b" stroke="#f6f1e4" stroke-dasharray="2.5 2.5"/><circle cx="141" cy="453" r="6.5" fill="#14141a" stroke="#f6f1e4" stroke-dasharray="2.5 2.5"/></g>
+<rect class="hit" x="100" y="398" width="95" height="142" rx="12"/>
+<g class="tag" transform="translate(147 526)"><rect x="-40.5" y="-12" width="81" height="24" rx="12"/><text y="5" text-anchor="middle">Blackjack</text></g>
+</g>
+<g class="station" data-game="poker" tabindex="0" role="button" aria-label="Poker" transform="translate(0 34)">
+<g><g transform="translate(208.0 424) rotate(0)"><rect width="12.5" height="18" rx="2.5" fill="#f6f1e4" stroke="#00000033" stroke-width=".6"/><text x="2.4" y="9" font-size="7" fill="#c8182b" font-weight="700">Q♦</text></g><g transform="translate(222.5 425) rotate(0)"><rect width="12.5" height="18" rx="2.5" fill="#f6f1e4" stroke="#00000033" stroke-width=".6"/><text x="2.4" y="9" font-size="7" fill="#14141a" font-weight="700">J♣</text></g><g transform="translate(237.0 424) rotate(0)"><rect width="12.5" height="18" rx="2.5" fill="#f6f1e4" stroke="#00000033" stroke-width=".6"/><text x="2.4" y="9" font-size="7" fill="#c8182b" font-weight="700">10♥</text></g><g transform="translate(251.5 425) rotate(0)"><rect width="12.5" height="18" rx="2.5" fill="#f6f1e4" stroke="#00000033" stroke-width=".6"/><text x="2.4" y="9" font-size="7" fill="#14141a" font-weight="700">A♠</text></g><g transform="translate(266.0 424) rotate(0)"><rect width="12.5" height="18" rx="2.5" fill="#f6f1e4" stroke="#00000033" stroke-width=".6"/><text x="2.4" y="9" font-size="7" fill="#c8182b" font-weight="700">7♦</text></g><circle cx="256" cy="454" r="6" fill="#ffd34d" stroke="#7a1220" stroke-dasharray="2.5 2.5"/><circle cx="264" cy="451" r="6" fill="#25e1d3" stroke="#0a3f3a" stroke-dasharray="2.5 2.5"/></g>
+<rect class="hit" x="195" y="398" width="95" height="142" rx="12"/>
+<g class="tag" transform="translate(243 526)"><rect x="-28" y="-12" width="56" height="24" rx="12"/><text y="5" text-anchor="middle">Poker</text></g>
+</g>
+<g id="dust" fill="#ffd9a0" transform="translate(0 20)"><circle cx="40" cy="300" r="1.2"/><circle cx="130" cy="420" r="1"/><circle cx="240" cy="260" r="1.3"/><circle cx="320" cy="460" r="1"/><circle cx="90" cy="500" r="1.2"/><circle cx="350" cy="240" r="1"/></g>
+<rect x="-400" y="-400" width="1190" height="1600" fill="url(#vignette)" pointer-events="none"/>
+</svg>
 
   <!-- ===== INTESTAZIONE (HTML sopra la scena) ===== -->
   <header id="top">
@@ -364,11 +280,11 @@
   </div>
 </main>
 
-<script src="config.js?v=5b"></script>
-<script src="app.js?v=5b"></script>
-<script src="aviator.js?v=5b"></script>
-<script src="games3.js?v=5b"></script>
-<script src="games4.js?v=5b"></script>
-<script src="social.js?v=5b"></script>
+<script src="config.js?v=5c"></script>
+<script src="app.js?v=5c"></script>
+<script src="aviator.js?v=5c"></script>
+<script src="games3.js?v=5c"></script>
+<script src="games4.js?v=5c"></script>
+<script src="social.js?v=5c"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
   font-family:"Oswald",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   overscroll-behavior:none;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 #app{position:fixed;inset:0}
-#scene{position:absolute;left:0;right:0;top:calc(116px + var(--safe-top));bottom:calc(110px + var(--safe-bottom));width:100%;height:calc(100% - 226px - var(--safe-top) - var(--safe-bottom));display:block}
+#scene{position:absolute;left:0;right:0;top:calc(44px + var(--safe-top));bottom:calc(106px + var(--safe-bottom));width:100%;height:calc(100% - 150px - var(--safe-top) - var(--safe-bottom));display:block}
 
 /* testo dentro la scena */
 .neonSmall{font-family:"Rye",Georgia,serif;font-size:20px;letter-spacing:1px}
@@ -22,7 +22,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 .station{cursor:pointer;outline:none;transition:transform .12s ease,filter .2s ease}
 .station .hit{fill:transparent}
 .station .tag rect{fill:rgba(12,6,4,.78);stroke:var(--gold);stroke-width:1}
-.station .tag text{font-family:"Oswald",sans-serif;font-size:11px;fill:var(--ink);letter-spacing:.5px}
+.station .tag text{font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;fill:var(--ink);letter-spacing:.5px}
 .station:focus-visible,.station:hover{filter:drop-shadow(0 0 7px rgba(255,200,110,.9)) brightness(1.12)}
 .station.press{filter:drop-shadow(0 0 10px rgba(255,200,110,1)) brightness(1.25)}
 .station.soon .tag rect{stroke:#7a6a52}
@@ -44,9 +44,9 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 #dust circle:nth-child(4){animation-duration:13s}#dust circle:nth-child(5){animation-duration:11s}
 
 /* intestazione */
-#top{position:absolute;left:0;right:0;top:0;padding:calc(10px + var(--safe-top)) 14px 22px;
+#top{position:absolute;left:0;right:0;top:0;z-index:2;padding:calc(10px + var(--safe-top)) 14px 10px;
   background:linear-gradient(180deg,rgba(8,4,3,.92),rgba(8,4,3,.55) 70%,rgba(8,4,3,0));pointer-events:none}
-.brand{font-family:"Rye",Georgia,serif;font-size:15px;letter-spacing:2px;color:var(--amber);
+.brand{display:none;font-family:"Rye",Georgia,serif;font-size:15px;letter-spacing:2px;color:var(--amber);
   text-shadow:0 0 10px rgba(255,150,60,.55);text-align:center;margin-bottom:8px}
 .brand span{color:var(--red);text-shadow:0 0 10px rgba(255,46,77,.6)}
 .player{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid rgba(232,195,106,.35);
