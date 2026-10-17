@@ -17,10 +17,10 @@
     slot:       { name: "Slot 777",        ready: true },
     roulette:   { name: "Roulette",        ready: true },
     scratch:    { name: "Gratta e Vinci",  ready: true },
-    wordle:     { name: "Wordle",          ready: false },
-    mastermind: { name: "Mastermind",      ready: false },
-    blackjack:  { name: "Blackjack",       ready: false },
-    poker:      { name: "Poker",           ready: false }
+    wordle:     { name: "Wordle",          ready: true },
+    mastermind: { name: "Mastermind",      ready: true },
+    blackjack:  { name: "Blackjack",       ready: true },
+    poker:      { name: "Poker",           ready: true }
   };
 
   // ---------- Utilità ----------
@@ -184,7 +184,7 @@
       window.ArcadeGames[key].open();
     } else {
       // il gioco è pronto ma il suo file non è stato caricato (o è vecchio): lo si dice chiaramente
-      var file = key === "aviator" ? "aviator.js" : "games3.js";
+      var file = key === "aviator" ? "aviator.js" : (["slot", "roulette", "scratch"].indexOf(key) >= 0 ? "games3.js" : "games4.js");
       sheet(g.name, "Il gioco è pronto, ma manca il file " + file + " nel repo della mini app (o la pagina è ancora quella vecchia: chiudi e riapri l'app).");
     }
   }
@@ -203,11 +203,6 @@
     else sheet("Ruota Daily", "Manca il file games3.js nel repo della mini app.");
   });
 
-  // etichetta di versione in basso a sinistra: mostra quali giochi sono stati davvero caricati
-  window.addEventListener("load", function () {
-    var v = $("ver"); if (!v) return;
-    v.textContent = "build 3a · giochi: " + (Object.keys(window.ArcadeGames || {}).join(" ") || "nessuno");
-  });
 
   loadMe();
 })();
