@@ -278,6 +278,7 @@
   <footer id="bottom">
     <div class="chip" id="bancoChip" hidden>🏦 Banco <b id="bancoVal">—</b></div>
     <div class="chip hot" id="folliaChip" hidden>🔥 Follia Sdrogo attiva</div>
+    <button class="chip btn gift" id="wheelChip" type="button" hidden>🎡 Ruota Daily disponibile</button>
     <div class="chip demo" id="demoChip" hidden>DEMO</div>
   </footer>
 
@@ -300,6 +301,23 @@
     </div>
   </section>
 
+  <!-- ===== GIOCHI ISTANTANEI: Slot, Roulette, Gratta e Vinci, Ruota Daily ===== -->
+  <section id="gm" hidden aria-label="Gioco">
+    <div class="avi-top">
+      <button id="gmBack" type="button" class="avi-back">‹ Saloon</button>
+      <div class="avi-title" id="gmTitle">—</div>
+      <div class="avi-bal">💳 <b id="gmBal">—</b></div>
+    </div>
+    <div class="gm-stage" id="gmStage"></div>
+    <div class="gm-msg" id="gmMsg"></div>
+    <div class="avi-panel">
+      <div class="gm-extra" id="gmExtra" hidden></div>
+      <div class="avi-bets" id="gmBets"></div>
+      <button id="gmGo" type="button" class="avi-go">—</button>
+      <div class="avi-notes" id="gmNotes"></div>
+    </div>
+  </section>
+
   <!-- ===== MESSAGGIO RAPIDO ===== -->
   <div id="toast" role="status" hidden></div>
 
@@ -316,5 +334,6 @@
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script src="aviator.js"></script>
+<script src="games3.js"></script>
 </body>
 </html>
