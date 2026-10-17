@@ -165,3 +165,5 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 @media (prefers-reduced-motion:reduce){
   .flick,.flick-b,.flick-slow,.lamp,.wheelspin,#dust circle,.chip.hot,.avi-go.cash{animation:none}
 }
+
+#ver{position:absolute;left:8px;top:calc(2px + var(--safe-top));font-size:9px;color:rgba(246,234,214,.35);pointer-events:none;z-index:3;letter-spacing:.3px}
