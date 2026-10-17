@@ -166,4 +166,52 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
   .flick,.flick-b,.flick-slow,.lamp,.wheelspin,#dust circle,.chip.hot,.avi-go.cash{animation:none}
 }
 
-#ver{position:absolute;left:8px;top:calc(2px + var(--safe-top));font-size:9px;color:rgba(246,234,214,.35);pointer-events:none;z-index:3;letter-spacing:.3px}
+
+/* ===== GIOCHI A PIÙ MOSSE ===== */
+#g4{position:absolute;inset:0;z-index:6;background:#07060f;display:flex;flex-direction:column}
+.g4-stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:8px 10px;overflow:hidden;
+  background:radial-gradient(120% 80% at 50% 0%,#0f3a26 0%,#0a1f16 45%,#07060f 100%)}
+.g4-acts{display:flex;gap:8px}
+.g4-acts .avi-go{flex:1;font-size:16px;padding:14px 6px}
+.g4-acts .avi-go.alt{background:linear-gradient(180deg,#e9edf5,#aeb6c6);color:#12161f;box-shadow:none}
+.g4-acts .avi-go.danger{background:linear-gradient(180deg,#ff8a9a,#d6293f);color:#fff;box-shadow:none}
+.g4-pad{margin-bottom:8px}
+
+/* carte */
+.hand{display:flex;gap:6px;justify-content:center;min-height:84px;align-items:center;flex-wrap:wrap}
+.pcard{width:56px;height:80px;border-radius:9px;background:#fbf6ea;color:#14110d;display:flex;flex-direction:column;justify-content:space-between;
+  padding:4px 5px;font-weight:700;font-size:19px;line-height:1;box-shadow:0 3px 8px rgba(0,0,0,.55);animation:dealin .28s ease-out}
+.pcard .s{font-size:22px;align-self:center;margin-top:-4px}
+.pcard .r2{align-self:flex-end;transform:rotate(180deg)}
+.pcard.red{color:#c4162a}
+.pcard.back{background:repeating-linear-gradient(45deg,#6a0f24 0 6px,#8b1a33 6px 12px);border:2px solid #e8c36a}
+.pcard.empty{background:rgba(255,255,255,.06);border:1px dashed rgba(232,195,106,.35);box-shadow:none;animation:none}
+@keyframes dealin{0%{transform:translateY(-18px) scale(.85);opacity:0}100%{transform:none;opacity:1}}
+.who2{font-size:12px;letter-spacing:2px;color:#cfe3d6;text-align:center}
+.tot{display:inline-block;min-width:26px;padding:1px 8px;margin-left:6px;border-radius:10px;background:rgba(0,0,0,.45);color:#ffe3a0;font-weight:600}
+.pot{font-size:15px;color:#ffe3a0;text-align:center}
+
+/* wordle */
+.wd-grid{display:grid;gap:6px}
+.wd-row{display:grid;grid-template-columns:repeat(5,50px);gap:6px}
+.wd-tile{width:50px;height:50px;display:grid;place-items:center;font-size:26px;font-weight:700;border:2px solid rgba(246,234,214,.25);border-radius:8px;color:#fff;background:rgba(255,255,255,.04)}
+.wd-tile.fill{border-color:rgba(246,234,214,.7)}
+.wd-tile.G{background:#2f9e5b;border-color:#2f9e5b}.wd-tile.Y{background:#c9a227;border-color:#c9a227}.wd-tile.B{background:#3b3b44;border-color:#3b3b44}
+.wd-tile.flip{animation:wflip .5s ease both}
+@keyframes wflip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.wd-row.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.kb{display:flex;flex-direction:column;gap:5px;align-items:center}
+.kb-row{display:flex;gap:4px;justify-content:center}
+.key{font:inherit;font-size:15px;font-weight:600;min-width:29px;height:40px;padding:0 4px;border:0;border-radius:7px;color:#f6ead6;background:#4a4252;cursor:pointer}
+.key.wide{min-width:48px;font-size:12px}
+.key.G{background:#2f9e5b}.key.Y{background:#c9a227}.key.B{background:#26242c;color:#8d8794}
+.key:disabled{opacity:.4}
+
+/* mastermind */
+.mm-slots{display:flex;gap:10px;justify-content:center}
+.mm-slot{width:58px;height:66px;display:grid;place-items:center;font-size:34px;font-weight:700;border-radius:12px;border:2px solid rgba(232,195,106,.45);background:rgba(255,255,255,.05);color:#fff}
+.mm-hist{width:min(320px,92%);display:flex;flex-direction:column;gap:5px;max-height:190px;overflow:auto}
+.mm-line{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-radius:10px;background:rgba(0,0,0,.35);font-size:15px}
+.mm-line b{letter-spacing:5px;font-size:19px}
+.mm-pad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
