@@ -13,7 +13,7 @@
 
   // ---------- Giochi ----------
   var GAMES = {
-    aviator:    { name: "Aviator",         ready: false, note: "Il volo con il moltiplicatore sarà il primo gioco della mini app: è in costruzione." },
+    aviator:    { name: "Aviator",         ready: true },
     slot:       { name: "Slot 777",        ready: false },
     roulette:   { name: "Roulette",        ready: false },
     scratch:    { name: "Gratta e Vinci",  ready: false },
@@ -29,7 +29,13 @@
     return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
   function haptic(kind) {
-    try { if (tg && tg.HapticFeedback) { kind === "ok" ? tg.HapticFeedback.notificationOccurred("success") : tg.HapticFeedback.impactOccurred("light"); } } catch (e) {}
+    try {
+      if (!tg || !tg.HapticFeedback) return;
+      if (kind === "ok") tg.HapticFeedback.notificationOccurred("success");
+      else if (kind === "bad") tg.HapticFeedback.notificationOccurred("error");
+      else if (kind === "med") tg.HapticFeedback.impactOccurred("medium");
+      else tg.HapticFeedback.impactOccurred("light");
+    } catch (e) {}
   }
   var toastTimer = null;
   function toast(msg) {
@@ -135,6 +141,36 @@
     });
   }
 
+  // ---------- Chiamate al bot (generiche, usate dai giochi) ----------
+  function api(path, method, body) {
+    var url = (CFG.API_BASE || "") + path;
+    var init = { method: method || "GET", headers: {}, cache: "no-store" };
+    if (body !== undefined) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
+    if (CFG.AUTH_MODE === "xheader") init.headers["X-Telegram-Init-Data"] = tg.initData;
+    else if (CFG.AUTH_MODE === "query") url += (url.indexOf("?") < 0 ? "?" : "&") + "initData=" + encodeURIComponent(tg.initData);
+    else init.headers["Authorization"] = "tma " + tg.initData;
+    var ctrl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 12000);
+    if (ctrl) init.signal = ctrl.signal;
+    return fetch(url, init).then(function (r) {
+      clearTimeout(timer);
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var e = new Error((j && j.error) || ("Errore " + r.status)); e.status = r.status; e.body = j; throw e; }
+        return j;
+      });
+    }, function (e) { clearTimeout(timer); e.network = true; throw e; });
+  }
+
+  // aggiorna in silenzio saldo, Banco e Follia dopo una partita
+  function refreshMe() {
+    if (!inTelegram) return Promise.resolve();
+    return api(CFG.ME_PATH || "/api/me").then(function (j) { render(normalizeMe(j)); }).catch(function () {});
+  }
+
+  window.Arcade = { api: api, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+    setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
+  window.ArcadeGames = window.ArcadeGames || {};
+
   // ---------- Stazioni ----------
   function onStation(key, el) {
     var g = GAMES[key]; if (!g) return;
@@ -142,8 +178,10 @@
     haptic("light");
     if (!g.ready) {
       if (g.note) sheet(g.name, g.note); else toast(g.name + ": in arrivo");
+    } else if (window.ArcadeGames && window.ArcadeGames[key]) {
+      window.ArcadeGames[key].open();
     } else {
-      // qui, in futuro, si apre il gioco
+      toast(g.name + ": in arrivo");
     }
   }
 
