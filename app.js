@@ -87,10 +87,11 @@
     $("demoChip").hidden = !opts.demo;
   }
 
-  function showError(title, text) {
+  function showError(title, text, detail) {
     $("player").classList.add("err");
     $("pname").textContent = title;
     $("pcoins").textContent = "—";
+    if (detail) { $("pdetail").textContent = detail; $("pdetail").hidden = false; }
     if (text) sheet(title, text);
   }
 
@@ -117,16 +118,18 @@
       clearTimeout(timer);
       if (r.status === 401) throw { kind: "auth" };
       if (r.status === 403) throw { kind: "forbidden" };
-      if (!r.ok) throw { kind: "http", status: r.status };
+      if (!r.ok) throw { kind: "http", status: r.status, url: url };
       return r.json();
     }).then(function (j) {
       render(normalizeMe(j));
     }).catch(function (e) {
       clearTimeout(timer);
       var k = e && e.kind;
+      var detail = k === "http" ? ("Errore HTTP " + e.status + " da " + (CFG.API_BASE || "?"))
+                 : (k ? "" : ("Nessuna risposta da " + (CFG.API_BASE || "?") + " (" + ((e && e.name) || "rete") + ")"));
       if (k === "forbidden") showError("Accesso riservato", "Questa mini app è ancora in costruzione: per ora è visibile solo all'amministratore.");
       else if (k === "auth") showError("Accesso non valido", "Non sono riuscito a verificare la tua identità. Chiudi e riapri l'app da Telegram.");
-      else showError("Server non raggiungibile", "Non riesco a collegarmi al bot. Riprova tra poco.");
+      else showError("Server non raggiungibile", "Non riesco a collegarmi al bot. Riprova tra poco.", detail);
       // il nome da Telegram resta visibile anche se il server non risponde
       try { var u = tg.initDataUnsafe.user; if (u && u.first_name) { $("avatar").textContent = u.first_name[0].toUpperCase(); } } catch (x) {}
     });
