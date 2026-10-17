@@ -359,7 +359,7 @@
   //  POKER
   // ======================================================================
   var pk = {
-    title: "♠ SDROGO POKER", st: null, res: null,
+    title: "♠ POKER", st: null, res: null,
     build: function () {
       stage.innerHTML = '<div class="who2">BOT</div><div class="hand" id="pkB"></div>' +
         '<div class="pot" id="pkPot">—</div><div class="hand" id="pkT"></div>' +
