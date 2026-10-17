@@ -250,3 +250,4 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 .pg-sum div{background:rgba(0,0,0,.32);border-radius:12px;padding:8px 4px;text-align:center;font-size:12px;color:#a99578}
 .pg-sum b{display:block;font-size:17px;color:var(--ink);margin-bottom:1px}
 .pg-me{text-align:center;color:#bfa985;font-size:14px;padding:6px 0 2px}
+.pg-speed{text-align:center;margin:0 0 10px}.pg-speed .pcat{font-size:13px;padding:6px 12px}

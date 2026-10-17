@@ -80,6 +80,7 @@
         var d = el("div"); d.appendChild(el("b", "", x[0])); d.appendChild(document.createTextNode(x[1])); sum.appendChild(d);
       });
       box.appendChild(sum);
+      box.appendChild(speedBox());
       if (!j.history.length) { box.appendChild(el("div", "pg-empty", "Nessuna giocata registrata, per ora.")); return; }
       var ic = { vinta: "✅", persa: "❌", pareggio: "⚖️" };
       j.history.forEach(function (h) {
@@ -91,6 +92,32 @@
       });
     }).catch(function (e) { if (!loaded.diary) empty(box, errMsg(e)); else A.toast(errMsg(e)); })
       .then(function () { busy.diary = false; });
+  }
+
+  // ---------- test di velocità (dal tuo telefono al bot) ----------
+  function speedBox() {
+    var wrap = el("div", "pg-speed"), btn = el("button", "pcat", "⚡ Test di velocità"), out = el("div", "pg-me", "");
+    btn.type = "button";
+    btn.addEventListener("click", function () {
+      if (btn.disabled) return; btn.disabled = true; A.haptic("light");
+      var N = 20, ts = [], fails = 0, i = 0;
+      (function next() {
+        if (i >= N) {
+          btn.disabled = false;
+          if (!ts.length) { out.textContent = "Nessuna risposta: server non raggiungibile."; return; }
+          ts.sort(function (a, b) { return a - b; });
+          var q = function (p) { return Math.round(ts[Math.min(ts.length - 1, Math.floor(ts.length * p))]); };
+          out.textContent = "Risposta in ms — migliore " + q(0) + " · mediana " + q(0.5) + " · 95% sotto " + q(0.95) + " · peggiore " + q(1) + (fails ? " · errori: " + fails : "");
+          return;
+        }
+        out.textContent = "Misuro… " + (i + 1) + "/" + N;
+        var t0 = performance.now(); i++;
+        A.api("/api/me").then(function () { ts.push(performance.now() - t0); }, function () { fails++; })
+          .then(function () { setTimeout(next, 200); });
+      })();
+    });
+    wrap.appendChild(btn); wrap.appendChild(out);
+    return wrap;
   }
 
   // ---------- swipe laterale ----------
