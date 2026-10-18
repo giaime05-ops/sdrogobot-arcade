@@ -154,11 +154,11 @@ for (const sx of [-1, 1]) for (const [px, pz, py] of [[3.84, -4.5, 5.92], [3.62,
 const loader = new THREE.TextureLoader();
 function loadTex(url) { const t = loader.load(url); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
 const SPLIT = 0.57;
-const mkSign = (rep, off) => { const t = loadTex("assets/sign.jpg"); t.repeat.set(1, rep); t.offset.set(0, off); return new THREE.MeshBasicMaterial({ map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); };
-const signTopMat = mkSign(SPLIT, 1 - SPLIT), signBotMat = mkSign(1 - SPLIT, 0);
+const mkSign = (url) => { const t = loadTex(url); return new THREE.MeshBasicMaterial({ map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); };
+const signTopMat = mkSign("assets/sign_pink.jpg"), signBotMat = mkSign("assets/sign_blue.jpg");
 const SIGN_W = 5.5, SIGN_H = SIGN_W * 390 / 877, SIGN_Y = 4.15;
-const signTop = new THREE.Mesh(new THREE.PlaneGeometry(SIGN_W, SIGN_H * SPLIT), signTopMat); signTop.position.set(0, SIGN_Y + SIGN_H / 2 - SIGN_H * SPLIT / 2, -4.42); scene.add(signTop);
-const signBot = new THREE.Mesh(new THREE.PlaneGeometry(SIGN_W, SIGN_H * (1 - SPLIT)), signBotMat); signBot.position.set(0, SIGN_Y - SIGN_H / 2 + SIGN_H * (1 - SPLIT) / 2, -4.42); scene.add(signBot);
+const signTop = new THREE.Mesh(new THREE.PlaneGeometry(SIGN_W, SIGN_H), signTopMat); signTop.position.set(0, SIGN_Y, -4.42); scene.add(signTop);
+const signBot = new THREE.Mesh(new THREE.PlaneGeometry(SIGN_W, SIGN_H), signBotMat); signBot.position.set(0, SIGN_Y, -4.421); scene.add(signBot);
 // sfarfallio indipendente: ogni tanto una scritta si spegne per un attimo
 const flick = [{ next: 2, off: 0, burst: 0 }, { next: 4, off: 0, burst: 0 }];
 function stepFlicker(time, mats) {
@@ -228,7 +228,7 @@ const tableTex = tex(1536, 666, (g, W, H) => {
   g.fillStyle = "#2a1a14"; g.fillRect(cx - 20, cy - ry * 0.99, 40, ry * 1.98);
   g.fillStyle = "#ff8fc4"; g.fillRect(cx - 2, cy - ry * 0.99, 4, ry * 1.98);
   g.fillStyle = "#fff"; for (const dy of [-0.55, 0.5, 0.62]) for (const dx of (dy === -0.55 ? [0] : [-9, 9])) { g.beginPath(); g.arc(cx + dx, cy + ry * dy, 7, 0, 7); g.fill(); }
-  const neon = (txt, x, y, glow, core) => { g.font = "58px " + FONT; g.textAlign = "center"; g.textBaseline = "middle"; g.shadowColor = glow; g.shadowBlur = 22; g.lineWidth = 9; g.strokeStyle = glow; g.strokeText(txt, x, y); g.shadowBlur = 0; g.fillStyle = core; g.fillText(txt, x, y); };
+  const neon = (txt, x, y, glow, core) => { g.font = "68px " + FONT; g.textAlign = "center"; g.textBaseline = "middle"; g.shadowColor = glow; g.shadowBlur = 22; g.lineWidth = 9; g.strokeStyle = glow; g.strokeText(txt, x, y); g.shadowBlur = 0; g.fillStyle = core; g.fillText(txt, x, y); };
   g.save(); g.translate(cx - W * 0.25, cy + ry * 0.42); g.rotate(-0.08); neon("POKER", 0, 0, "#26e08a", "#d8ffea"); g.restore();
   g.save(); g.translate(cx + W * 0.25, cy + ry * 0.42); g.rotate(0.1); neon("BLACKJACK", 0, 0, "#ff4d78", "#ffe0e8"); g.restore();
   g.strokeStyle = "rgba(255,215,130,.85)"; g.lineWidth = 2.5; ell2(0.865); g.stroke(); ell2(0.52); g.stroke();
@@ -241,11 +241,11 @@ for (const h of [halfBJ, halfPK]) { h.rotation.x = -Math.PI / 2; tilt.add(h); }
 C(0.22, 0.3, 0.8, MS(0x2a1014, 0.3, 0.3), 0, 0.4, 0, table, 32); C(0.7, 0.72, 0.06, MS(0xd9a94a, 0.95, 0.25), 0, 0.03, 0, table, 36);
 const tc = (r, su, rd, x, z, rot) => card(r, su, rd, x, TY + 0.06, z, rot, tilt);
 // poker (verde, sinistra): 5 carte comuni a ventaglio in fondo, fiche dietro
-[["A", "♥", 1], ["K", "♠", 0], ["Q", "♦", 1], ["J", "♣", 0], ["10", "♥", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], -1.6 + i * 0.22, -0.42 + Math.abs(i - 2) * 0.03, (i - 2) * 0.14));
-chips(-0.75, 1.03, -0.5, [0xc8182b, 0xc8182b, 0x14141a, 0x2b6fd6]); chips(-0.55, 1.03, -0.42, [0x14141a, 0xffd34d, 0xffd34d]);
+[["A", "♥", 1], ["K", "♠", 0], ["Q", "♦", 1], ["J", "♣", 0], ["10", "♥", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], -1.6 + i * 0.22, -0.34 + Math.abs(i - 2) * 0.03, (i - 2) * 0.14));
+chips(-0.75, 1.03, -0.42, [0xc8182b, 0xc8182b, 0x14141a, 0x2b6fd6]); chips(-0.55, 1.03, -0.34, [0x14141a, 0xffd34d, 0xffd34d]);
 // blackjack (rosso, destra): solo asso e re
-[["A", "♠", 0], ["K", "♥", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], 1.0 + i * 0.2, -0.38, 0.12 - i * 0.24));
-chips(1.75, 1.03, -0.45, [0xffd34d, 0xffd34d, 0x25e1d3, 0x14141a]); chips(1.95, 1.03, -0.38, [0xc8182b, 0x25e1d3, 0x25e1d3]);
+[["A", "♠", 0], ["K", "♥", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], 1.0 + i * 0.2, -0.3, 0.12 - i * 0.24));
+chips(1.75, 1.03, -0.37, [0xffd34d, 0xffd34d, 0x25e1d3, 0x14141a]); chips(1.95, 1.03, -0.3, [0xc8182b, 0x25e1d3, 0x25e1d3]);
 
 // ---------- slot machine futuristica (angolo in fondo a destra) ----------
 const slot = new THREE.Group(); slot.position.set(3.0, 0, -3.3); slot.scale.setScalar(1.1); scene.add(slot);
@@ -263,8 +263,8 @@ for (const [sx, col] of [[-0.51, PINK], [0.51, CYAN]]) {
   const t3 = C(0.028, 0.028, 0.98, NEONM(PINK), 0, 2.67, -0.12, slot, 10); t3.rotation.z = Math.PI / 2;
 }
 const topTex = tex(512, 160, (g, w, h) => { g.fillStyle = "#08060c"; g.fillRect(0, 0, w, h); g.textAlign = "center"; g.textBaseline = "middle";
-  g.font = "58px " + FONT; g.shadowColor = "#ff5fd0"; g.shadowBlur = 20; g.lineWidth = 6; g.strokeStyle = "#ff5fd0"; g.strokeText("SLOT", w / 2, 52); g.shadowBlur = 0; g.fillStyle = "#ffe9f6"; g.fillText("SLOT", w / 2, 52);
-  g.font = "58px " + FONT; g.shadowColor = "#6fe8ff"; g.shadowBlur = 18; g.lineWidth = 5; g.strokeStyle = "#6fe8ff"; g.strokeText("777", w / 2, 122); g.shadowBlur = 0; g.fillStyle = "#e6fbff"; g.fillText("777", w / 2, 122); });
+  g.font = "70px " + FONT; g.shadowColor = "#ff5fd0"; g.shadowBlur = 20; g.lineWidth = 6; g.strokeStyle = "#ff5fd0"; g.strokeText("SLOT", w / 2, 52); g.shadowBlur = 0; g.fillStyle = "#ffe9f6"; g.fillText("SLOT", w / 2, 52);
+  g.font = "70px " + FONT; g.shadowColor = "#6fe8ff"; g.shadowBlur = 18; g.lineWidth = 5; g.strokeStyle = "#6fe8ff"; g.strokeText("777", w / 2, 122); g.shadowBlur = 0; g.fillStyle = "#e6fbff"; g.fillText("777", w / 2, 122); });
 const topLabel = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.25), new THREE.MeshBasicMaterial({ map: topTex })); topLabel.position.set(0, 2.32, 0.3); slot.add(topLabel);
 // fila di icone colorate
 const bulbs = [];
@@ -393,8 +393,9 @@ const ptab = new THREE.Group(); ptab.position.set(-2.95, 2.45, -4.4); scene.add(
 const ppMat = new THREE.MeshBasicMaterial({ map: loadTex("assets/paperplane.png"), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
 const haloAv = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); haloAv.position.set(0, 0, -0.01); ptab.add(haloAv);
 const pp = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 1.25 * 405 / 640), ppMat); pp.position.set(0, 0.15, 0); ptab.add(pp);
+const AVI_TXT = "A V I A T O R";
 const avBack = new THREE.Mesh(new THREE.PlaneGeometry(1.45, 0.3), new THREE.MeshBasicMaterial({ map: tex(256, 53, (g, w, h) => { g.fillStyle = "rgba(3,3,6,.9)"; g.beginPath(); g.roundRect(0, 0, w, h, 18); g.fill(); g.strokeStyle = "rgba(255,255,255,.25)"; g.lineWidth = 2; g.beginPath(); g.roundRect(2, 2, w - 4, h - 4, 16); g.stroke(); }), transparent: true, depthWrite: false })); avBack.position.set(0, -0.45, 0.005); ptab.add(avBack);
-plate("AVIATOR", 1.3, 0.24, "#ffffff", "#ffffff", 0, -0.45, 0.012, ptab);
+plate(AVI_TXT, 1.3, 0.24, "#ffffff", "#ffffff", 0, -0.45, 0.012, ptab);
 
 // ---------- tavolino con il quaderno Wordle (davanti a destra) ----------
 const wtab = new THREE.Group(); wtab.position.set(1.3, 0.12, 2.0); wtab.scale.setScalar(1.08); scene.add(wtab);
