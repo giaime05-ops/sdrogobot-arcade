@@ -176,7 +176,7 @@
   // ---------- Stazioni ----------
   function onStation(key, el) {
     var g = GAMES[key]; if (!g) return;
-    el.classList.add("press"); setTimeout(function () { el.classList.remove("press"); }, 140);
+    if (el) { el.classList.add("press"); setTimeout(function () { el.classList.remove("press"); }, 140); }
     haptic("light");
     if (!g.ready) {
       if (g.note) sheet(g.name, g.note); else toast(g.name + ": in arrivo");
@@ -188,6 +188,9 @@
       sheet(g.name, "Il gioco è pronto, ma manca il file " + file + " nel repo della mini app (o la pagina è ancora quella vecchia: chiudi e riapri l'app).");
     }
   }
+
+  // il tocco sugli oggetti della sala 3D apre lo stesso gioco della stazione 2D
+  window.Arcade3D = { onTap: function (key) { onStation(key, null); } };
 
   var stations = document.querySelectorAll(".station");
   Array.prototype.forEach.call(stations, function (el) {
