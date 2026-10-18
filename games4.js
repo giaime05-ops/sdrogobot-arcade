@@ -49,6 +49,15 @@
     });
   }
 
+  // ---------- risultato centrale ----------
+  function clearBanner() { var o = stage.querySelector(".res-banner"); if (o) o.remove(); }
+  function banner(text, sub, cls) {
+    clearBanner();
+    var b = el("div", "res-banner" + (cls ? " " + cls : ""), text);
+    if (sub) b.appendChild(el("small", "", sub));
+    stage.appendChild(b);
+  }
+
   // ---------- carte ----------
   var SUITS_BJ = ["♠", "♥", "♦", "♣"], SUITS_PK = ["♠", "♥", "♦", "♣"];
   function cardEl(label, suit, red) {
@@ -113,7 +122,7 @@
       }).catch(function (e) { msg(errText(e), "lose"); });
     },
     start: function () {
-      bj.res = null; bj.dShown = null; bj.dFinal = false; bj.P = []; bj.D = [];
+      clearBanner(); bj.res = null; bj.dShown = null; bj.dFinal = false; bj.P = []; bj.D = [];
       msg("", ""); notes([]); setBusy(true); A.haptic("med");
       A.api("/api/g/bj/start", "POST", { bet: S.bet }).then(function (j) {
         bj.apply(j); S.busy = false; elBack.disabled = false;
@@ -146,6 +155,8 @@
         else if (o === "bust") t = ["💥 Sballato! " + sgn(res.net) + " $SDG", "lose"];
         else t = ["❌ Sconfitta " + sgn(res.net) + " $SDG", "lose"];
         msg(t[0], t[1]); A.haptic(t[1] === "win" ? "ok" : (t[1] === "lose" ? "bad" : "light"));
+        var BT = { blackjack: "BLACKJACK!", charlie: "CHARLIE!", win: "HAI VINTO", push: "PAREGGIO", bust: "SBALLATO", lose: "HAI PERSO" };
+        banner(BT[o] || "FINE MANO", o === "push" ? "puntata restituita" : sgn(res.net) + " $SDG", t[1]);
         setBalance(res.balance); notes(res.notes); S.busy = false; elBack.disabled = false; bj.render(); A.refreshMe();
       }
       if (!dealerPlays || n <= 1) { bj.draw(); S.busy = true; later(done, 450); return; }
@@ -361,9 +372,9 @@
   var pk = {
     title: "♠ POKER", st: null, res: null,
     build: function () {
-      stage.innerHTML = '<div class="who2">BOT</div><div class="hand" id="pkB"></div>' +
+      stage.innerHTML = '<div class="who2">BOT</div><div class="hrow"><div class="hand" id="pkB"></div><div class="htag" id="pkBT" hidden></div></div>' +
         '<div class="pot" id="pkPot">—</div><div class="hand" id="pkT"></div>' +
-        '<div class="who2" id="pkStreet">TU</div><div class="hand" id="pkP"></div>';
+        '<div class="who2" id="pkStreet">TU</div><div class="hrow"><div class="hand" id="pkP"></div><div class="htag" id="pkPT" hidden></div></div>';
       pk.res = null;
     },
     cardOf: function (c) { var red = c.s === 1 || c.s === 2; return cardEl(pkRank(c.r), SUITS_PK[c.s], red); },
@@ -378,7 +389,11 @@
       hole.forEach(function (c) { P.appendChild(pk.cardOf(c)); });
       $("pkPot").textContent = r ? (r.outcome === "win" ? "Hai vinto " + A.fmt(r.paid) + " $SDG" : (r.outcome === "push" ? "Pareggio" : "Mano persa")) :
         (st.active ? "Piatto: " + A.fmt((st.pot_p || 0) + (st.pot_b || 0)) + " $SDG" : "Scegli la puntata e gioca");
-      $("pkStreet").textContent = r ? (r.mine ? "TU · " + r.mine + "  vs  BOT · " + r.theirs : "TU") : (st.active ? "TU · " + (st.street_name || "") : "TU");
+      $("pkStreet").textContent = (!r && st.active) ? "TU · " + (st.street_name || "") : "TU";
+      var bt = $("pkBT"), mt = $("pkPT"), won = r && r.outcome === "win", lost = r && r.outcome !== "win" && r.outcome !== "push";
+      [[bt, "BOT", r && r.theirs, lost], [mt, "TU", r && r.mine, won]].forEach(function (x) {
+        x[0].hidden = !(r && x[2]); if (!x[0].hidden) { x[0].innerHTML = ""; x[0].appendChild(el("b", "", x[1])); x[0].appendChild(document.createTextNode(x[2])); x[0].className = "htag" + (x[3] ? " win" : (r && r.outcome !== "push" ? " lose" : "")); }
+      });
     },
     render: function () {
       var st = pk.st || {}, active = !!st.active && !pk.res;
@@ -401,7 +416,7 @@
       }).catch(function (e) { msg(errText(e), "lose"); });
     },
     start: function () {
-      pk.res = null; msg("", ""); notes([]); setBusy(true); A.haptic("med");
+      clearBanner(); pk.res = null; msg("", ""); notes([]); setBusy(true); A.haptic("med");
       A.api("/api/g/pk/start", "POST", { bet: S.bet }).then(function (j) {
         pk.apply(j); S.busy = false; elBack.disabled = false; pk.render();
       }).catch(function (e) { msg(errText(e), "lose"); setBusy(false); });
@@ -427,6 +442,8 @@
       else if (r.outcome === "push") t = ["⚖️ Pareggio: ti torna quanto hai messo.", ""];
       else t = ["❌ Il bot vince lo showdown: " + sgn(r.net) + " $SDG", "lose"];
       msg(t[0], t[1]); A.haptic(t[1] === "win" ? "ok" : (t[1] === "lose" ? "bad" : "light"));
+      var PT = r.how === "fold" ? "HAI LASCIATO" : (r.outcome === "win" ? "HAI VINTO" : (r.outcome === "push" ? "PAREGGIO" : "HAI PERSO"));
+      banner(PT, r.outcome === "push" ? "ti torna quanto hai messo" : sgn(r.net) + " $SDG", t[1]);
       setBalance(r.balance); notes(r.notes); pk.render(); A.refreshMe();
     }
   };

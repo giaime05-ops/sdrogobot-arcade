@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Rye&family=Bungee&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -218,9 +218,9 @@
     <div class="pg-body" id="actBody"></div>
   </section>
   <nav id="tabs" aria-label="Sezioni">
+    <button type="button" class="tab" data-tab="act"><span>🎯</span>Attività</button>
     <button type="button" class="tab on" data-tab="hub"><span>🎪</span>Saloon</button>
     <button type="button" class="tab" data-tab="lead"><span>🏆</span>Classifica</button>
-    <button type="button" class="tab" data-tab="act"><span>🎯</span>Attività</button>
   </nav>
 
   <!-- ===== AVIATOR ===== -->
@@ -289,12 +289,16 @@
   </div>
 </main>
 
-<script src="config.js?v=6"></script>
-<script src="app.js?v=6"></script>
-<script src="aviator.js?v=6"></script>
-<script src="games3.js?v=6"></script>
-<script src="games4.js?v=6"></script>
-<script src="social.js?v=6"></script>
-<script type="module" src="hub3d.js?v=6"></script>
+<script src="config.js?v=7"></script>
+<script src="app.js?v=7"></script>
+<script src="aviator.js?v=7"></script>
+<script src="games3.js?v=7"></script>
+<script src="games4.js?v=7"></script>
+<script src="social.js?v=7"></script>
+<script type="module" src="hub3d.js?v=7"></script>
+<script>
+// se il 3D non parte entro 6 secondi (telefono vecchio, WebGL assente) si mostra la sala 2D
+setTimeout(function () { if (!document.body.classList.contains("has3d")) { var s = document.getElementById("scene"); if (s) s.classList.add("show"); } }, 6000);
+</script>
 </body>
 </html>

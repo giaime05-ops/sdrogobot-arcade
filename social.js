@@ -5,11 +5,11 @@
   "use strict";
   var A = window.Arcade; if (!A) return;
   var $ = function (id) { return document.getElementById(id); };
-  var ORDER = ["hub", "lead", "act"];
+  var ORDER = ["act", "hub", "lead"];
   var cur = "hub", cat = "coins", sub = "quests", loaded = {}, busy = {};
   var tabs = document.querySelectorAll(".tab");
   var views = { hub: $("pgHub"), lead: $("pgLead"), act: $("pgAct") };
-  var pos = 0, offTimer = null;
+  var pos = 1, offTimer = null, badgeBusy = false;
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function gameOpen() { return ["avi", "gm", "g4"].some(function (id) { var n = $(id); return n && !n.hidden; }); }
@@ -34,20 +34,34 @@
     clearTimeout(offTimer);
     offTimer = setTimeout(function () { ORDER.forEach(function (n, i) { if (i !== idx) views[n].classList.add("off"); }); }, 340);
   }
+  // pallino rosso sulla scheda Attività quando c'è un premio da riscattare
+  function setBadge(n) {
+    var t = document.querySelector('.tab[data-tab="act"]'); if (!t) return;
+    var d = t.querySelector(".dot");
+    if (!n) { if (d) d.remove(); return; }
+    if (!d) { d = document.createElement("i"); d.className = "dot"; t.appendChild(d); }
+    d.textContent = String(n);
+  }
+  function refreshBadge() {
+    if (!A.inTelegram || badgeBusy) return; badgeBusy = true;
+    A.api("/api/social/quests").then(function (j) {
+      setBadge((j.quests || []).filter(function (q) { return q.done && !q.claimed; }).length);
+    }).catch(function () {}).then(function () { badgeBusy = false; });
+  }
   function show(name, fromUser) {
     var idx = ORDER.indexOf(name); if (idx < 0) return;
     cur = name; pos = idx;
     if (name !== "lead") cat = "coins";                 // uscendo dalla classifica, al ritorno si riparte dai Ricconi
-    document.body.setAttribute("data-tab", idx === 0 ? "hub" : "other");
+    document.body.setAttribute("data-tab", name === "hub" ? "hub" : "other");
     Array.prototype.forEach.call(tabs, function (t) { t.classList.toggle("on", t.getAttribute("data-tab") === name); });
     paint(idx, true); settle(idx);
     if (fromUser) A.haptic("light");
     syncCoins();
     if (name === "lead") loadLead();
     if (name === "act") loadAct();
-    if (name === "hub") A.refreshMe();
+    if (name === "hub") { A.refreshMe(); refreshBadge(); }
   }
-  views.lead.style.transform = "translate3d(100%,0,0)"; views.act.style.transform = "translate3d(200%,0,0)";
+  views.lead.style.transform = "translate3d(100%,0,0)"; views.act.style.transform = "translate3d(-100%,0,0)";
   document.body.setAttribute("data-tab", "hub");
   Array.prototype.forEach.call(tabs, function (t) { t.addEventListener("click", function () { show(t.getAttribute("data-tab"), true); }); });
 
@@ -105,7 +119,7 @@
     if (!loaded[key]) empty(box, "Carico sfide e missioni…");
     if (busy[key]) return; busy[key] = true;
     A.api("/api/social/quests").then(function (j) {
-      loaded[key] = true; if (sub !== "quests") return;
+      loaded[key] = true; setBadge((j.quests || []).filter(function (q) { return q.done && !q.claimed; }).length); if (sub !== "quests") return;
       box.innerHTML = "";
       var ch = j.challenge, card = el("div", "qcard"); card.appendChild(el("h3", "", "🎯 SFIDA DI GRUPPO"));
       if (ch.active) {
@@ -228,5 +242,6 @@
 
   // il saldo nelle sezioni segue quello dell'hub
   new MutationObserver(syncCoins).observe($("pcoins"), { childList: true, characterData: true, subtree: true });
-  window.ArcadeTabs = { show: show };
+  window.ArcadeTabs = { show: show, refreshBadge: refreshBadge, setBadge: setBadge };
+  setTimeout(refreshBadge, 1200);
 })();

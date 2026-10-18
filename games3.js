@@ -103,18 +103,110 @@
     W.draw();
     return W;
   }
+  // ---------- roulette: ruota ferma con numeri grandi, la pallina gira lungo la pista e cade nella casella ----------
+  function makeRoulette(size) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), n = ORDER.length, sl = Math.PI * 2 / n;
+    var cv = document.createElement("canvas"); cv.style.width = size + "px"; cv.style.height = size + "px";
+    cv.width = Math.round(size * dpr); cv.height = Math.round(size * dpr);
+    var c = cv.getContext("2d"), cx = size / 2, cy = size / 2;
+    var r0 = size / 2 - 5, r1 = r0 - 9, r2 = r1 - 26, rpIn = r2 - 52, rBall = (r1 + r2) / 2 + 3, rPk = r2 - 11;
+    var W = { cv: cv, ball: { a: -Math.PI / 2, r: rBall }, hub: 0, win: -1, raf: 0 };
+    function ang(i) { return -Math.PI / 2 + i * sl; }
+    W.draw = function () {
+      c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size);
+      // bordo esterno: nero lucido con filo neon
+      var g0 = c.createRadialGradient(cx - 30, cy - 40, 10, cx, cy, r0); g0.addColorStop(0, "#2b2233"); g0.addColorStop(1, "#08050c");
+      c.beginPath(); c.arc(cx, cy, r0, 0, 7); c.fillStyle = g0; c.fill();
+      c.save(); c.shadowColor = "#ff3db0"; c.shadowBlur = 12; c.strokeStyle = "#ff6fc8"; c.lineWidth = 2.4; c.beginPath(); c.arc(cx, cy, r0, 0, 7); c.stroke(); c.restore();
+      // pista della pallina
+      var g1 = c.createLinearGradient(0, cy - r1, 0, cy + r1); g1.addColorStop(0, "#1c1626"); g1.addColorStop(0.5, "#0c0812"); g1.addColorStop(1, "#1c1626");
+      c.beginPath(); c.arc(cx, cy, r1, 0, 7); c.arc(cx, cy, r2, 0, 7, true); c.fillStyle = g1; c.fill("evenodd");
+      c.strokeStyle = "rgba(53,230,255,.35)"; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, r1, 0, 7); c.stroke();
+      // caselle
+      for (var i = 0; i < n; i++) {
+        var num = ORDER[i], a0 = ang(i) - sl / 2, a1 = a0 + sl;
+        c.beginPath(); c.arc(cx, cy, r2, a0, a1); c.arc(cx, cy, rpIn, a1, a0, true); c.closePath();
+        c.fillStyle = num === 0 ? "#0f9b52" : (RED.indexOf(num) >= 0 ? "#c9162c" : "#14101c"); c.fill();
+        if (W.win === i) { c.fillStyle = "rgba(255,255,255,.35)"; c.fill(); }
+        c.strokeStyle = "rgba(232,195,106,.8)"; c.lineWidth = 1; c.stroke();
+        c.save(); c.translate(cx, cy); c.rotate(ang(i)); c.translate(rPk, 0); c.rotate(Math.PI / 2);
+        c.fillStyle = "#fff"; c.font = "700 14px Oswald, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(String(num), 0, 0); c.restore();
+      }
+      c.strokeStyle = "#e8c36a"; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, rpIn, 0, 7); c.stroke();
+      // cono centrale con croce dorata che gira piano
+      var g2 = c.createRadialGradient(cx - 8, cy - 10, 4, cx, cy, rpIn); g2.addColorStop(0, "#3a2d4a"); g2.addColorStop(1, "#0d0814");
+      c.beginPath(); c.arc(cx, cy, rpIn - 1, 0, 7); c.fillStyle = g2; c.fill();
+      c.save(); c.translate(cx, cy); c.rotate(W.hub); c.strokeStyle = "#e8c36a"; c.lineWidth = 4; c.lineCap = "round";
+      c.beginPath(); c.moveTo(-rpIn * 0.62, 0); c.lineTo(rpIn * 0.62, 0); c.moveTo(0, -rpIn * 0.62); c.lineTo(0, rpIn * 0.62); c.stroke();
+      c.fillStyle = "#e8c36a"; c.beginPath(); c.arc(0, 0, 8, 0, 7); c.fill(); c.restore();
+      // pallina
+      var bx = cx + Math.cos(W.ball.a) * W.ball.r, by = cy + Math.sin(W.ball.a) * W.ball.r;
+      c.save(); c.shadowColor = "rgba(255,255,255,.9)"; c.shadowBlur = 9;
+      var gb = c.createRadialGradient(bx - 2, by - 2, 1, bx, by, 6); gb.addColorStop(0, "#fff"); gb.addColorStop(1, "#b9c2d6");
+      c.fillStyle = gb; c.beginPath(); c.arc(bx, by, 5.5, 0, 7); c.fill(); c.restore();
+    };
+    W.spinTo = function (idx, ms, done) {
+      W.win = -1; var t0 = performance.now(), thf = ang(idx), D = Math.PI * 2 * (6 + Math.random() * 1.5), h0 = W.hub;
+      cancelAnimationFrame(W.raf);
+      (function step(now) {
+        var p = Math.min(1, (now - t0) / ms), q = 1 - p;
+        var a = thf - D * Math.pow(q, 2.3);
+        var land = Math.max(0, Math.min(1, (p - 0.62) / 0.3)), ls = land * land * (3 - 2 * land);
+        var r = rBall + (rPk - rBall) * ls;
+        if (p > 0.86 && p < 1) { var k = (p - 0.86) / 0.14; a += Math.sin(k * 26) * sl * 0.55 * (1 - k); r += Math.sin(k * 20) * 3 * (1 - k); }   // rimbalza tra le caselle
+        W.ball.a = a; W.ball.r = r; W.hub = h0 + (now - t0) / 1000 * 1.4;
+        W.draw();
+        if (p < 1) W.raf = requestAnimationFrame(step); else { W.win = idx; W.ball.a = thf; W.ball.r = rPk; W.draw(); done && done(); }
+      })(performance.now());
+    };
+    W.draw();
+    return W;
+  }
   function wheelSize() { return Math.min(300, Math.round(Math.min(window.innerWidth, 420) * 0.8)); }
 
   // ======================================================================
   //  SLOT
   // ======================================================================
   var SLOT_SYMS = ["🍒", "🍋", "🔔", "💎", "7️⃣"];
+  var RH = 104, CYC = ["🍒", "🍋", "🔔", "💎", "7️⃣", "🍒", "🔔", "🍋", "💎", "🍋"];      // ciclo del rullo
+  var reelRaf = 0;
+  function makeReel(box) {
+    var strip = document.createElement("div"); strip.className = "strip";
+    for (var k = 0; k <= CYC.length; k++) { var d = document.createElement("div"); d.textContent = CYC[k % CYC.length]; strip.appendChild(d); }
+    box.innerHTML = ""; box.appendChild(strip);
+    var R = { box: box, strip: strip, y: 4 * RH, mode: "idle", v: 2200, L: CYC.length * RH };
+    R.set = function () { var yy = ((R.y % R.L) + R.L) % R.L; strip.style.transform = "translate3d(0," + (-yy).toFixed(1) + "px,0)"; };
+    R.spin = function () { R.mode = "spin"; };
+    // si ferma sul simbolo sym: decelerazione continua (parte dalla velocità di rotazione), niente scatti
+    R.stop = function (sym, done) {
+      var idxs = []; CYC.forEach(function (c, i) { if (c === sym) idxs.push(i); });
+      var tgt = idxs[Math.floor(Math.random() * idxs.length)] * RH, cur = ((R.y % R.L) + R.L) % R.L;
+      var dist = ((tgt - cur) + R.L) % R.L + R.L, ms = Math.max(700, 2 * dist / R.v * 1000);
+      R.mode = "stop"; R.a = { y0: R.y, dist: dist, ms: ms, t0: performance.now(), done: done };
+    };
+    R.set(); return R;
+  }
+  var lastT = 0;
+  function reelFrame(now) {
+    var dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; var any = false;
+    slot.reels.forEach(function (R) {
+      if (R.mode === "spin") { R.y += R.v * dt; any = true; }
+      else if (R.mode === "stop") {
+        var a = R.a, p = Math.min(1, (now - a.t0) / a.ms), e = 1 - (1 - p) * (1 - p);
+        R.y = a.y0 + a.dist * e; any = true;
+        if (p >= 1) { R.mode = "idle"; R.y = Math.round(R.y / RH) * RH; var d = a.done; a.done = null; R.box.classList.add("stop"); R.set(); d && d(); }
+      }
+      R.set();
+    });
+    reelRaf = any ? requestAnimationFrame(reelFrame) : 0;
+  }
+  function reelsStart() { if (!reelRaf) { lastT = performance.now(); reelRaf = requestAnimationFrame(reelFrame); } }
   var slot = {
     title: "🎰 SLOT 777", bets: true, reels: [], box: null,
     build: function () {
-      stage.innerHTML = '<div class="reels" id="slReels"><div class="reel">7️⃣</div><div class="reel">7️⃣</div><div class="reel">7️⃣</div></div>' +
+      stage.innerHTML = '<div class="reels" id="slReels"><div class="reel"></div><div class="reel"></div><div class="reel"></div></div>' +
         '<div class="gm-hint">7️⃣7️⃣7️⃣ ×10 · 💎💎💎 ×6 · 🔔🔔🔔 ×5 · 🍋🍋🍋 ×4 · 🍒🍒🍒 ×3<br>Doppia 7️⃣ o 💎 ×2 · altre doppie: rimborso</div>';
-      slot.box = $("slReels"); slot.reels = Array.prototype.slice.call(slot.box.querySelectorAll(".reel"));
+      slot.box = $("slReels"); slot.reels = Array.prototype.slice.call(slot.box.querySelectorAll(".reel")).map(makeReel);
     },
     onOpen: function () {
       A.api("/api/me").then(function (j) { /* il saldo arriva dal profilo */ }).catch(function () {});
@@ -128,25 +220,19 @@
       var bet = S.bet, t0 = performance.now();
       setBusy(true); msg("", ""); notes([]); slot.box.classList.remove("win");
       showBal(S.balance - bet);
-      slot.reels.forEach(function (r) { r.classList.add("spin"); r.classList.remove("stop"); });
-      var iv = setInterval(function () {
-        slot.reels.forEach(function (r) { if (r.classList.contains("spin")) r.textContent = SLOT_SYMS[Math.floor(Math.random() * 5)]; });
-      }, 80);
-      timers.push(iv);
+      slot.reels.forEach(function (r) { r.box.classList.remove("stop"); r.spin(); }); reelsStart();
       A.haptic("med");
       A.api("/api/slot/spin", "POST", { bet: bet }).then(function (j) {
         var res = j.result, rl = res.reels;
-        var stops = [900, 1600, 2300];
-        if (rl[0] === rl[1]) stops[2] += 900;                       // suspense: i primi due uguali, l'ultimo rulla di più
-        function stopReel(i) {
-          var r = slot.reels[i]; r.classList.remove("spin"); r.classList.add("stop"); r.textContent = rl[i]; A.haptic("light");
-        }
+        var stops = [600, 1050, 1500];
+        if (rl[0] === rl[1]) stops[2] += 450;                       // un filo di suspense se i primi due sono uguali
         [0, 1, 2].forEach(function (i) {
-          later(function () { stopReel(i); if (i === 2) { clearInterval(iv); finish(res); } }, Math.max(0, stops[i] - (performance.now() - t0)));
+          later(function () {
+            slot.reels[i].stop(rl[i], function () { A.haptic("light"); if (i === 2) finish(res); });
+          }, Math.max(0, stops[i] - (performance.now() - t0)));
         });
       }).catch(function (e) {
-        clearInterval(iv);
-        slot.reels.forEach(function (r) { r.classList.remove("spin"); });
+        slot.reels.forEach(function (r) { r.mode = "idle"; });
         showBal(S.balance); msg(errText(e), "lose"); setBusy(false);
         if (e && e.body && e.body.error) A.refreshMe();
       });
@@ -173,8 +259,8 @@
       var items = ORDER.map(function (n) {
         return { label: String(n), color: n === 0 ? "#0f8a46" : (RED.indexOf(n) >= 0 ? "#c4162a" : "#15101a"), text: "#fff" };
       });
-      roul.wheel = makeWheel(wheelSize(), items, { font: 10 });
-      stage.innerHTML = '<div class="wheelbox" id="rlBox"></div><div class="bigres" id="rlOut">?</div>' +
+      roul.wheel = makeRoulette(wheelSize());
+      stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div><div class="bigres" id="rlOut">?</div>' +
         '<div class="gm-hint">Rosso / Nero / Pari / Dispari ×2 · Verde (0) ×36<br>Lo zero fa perdere tutto tranne chi punta sul Verde.</div>';
       $("rlBox").appendChild(roul.wheel.cv); roul.out = $("rlOut");
     },
@@ -201,7 +287,7 @@
       A.api("/api/roulette/spin", "POST", { bet: bet, choice: choice }).then(function (j) {
         var res = j.result, idx = ORDER.indexOf(res.number);
         later(function () {
-          roul.wheel.spinTo(idx, 4300, function () {
+          roul.wheel.spinTo(idx, 5200, function () {
             roul.out.className = "bigres " + res.color; roul.out.textContent = res.number;
             setBalance(res.balance);
             if (res.mult === 36) { msg("🔥 VERDE! +" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }

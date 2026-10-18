@@ -9,13 +9,14 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
   font-family:"Oswald",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   overscroll-behavior:none;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 #app{position:fixed;inset:0}
-#scene{position:absolute;left:0;right:0;top:calc(44px + var(--safe-top));bottom:calc(106px + var(--safe-bottom));width:100%;height:calc(100% - 150px - var(--safe-top) - var(--safe-bottom));display:block}
+#scene{display:none;position:absolute;left:0;right:0;top:calc(44px + var(--safe-top));bottom:calc(106px + var(--safe-bottom));width:100%;height:calc(100% - 150px - var(--safe-top) - var(--safe-bottom))}
+#scene.show{display:block}
 
 /* testo dentro la scena */
-.neonSmall{font-family:"Rye",Georgia,serif;font-size:20px;letter-spacing:1px}
-.neonBig{font-family:"Rye",Georgia,serif;font-size:27px;letter-spacing:2px}
-.posterTxt{font-family:"Rye",Georgia,serif;font-size:11px;fill:#ffd37a;letter-spacing:1px}
-.kioskTxt{font-family:"Rye",Georgia,serif;font-size:10px;fill:#ffd34d}
+.neonSmall{font-family:"Bungee","Oswald",sans-serif;font-size:20px;letter-spacing:1px}
+.neonBig{font-family:"Bungee","Oswald",sans-serif;font-size:27px;letter-spacing:2px}
+.posterTxt{font-family:"Bungee","Oswald",sans-serif;font-size:11px;fill:#ffd37a;letter-spacing:1px}
+.kioskTxt{font-family:"Bungee","Oswald",sans-serif;font-size:10px;fill:#ffd34d}
 .feltTxt{font-family:"Oswald",sans-serif;font-size:8.5px;fill:#e8c36a;letter-spacing:1.5px;opacity:.85}
 
 /* stazioni toccabili */
@@ -46,7 +47,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 /* intestazione */
 #top{position:absolute;left:0;right:0;top:0;z-index:2;padding:calc(10px + var(--safe-top)) 14px 10px;
   background:linear-gradient(180deg,rgba(8,4,3,.92),rgba(8,4,3,.55) 70%,rgba(8,4,3,0));pointer-events:none}
-.brand{display:none;font-family:"Rye",Georgia,serif;font-size:15px;letter-spacing:2px;color:var(--amber);
+.brand{display:none;font-family:"Bungee","Oswald",sans-serif;font-size:15px;letter-spacing:2px;color:var(--amber);
   text-shadow:0 0 10px rgba(255,150,60,.55);text-align:center;margin-bottom:8px}
 .brand span{color:var(--red);text-shadow:0 0 10px rgba(255,46,77,.6)}
 .player{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid rgba(232,195,106,.35);
@@ -80,7 +81,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 #sheet{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.62);z-index:10;padding:24px}
 #sheet .card{width:min(340px,100%);background:#1b0e09;border:1px solid var(--gold);border-radius:18px;padding:20px 18px;text-align:center;
   box-shadow:0 12px 40px rgba(0,0,0,.7)}
-#sheet h2{font-family:"Rye",Georgia,serif;font-weight:400;font-size:19px;color:var(--amber);margin-bottom:8px}
+#sheet h2{font-family:"Bungee","Oswald",sans-serif;font-weight:400;font-size:19px;color:var(--amber);margin-bottom:8px}
 #sheet p{font-size:15px;line-height:1.35;color:#ecdcc0;margin-bottom:16px}
 #sheet button{font:inherit;font-weight:600;letter-spacing:.5px;color:#1a0d07;background:linear-gradient(180deg,#ffd37a,#e08a2e);
   border:0;border-radius:12px;padding:10px 28px;cursor:pointer}
@@ -94,11 +95,11 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 .avi-back{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);border:1px solid rgba(232,195,106,.4);
   border-radius:12px;padding:7px 12px;cursor:pointer}
 .avi-back:disabled{opacity:.35}
-.avi-title{font-family:"Rye",Georgia,serif;font-size:16px;letter-spacing:2px;color:var(--amber);text-shadow:0 0 10px rgba(255,150,60,.55)}
+.avi-title{font-family:"Bungee","Oswald",sans-serif;font-size:16px;letter-spacing:2px;color:var(--amber);text-shadow:0 0 10px rgba(255,150,60,.55)}
 .avi-bal{font-size:15px;color:#ffe3a0;min-width:84px;text-align:right}
 .avi-stage{position:relative;flex:1;min-height:0}
 #aviCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.avi-mult{position:absolute;left:0;right:0;top:14px;text-align:center;font-family:"Rye",Georgia,serif;font-size:54px;
+.avi-mult{position:absolute;left:0;right:0;top:14px;text-align:center;font-family:"Bungee","Oswald",sans-serif;font-size:54px;
   color:#fff;text-shadow:0 0 18px rgba(255,150,60,.7);pointer-events:none;letter-spacing:1px}
 .avi-mult.win{color:#7dffb0;text-shadow:0 0 18px rgba(60,255,140,.8)}
 .avi-mult.lose{color:#ff5b73;text-shadow:0 0 18px rgba(255,46,77,.9)}
@@ -148,7 +149,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
 /* ruote */
 .wheelbox{position:relative}
 .wheelbox canvas{display:block}
-.bigres{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-family:"Rye",Georgia,serif;font-size:32px;color:#fff;
+.bigres{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-family:"Bungee","Oswald",sans-serif;font-size:32px;color:#fff;
   border:3px solid var(--gold);box-shadow:0 0 18px rgba(0,0,0,.6);background:#222}
 .bigres.red{background:#c4162a}.bigres.black{background:#15101a}.bigres.green{background:#0f8a46}
 
@@ -228,7 +229,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
   background:linear-gradient(180deg,#1a0d09,#0d0706);padding-top:var(--safe-top)}
 .pg[hidden]{display:none}
 .pg-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px}
-.pg-title{font-family:"Rye",Georgia,serif;color:var(--gold);font-size:19px;letter-spacing:1px}
+.pg-title{font-family:"Bungee","Oswald",sans-serif;color:var(--gold);font-size:19px;letter-spacing:1px}
 .pg-bal{background:var(--panel);border:1px solid rgba(232,195,106,.35);border-radius:999px;padding:4px 12px;font-size:14px}
 .pg-bal b{color:var(--gold)}
 .pg-cats{display:flex;gap:6px;padding:4px 12px 8px;overflow-x:auto;scrollbar-width:none}
@@ -261,7 +262,7 @@ body.has3d #hub3d{visibility:visible}
 .pg{background:var(--bg)}
 .pg-sub{padding-top:0}
 .qcard{background:rgba(0,0,0,.32);border:1px solid rgba(232,195,106,.22);border-radius:14px;padding:11px 12px;margin-bottom:10px}
-.qcard h3{margin:0 0 6px;font-family:"Rye",Georgia,serif;font-weight:400;color:var(--gold);font-size:15px;letter-spacing:.5px}
+.qcard h3{margin:0 0 6px;font-family:"Bungee","Oswald",sans-serif;font-weight:400;color:var(--gold);font-size:15px;letter-spacing:.5px}
 .qbar{height:9px;border-radius:6px;background:#241812;overflow:hidden;margin:6px 0 4px}
 .qbar i{display:block;height:100%;background:linear-gradient(90deg,#e08a2e,#ffd37a);border-radius:6px;transition:width .5s ease}
 .qmeta{font-size:12.5px;color:#bfa985;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -271,3 +272,51 @@ body.has3d #hub3d{visibility:visible}
 .qrow .qb{flex:1;min-width:0}
 .qclaim{font:inherit;font-weight:600;font-size:13px;color:#1a0d07;background:linear-gradient(180deg,#ffd37a,#e08a2e);border:0;border-radius:10px;padding:8px 10px;white-space:nowrap}
 .qdone{color:#7fd69a;font-size:13px;white-space:nowrap}
+
+/* ===== stile neon dei giochi ===== */
+:root{--np:#ff3db0;--nc:#35e6ff}
+#avi,#gm,#g4{background:#07040d}
+.avi-top{background:linear-gradient(180deg,#14061c,#0b0512);border-bottom:1px solid rgba(255,61,176,.35);box-shadow:0 2px 18px rgba(255,61,176,.18)}
+.avi-title{font-size:15px;letter-spacing:2px;color:#ffd6ef;text-shadow:0 0 8px var(--np),0 0 18px rgba(255,61,176,.7)}
+.avi-back{border-color:rgba(53,230,255,.5);color:#d7fbff;background:rgba(53,230,255,.08)}
+.avi-bal{color:#d7fbff}
+.avi-panel{background:linear-gradient(0deg,#0b0512,#120819);border-top:1px solid rgba(53,230,255,.25)}
+.avi-bet{border-color:rgba(53,230,255,.4);background:rgba(53,230,255,.07);color:#d7fbff}
+.avi-bet.on{border-color:var(--np);color:#fff;background:linear-gradient(180deg,#ff6fc8,#c71d78);box-shadow:0 0 14px rgba(255,61,176,.55)}
+.avi-go{color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.35);background:linear-gradient(180deg,#ff6fc8,#c71d78);box-shadow:0 6px 22px rgba(255,61,176,.45),inset 0 1px 0 rgba(255,255,255,.35)}
+.avi-go.cash{color:#04200f}
+.gm-stage{background:radial-gradient(120% 80% at 50% 0%,#2b0d3d 0%,#10061c 55%,#07040d 100%)}
+.gm-msg{background:#0b0512;border-top:1px solid rgba(255,61,176,.2)}
+.gm-pick{border-color:rgba(53,230,255,.4);background:rgba(53,230,255,.07);color:#d7fbff}
+.gm-pick.on{border-color:var(--np);color:#fff;background:linear-gradient(180deg,#ff6fc8,#c71d78);box-shadow:0 0 12px rgba(255,61,176,.5)}
+.g4-stage{background:radial-gradient(120% 80% at 50% 0%,#0b5a52 0%,#08262c 50%,#07040d 100%);position:relative}
+.avi-mult{font-size:46px;text-shadow:0 0 10px rgba(255,61,176,.8),0 0 26px rgba(255,61,176,.5)}
+.pg-title,.qcard h3{color:#ffd6ef;text-shadow:0 0 8px rgba(255,61,176,.7)}
+.pg-title{font-size:16px}.qcard h3{font-size:13px}
+#sheet h2{font-size:16px;color:#ffd6ef}
+.qclaim{color:#fff;background:linear-gradient(180deg,#ff6fc8,#c71d78);box-shadow:0 0 12px rgba(255,61,176,.45)}
+.tab{position:relative}
+.tab .dot{position:absolute;top:4px;left:calc(50% + 6px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#ff2e4d;color:#fff;font-size:11px;font-weight:600;line-height:17px;text-align:center;box-shadow:0 0 8px rgba(255,46,77,.8)}
+/* risultato centrale con effetto neon */
+.res-banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;text-align:center;padding:12px 22px;border-radius:16px;
+  background:rgba(7,4,13,.86);border:2px solid var(--np);font-family:"Bungee","Oswald",sans-serif;font-size:24px;letter-spacing:1px;color:#fff;line-height:1.15;
+  text-shadow:0 0 10px var(--np),0 0 22px var(--np);box-shadow:0 0 26px rgba(255,61,176,.55);animation:bannerIn .4s cubic-bezier(.2,1.4,.4,1) both,bannerOut .5s ease 2.4s forwards}
+.res-banner small{display:block;font-family:"Oswald",sans-serif;font-size:14px;letter-spacing:.5px;text-shadow:none;margin-top:4px;color:#ffd6ef}
+.res-banner.win{border-color:#38ff9b;text-shadow:0 0 10px #38ff9b,0 0 22px #38ff9b;box-shadow:0 0 28px rgba(56,255,155,.55)}
+.res-banner.lose{border-color:#ff4d6a;text-shadow:0 0 10px #ff4d6a,0 0 22px #ff4d6a;box-shadow:0 0 28px rgba(255,77,106,.5)}
+@keyframes bannerIn{0%{transform:translate(-50%,-50%) scale(.6);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes bannerOut{to{opacity:0;transform:translate(-50%,-60%) scale(.96)}}
+.hrow{display:flex;align-items:center;justify-content:center;gap:10px}
+.htag{font-size:13px;line-height:1.2;color:#ffd6ef;text-align:left;max-width:96px;padding:5px 9px;border-radius:10px;background:rgba(0,0,0,.45);border:1px solid rgba(53,230,255,.35)}
+.htag b{display:block;font-size:11px;letter-spacing:1.5px;color:#9fe8f2;font-weight:500}
+.htag.win{border-color:#38ff9b;color:#c9ffe3}.htag.lose{border-color:rgba(255,77,106,.7)}
+/* slot a rulli scorrevoli */
+.reel{position:relative;display:block;padding:0}
+.reel .strip{position:absolute;left:0;right:0;top:0;will-change:transform}
+.reel .strip div{height:104px;display:grid;place-items:center;font-size:56px}
+.reel.spin{filter:none;transform:none}
+.reel.stop{animation:none}
+.reel::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,0) 26%,rgba(0,0,0,0) 74%,rgba(0,0,0,.28))}
+/* roulette */
+.rl-wrap{position:relative}
+.rl-wrap canvas{display:block}

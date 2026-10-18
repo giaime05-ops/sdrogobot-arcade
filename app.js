@@ -166,7 +166,7 @@
   // aggiorna in silenzio saldo, Banco e Follia dopo una partita
   function refreshMe() {
     if (!inTelegram) return Promise.resolve();
-    return api(CFG.ME_PATH || "/api/me").then(function (j) { render(normalizeMe(j)); }).catch(function () {});
+    return api(CFG.ME_PATH || "/api/me").then(function (j) { render(normalizeMe(j)); if (window.ArcadeTabs) window.ArcadeTabs.refreshBadge(); }).catch(function () {});
   }
 
   window.Arcade = { api: api, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,

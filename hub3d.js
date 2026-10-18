@@ -512,7 +512,7 @@ function degrade() {
   fallback2D();
 }
 function fallback2D() {
-  dead = true; cv.style.display = "none"; const sc = document.getElementById("scene"); if (sc) sc.style.display = "";
+  dead = true; cv.style.display = "none"; const sc = document.getElementById("scene"); if (sc) sc.classList.add("show");
   document.body.classList.remove("has3d");
   try { renderer.dispose(); } catch (e) {}
 }
@@ -540,7 +540,7 @@ function frame(now) {
   stepGlow(dt);
   if (aviT > 0) { aviT -= dt; const k = Math.sin(Math.max(0, 1 - aviT / 0.5) * Math.PI); haloAv.material.opacity = k * 0.9; pp.scale.setScalar(1 + k * 0.1); } else { haloAv.material.opacity = 0; pp.scale.setScalar(1); }
   placeCamera(); renderer.render(scene, camera);
-  if (!ready) { ready = true; cv.style.visibility = "visible"; const sc = document.getElementById("scene"); if (sc) sc.style.display = "none"; document.body.classList.add("has3d"); }
+  if (!ready) { ready = true; cv.style.visibility = "visible"; const sc = document.getElementById("scene"); if (sc) sc.classList.remove("show"); document.body.classList.add("has3d"); }
 }
 (async () => {
   try { await Promise.race([Promise.all([document.fonts.load("100px Bungee"), document.fonts.load("100px Rye"), document.fonts.load("20px Oswald")]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) {}

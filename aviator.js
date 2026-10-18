@@ -12,6 +12,7 @@
   var elMult = $("aviMult"), elMsg = $("aviMsg"), elBets = $("aviBets"), elGo = $("aviGo"),
       elNotes = $("aviNotes"), elBal = $("aviBal"), elBack = $("aviBack");
 
+  var LAG = 140;                       // ms: il moltiplicatore mostrato resta un filo indietro, mai avanti al server
   var S = {
     open: false, phase: "idle",        // idle | starting | flying | cashing | ended
     bets: [10, 25, 50, 100], bet: 10, balance: 0, rate: 0.075,
@@ -80,7 +81,7 @@
 
   function startFlightFromView(v, rtt) {
     S.gid = v.gid;
-    S.t0 = now() - (v.elapsed || 0) * 1000 - (rtt || 0) / 2;
+    S.t0 = now() - (v.elapsed || 0) * 1000 - (rtt || 0) / 2 + LAG;
     S.phase = "flying"; S.res = null; S.fx = [];
     msg("", ""); notes([]);
     elMult.className = "avi-mult";
@@ -90,7 +91,7 @@
 
   function startPolling() {
     stopPolling();
-    S.pollTimer = setInterval(poll, 500);
+    S.pollTimer = setInterval(poll, 250);
   }
   function stopPolling() { if (S.pollTimer) { clearInterval(S.pollTimer); S.pollTimer = null; } }
 
@@ -103,8 +104,9 @@
       if (v.active && v.gid === S.gid) {
         // risincronizzazione dolce dell'orologio (niente salti visibili)
         var rtt = now() - t1;
-        var target = now() - v.elapsed * 1000 - rtt / 2;
-        S.t0 = S.t0 * 0.6 + target * 0.4;
+        var target = now() - v.elapsed * 1000 - rtt / 2 + LAG;
+        // se l'orologio locale è avanti rispetto al server si riallinea subito (il moltiplicatore mostrato non deve mai superare quello reale)
+        if (S.t0 < target) S.t0 = target; else S.t0 = S.t0 * 0.7 + target * 0.3;
       } else if (!v.active && v.last && v.last.gid === S.gid) {
         finish(v.last);
       } else if (!v.active && S.phase === "flying") {
@@ -192,21 +194,23 @@
   var stars = [];
   for (var i = 0; i < 40; i++) stars.push({ x: Math.random(), y: Math.random() * 0.8, r: Math.random() * 1.2 + 0.3, p: Math.random() * 6 });
 
+  // aeroplanino di carta: due ali con piega centrale, ombreggiate, con bagliore neon
   function plane(x, y, ang, scale, alpha) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.scale(scale, scale); ctx.globalAlpha = alpha == null ? 1 : alpha;
-    ctx.shadowColor = "rgba(255,70,90,.9)"; ctx.shadowBlur = 14;
-    // fusoliera
-    ctx.fillStyle = "#f6ead6";
-    ctx.beginPath(); ctx.moveTo(-22, 0); ctx.quadraticCurveTo(-8, -7, 22, -2); ctx.quadraticCurveTo(26, 0, 22, 3); ctx.quadraticCurveTo(-6, 7, -22, 0); ctx.fill();
+    ctx.shadowColor = "rgba(255,255,255,.85)"; ctx.shadowBlur = 16;
+    // ala superiore (chiara)
+    ctx.fillStyle = "#f4f7ff";
+    ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(-24, -15); ctx.lineTo(-10, -1); ctx.closePath(); ctx.fill();
     ctx.shadowBlur = 0;
-    // ala
-    ctx.fillStyle = "#ff2e4d";
-    ctx.beginPath(); ctx.moveTo(-4, 1); ctx.lineTo(-14, 15); ctx.lineTo(-7, 15); ctx.lineTo(7, 2); ctx.closePath(); ctx.fill();
-    // coda
-    ctx.beginPath(); ctx.moveTo(-20, -1); ctx.lineTo(-26, -11); ctx.lineTo(-19, -10); ctx.lineTo(-12, -2); ctx.closePath(); ctx.fill();
-    // cabina
-    ctx.fillStyle = "#25e1d3";
-    ctx.beginPath(); ctx.ellipse(10, -2.2, 5, 2.4, -0.1, 0, Math.PI * 2); ctx.fill();
+    // ala inferiore (in ombra)
+    ctx.fillStyle = "#aeb8d6";
+    ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(-10, -1); ctx.lineTo(-22, 13); ctx.closePath(); ctx.fill();
+    // piega centrale
+    ctx.fillStyle = "#d9def0";
+    ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(-10, -1); ctx.lineTo(-6, 5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(255,61,176,.9)"; ctx.lineWidth = 1.2; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(-24, -15); ctx.lineTo(-10, -1); ctx.lineTo(-22, 13); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(30, 0); ctx.lineTo(-10, -1); ctx.stroke();
     ctx.restore();
   }
 
@@ -238,7 +242,7 @@
 
     // sfondo
     var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#07060f"); g.addColorStop(0.6, "#160a1f"); g.addColorStop(1, "#2a0e16");
+    g.addColorStop(0, "#06030c"); g.addColorStop(0.55, "#150826"); g.addColorStop(1, "#2b0b3a");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     var scrolling = (p === "flying" || p === "cashing");
     for (var i = 0; i < stars.length; i++) {
@@ -266,43 +270,33 @@
     function Y(mv) { return yPlane + K * (lnm - Math.log(mv)); }
     var cb = Math.max(0, Math.min(1, (K * lnm - gh * 0.55) / (gh * 0.12)));     // 0 = in salita, 1 = a quota di crociera
 
-    // righello dei moltiplicatori
-    ctx.lineWidth = 1; ctx.font = "11px Oswald, sans-serif"; ctx.textAlign = "right";
-    var NICE = [1, 1.5, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 70, 100];
-    NICE.forEach(function (mv) {
-      var y = Y(mv);
-      if (y < padT - 6 || y > yBottom + 2) return;
-      var fade = Math.max(0, Math.min(1, (y - padT + 6) / 28, (yBottom + 2 - y) / 22));
-      ctx.strokeStyle = "rgba(232,195,106," + (0.10 * fade).toFixed(3) + ")";
-      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-      ctx.fillStyle = "rgba(246,234,214," + (0.55 * fade).toFixed(3) + ")"; ctx.fillText(mv + "x", padL - 6, y + 4);
-    });
-
-    if (t > 0) {
-      ctx.strokeStyle = "rgba(232,195,106,.07)";
-      for (var kk = Math.max(0, Math.floor(t - 10)); kk <= Math.floor(t); kk++) {
-        var gx = X(kk); if (gx < padL || gx > W - padR) continue;
-        ctx.beginPath(); ctx.moveTo(gx, padT); ctx.lineTo(gx, padT + gh); ctx.stroke();
-      }
-    }
-
     var showCurve = p === "flying" || p === "cashing" || ended;
     if (showCurve && t > 0) {
       var pts = [], n = 60, tS = Math.max(0, t - 10);
       for (var j = 0; j <= n; j++) { var tj = tS + (t - tS) * j / n; pts.push([X(tj), Y(Math.max(1, Math.exp(S.rate * tj)))]); }
       ctx.save(); ctx.beginPath(); ctx.rect(padL - 2, padT - 12, W, gh + padB + 12); ctx.clip();
       var ex = pts[n][0], ey = pts[n][1];
-      // area
-      var fg = ctx.createLinearGradient(0, padT, 0, padT + gh);
-      fg.addColorStop(0, "rgba(255,46,77,.38)"); fg.addColorStop(1, "rgba(255,46,77,0)");
-      ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
-      pts.forEach(function (q) { ctx.lineTo(q[0], q[1]); });
-      ctx.lineTo(ex, padT + gh + padB); ctx.lineTo(pts[0][0], padT + gh + padB); ctx.closePath(); ctx.fill();
-      // linea
-      ctx.shadowColor = "rgba(255,180,90,.9)"; ctx.shadowBlur = 10;
-      ctx.strokeStyle = ended && S.res && S.res.result === "crash" ? "#ff2e4d" : "#ffb45a"; ctx.lineWidth = 3; ctx.lineJoin = "round";
-      ctx.beginPath(); pts.forEach(function (q, idx) { idx ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.stroke();
-      ctx.shadowBlur = 0;
+      // scia: nastro che si assottiglia e sfuma verso il passato, rosa -> azzurro, con bagliore
+      var tg = ctx.createLinearGradient(pts[0][0], 0, ex, 0);
+      tg.addColorStop(0, "rgba(53,230,255,0)"); tg.addColorStop(0.55, "rgba(53,230,255,.55)"); tg.addColorStop(1, ended && S.res && S.res.result === "crash" ? "rgba(255,77,106,.95)" : "rgba(255,110,200,.95)");
+      var up = [], dn = [];
+      for (var q2 = 0; q2 <= n; q2++) {
+        var pq = pts[q2], pn = pts[Math.min(n, q2 + 1)], pp = pts[Math.max(0, q2 - 1)];
+        var nx = -(pn[1] - pp[1]), ny = pn[0] - pp[0], nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+        var wd = 0.4 + 5.2 * Math.pow(q2 / n, 1.6);
+        up.push([pq[0] + nx * wd, pq[1] + ny * wd]); dn.push([pq[0] - nx * wd, pq[1] - ny * wd]);
+      }
+      ctx.shadowColor = "rgba(255,61,176,.9)"; ctx.shadowBlur = 14; ctx.fillStyle = tg;
+      ctx.beginPath(); up.forEach(function (q, idx) { idx ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
+      for (var q3 = n; q3 >= 0; q3--) ctx.lineTo(dn[q3][0], dn[q3][1]);
+      ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+      // scintille lungo la scia
+      for (var sp = 0; sp < 10; sp++) {
+        var si = Math.floor(n * (0.35 + 0.65 * ((sp * 0.37 + tt * 0.9) % 1))), sq = pts[si];
+        ctx.globalAlpha = 0.25 + 0.5 * ((sp * 0.61 + tt) % 1) * (si / n); ctx.fillStyle = sp % 2 ? "#fff" : "#9ff3ff";
+        ctx.beginPath(); ctx.arc(sq[0] + Math.sin(tt * 3 + sp) * 4, sq[1] + Math.cos(tt * 2.3 + sp) * 4, 1.4, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
       ctx.restore();
       var pa = pts[n - 3 > 0 ? n - 3 : 0];
       var ang = Math.atan2(ey - pa[1], ex - pa[0]);
