@@ -144,9 +144,11 @@ function ledTube(axis, len, col, x, y, z, faceDir) {
   for (let i = 0; i <= n; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(axis === "x" ? 0.05 : 0.15, 0.15, axis === "x" ? 0.15 : 0.05), alu); const t = -len / 2 + 0.05 + (len - 0.1) * i / n; c.position.set(axis === "x" ? t : 0, 0, axis === "x" ? 0 : t); g.add(c); }
   return g;
 }
-for (const dy of [6.22, 5.98]) ledTube("x", 8.0, 0xff3d9a, 0, dy, -4.5);
-for (const sx of [-1, 1]) for (const dy of [6.22, 5.98]) ledTube("z", 13.4, 0x35a8ff, sx * 3.84, dy, 2.4, -sx);
-ledTube("x", 7.6, 0xb05cff, 0, ceilY - 0.14, 6.0);
+// cornice di tubi neon rettangolare (rosa + azzurro), sotto le travi: due livelli
+ledTube("x", 7.6, 0xff3d9a, 0, 5.92, -4.5); ledTube("x", 7.0, 0x35e0ff, 0, 5.70, -4.3);
+for (const sx of [-1, 1]) { ledTube("z", 13.4, 0x35a8ff, sx * 3.84, 5.92, 2.4, -sx); ledTube("z", 13.0, 0xff3d9a, sx * 3.62, 5.70, 2.4, -sx); }
+ledTube("x", 7.4, 0xb05cff, 0, 5.92, 6.0);
+for (const sx of [-1, 1]) for (const [px, pz, py] of [[3.84, -4.5, 5.92], [3.62, -4.3, 5.70]]) B(0.18, 0.18, 0.18, alu, sx * px, py, pz);
 
 // insegna al neon: immagine reale, senza cartellone, appesa con due cavi
 const loader = new THREE.TextureLoader();
@@ -172,18 +174,18 @@ for (const sx of [-1, 1]) {
 // ---------- carte ----------
 function cardTex(rank, suit, red) {
   return tex(128, 180, (g, w, h) => {
-    g.fillStyle = "#f6f1e4"; g.fillRect(0, 0, w, h); g.strokeStyle = "#0003"; g.lineWidth = 3; g.strokeRect(1, 1, w - 2, h - 2);
+    g.fillStyle = "#fbf7ea"; g.beginPath(); g.roundRect(0, 0, w, h, 12); g.fill(); g.strokeStyle = "#0005"; g.lineWidth = 3; g.beginPath(); g.roundRect(1.5, 1.5, w - 3, h - 3, 11); g.stroke();
     g.fillStyle = red ? "#c8182b" : "#14141a"; g.font = "bold 46px Oswald, sans-serif"; g.textAlign = "left"; g.textBaseline = "top";
     g.fillText(rank, 10, 8); g.font = "44px serif"; g.fillText(suit, 12, 54);
-    g.font = "78px serif"; g.textAlign = "center"; g.fillText(suit, w / 2, 86);
+    g.font = "78px serif"; g.textAlign = "center"; g.fillText(suit, w / 2, 86); g.save(); g.translate(w - 10, h - 8); g.rotate(Math.PI); g.font = "bold 36px Oswald, sans-serif"; g.textAlign = "left"; g.fillText(rank, 0, 0); g.restore();
   });
 }
 function card(rank, suit, red, x, y, z, rot, parent) {
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.48), new THREE.MeshLambertMaterial({ map: cardTex(rank, suit, red) }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.48), new THREE.MeshLambertMaterial({ map: cardTex(rank, suit, red), transparent: true, alphaTest: 0.3 }));
   m.rotation.set(-Math.PI / 2, 0, rot || 0); m.position.set(x, y, z); (parent || scene).add(m); return m;
 }
 function chips(x, y, z, colors) {
-  colors.forEach((c, i) => C(0.1, 0.1, 0.035, M(c), x, y + i * 0.037, z, tilt, 18));
+  colors.forEach((c, i) => { C(0.1, 0.1, 0.035, M(c), x, y + i * 0.037, z, tilt, 20); C(0.103, 0.103, 0.012, M(0xf5f0e0), x, y + i * 0.037, z, tilt, 20); });
 }
 
 // ---------- tavolo centrale ovale: blackjack (verde, sinistra) e poker (rosso, destra) ----------
@@ -211,8 +213,11 @@ const tableTex = tex(1536, 666, (g, W, H) => {
   g.fillStyle = "#2a1a14"; g.fillRect(cx - 20, cy - ry * 0.99, 40, ry * 1.98);
   g.fillStyle = "#ff8fc4"; g.fillRect(cx - 2, cy - ry * 0.99, 4, ry * 1.98);
   g.fillStyle = "#fff"; for (const dy of [-0.55, 0.5, 0.62]) for (const dx of (dy === -0.55 ? [0] : [-9, 9])) { g.beginPath(); g.arc(cx + dx, cy + ry * dy, 7, 0, 7); g.fill(); }
-  const neon = (txt, x, y, glow, core) => { g.font = "84px " + FONT; g.textAlign = "center"; g.textBaseline = "middle"; g.shadowColor = glow; g.shadowBlur = 22; g.lineWidth = 9; g.strokeStyle = glow; g.strokeText(txt, x, y); g.shadowBlur = 0; g.fillStyle = core; g.fillText(txt, x, y); };
-  neon("BLACKJACK", cx - W * 0.25, cy + ry * 0.60, "#26e08a", "#d8ffea"); neon("POKER", cx + W * 0.25, cy + ry * 0.60, "#ff4d78", "#ffe0e8");
+  const neon = (txt, x, y, glow, core) => { g.font = "70px " + FONT; g.textAlign = "center"; g.textBaseline = "middle"; g.shadowColor = glow; g.shadowBlur = 22; g.lineWidth = 9; g.strokeStyle = glow; g.strokeText(txt, x, y); g.shadowBlur = 0; g.fillStyle = core; g.fillText(txt, x, y); };
+  g.save(); g.translate(cx - W * 0.25, cy + ry * 0.42); g.rotate(-0.1); neon("POKER", 0, 0, "#26e08a", "#d8ffea"); g.restore();
+  g.save(); g.translate(cx + W * 0.25, cy + ry * 0.42); g.rotate(0.1); neon("BLACKJACK", 0, 0, "#ff4d78", "#ffe0e8"); g.restore();
+  g.strokeStyle = "rgba(255,215,130,.85)"; g.lineWidth = 2.5; ell2(0.865); g.stroke(); ell2(0.52); g.stroke();
+  for (let i = 0; i < 9; i++) { const a = Math.PI * (0.12 + i * 0.095), px = cx + Math.cos(a) * rx * 0.935, py = cy + Math.sin(a) * ry * 0.935; for (const m of [1, -1]) { const qx = cx + (px - cx) * 1, qy = cy + m * (py - cy); const gr2 = g.createRadialGradient(qx - 3, qy - 3, 2, qx, qy, 16); gr2.addColorStop(0, "#fff0b0"); gr2.addColorStop(0.5, "#d9a94a"); gr2.addColorStop(1, "#6b4a15"); g.fillStyle = gr2; g.beginPath(); g.arc(qx, qy, 15, 0, 7); g.fill(); g.fillStyle = "#1a0a0c"; g.beginPath(); g.arc(qx, qy, 9, 0, 7); g.fill(); } }
 });
 const halfMat = (offs) => { const t = tableTex.clone(); t.repeat.set(0.5, 1); t.offset.set(offs, 0); t.needsUpdate = true; texAll.push(t); return new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.5 }); };
 const halfBJ = new THREE.Mesh(new THREE.PlaneGeometry(2.19, 1.9), halfMat(0)); const halfPK = new THREE.Mesh(new THREE.PlaneGeometry(2.19, 1.9), halfMat(0.5));
@@ -220,9 +225,11 @@ halfBJ.position.set(-1.095, 1.012, 0); halfPK.position.set(1.095, 1.012, 0);
 for (const h of [halfBJ, halfPK]) { h.rotation.x = -Math.PI / 2; tilt.add(h); }
 C(0.22, 0.3, 0.8, MS(0x2a1014, 0.3, 0.3), 0, 0.4, 0, table, 32); C(0.7, 0.72, 0.06, MS(0xd9a94a, 0.95, 0.25), 0, 0.03, 0, table, 36);
 const tc = (r, su, rd, x, z, rot) => card(r, su, rd, x, TY + 0.06, z, rot, tilt);
-tc("A", "♥", true, -1.45, -0.15, 0.2); tc("K", "♠", false, -1.15, -0.1, -0.1); tc("9", "♦", true, -1.45, 0.25, 0.05);
-[["Q", "♦", 1], ["J", "♣", 0], ["10", "♥", 1], ["A", "♠", 0], ["7", "♦", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], 0.5 + i * 0.3, -0.1, 0));
-chips(-1.6, 1.03, 0.3, [0xc8182b, 0xc8182b, 0x14141a]); chips(1.5, 1.03, 0.3, [0xffd34d, 0xffd34d, 0x25e1d3]);
+[["A", "♥", 1], ["K", "♠", 0]].forEach((c, i) => tc(c[0], c[1], !!c[2], -1.35 + i * 0.22, -0.2 + i * 0.02, 0.18 - i * 0.3));
+[["Q", "♦", 1], ["J", "♣", 0], ["10", "♥", 1], ["A", "♠", 0], ["7", "♦", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], 0.75 + i * 0.2, -0.22 + Math.abs(i - 2) * 0.03, (i - 2) * 0.16));
+[["9", "♦", 1], ["6", "♣", 0]].forEach((c, i) => tc(c[0], c[1], !!c[2], 1.25 + i * 0.2, 0.28, 0.1 - i * 0.2));
+chips(-1.6, 1.03, 0.35, [0xc8182b, 0xc8182b, 0x14141a, 0x2b6fd6]); chips(-1.35, 1.03, 0.4, [0x14141a, 0x14141a, 0xffd34d]); chips(-0.8, 1.03, 0.38, [0x2b6fd6, 0xc8182b]);
+chips(0.75, 1.03, 0.4, [0xffd34d, 0xffd34d, 0x25e1d3, 0x14141a]); chips(1.0, 1.03, 0.35, [0xc8182b, 0x25e1d3, 0x25e1d3]); chips(1.7, 1.03, 0.2, [0x14141a, 0x2b6fd6, 0xffd34d]);
 
 // ---------- slot machine futuristica (angolo in fondo a destra) ----------
 const slot = new THREE.Group(); slot.position.set(3.0, 0, -3.3); slot.scale.setScalar(1.1); scene.add(slot);
@@ -240,7 +247,7 @@ for (const [sx, col] of [[-0.51, PINK], [0.51, CYAN]]) {
   const t3 = C(0.028, 0.028, 0.98, NEONM(PINK), 0, 2.67, -0.12, slot, 10); t3.rotation.z = Math.PI / 2;
 }
 const topTex = tex(512, 160, (g, w, h) => { g.fillStyle = "#08060c"; g.fillRect(0, 0, w, h); g.textAlign = "center"; g.textBaseline = "middle";
-  g.font = "84px " + FONT; g.shadowColor = "#ff5fd0"; g.shadowBlur = 20; g.lineWidth = 6; g.strokeStyle = "#ff5fd0"; g.strokeText("SLOT", w / 2, 52); g.shadowBlur = 0; g.fillStyle = "#ffe9f6"; g.fillText("SLOT", w / 2, 52);
+  g.font = "70px " + FONT; g.shadowColor = "#ff5fd0"; g.shadowBlur = 20; g.lineWidth = 6; g.strokeStyle = "#ff5fd0"; g.strokeText("SLOT", w / 2, 52); g.shadowBlur = 0; g.fillStyle = "#ffe9f6"; g.fillText("SLOT", w / 2, 52);
   g.font = "70px " + FONT; g.shadowColor = "#6fe8ff"; g.shadowBlur = 18; g.lineWidth = 5; g.strokeStyle = "#6fe8ff"; g.strokeText("777", w / 2, 122); g.shadowBlur = 0; g.fillStyle = "#e6fbff"; g.fillText("777", w / 2, 122); });
 const topLabel = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.25), new THREE.MeshBasicMaterial({ map: topTex })); topLabel.position.set(0, 2.32, 0.3); slot.add(topLabel);
 // fila di icone colorate
@@ -376,15 +383,16 @@ const slab = MS(0x1b1620, 0.35, 0.3, { envMapIntensity: 1.0 }), slabE = MS(0x2a2
 C(0.12, 0.18, 0.74, slab, 0, 0.37, 0, wtab, 28); C(0.3, 0.34, 0.06, slab, 0, 0.03, 0, wtab, 32);
 B(1.3, 0.06, 1.0, slab, 0, 0.78, 0, wtab); B(1.32, 0.012, 1.02, slabE, 0, 0.812, 0, wtab);
 const nbTex = tex(300, 400, (g, w, h) => {
-  g.fillStyle = "#f3ecd8"; g.fillRect(0, 0, w, h); g.fillStyle = "#14141a"; g.font = "bold 30px Oswald, sans-serif"; g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillText("WORDLE", w / 2, 40);
-  const cols = ["#4a5a66", "#c9a23a", "#4a5a66", "#4a5a66", "#2f9e5b", "#c9a23a", "#2f9e5b", "#4a5a66", "#2f9e5b", "#2f9e5b", "#2f9e5b", "#2f9e5b", "#d8dadc", "#d8dadc", "#d8dadc", "#d8dadc", "#d8dadc", "#d8dadc", "#d8dadc", "#d8dadc"];
-  cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(48 + (i % 4) * 54, 56 + Math.floor(i / 4) * 54, 48, 48); });
-  const kb = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]; g.font = "11px Oswald, sans-serif"; g.textBaseline = "middle";
-  kb.forEach((row, ri) => { const x0 = (w - row.length * 24) / 2; for (let k = 0; k < row.length; k++) { g.fillStyle = "#c9cdd2"; g.fillRect(x0 + k * 24, 336 + ri * 20, 21, 17); g.fillStyle = "#222"; g.textAlign = "center"; g.fillText(row[k], x0 + k * 24 + 10.5, 345 + ri * 20); } });
+  g.fillStyle = "#fbfbf8"; g.fillRect(0, 0, w, h);
+  g.fillStyle = "#14141a"; g.font = "bold 26px Oswald, sans-serif"; g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillText("WORDLE", w / 2, 58);
+  const C_ = { g: "#5aa95a", y: "#c9b458", x: "#787c7e" }, rows = ["xyxxg", "ygxgg", "ggggg", "", "", ""];
+  rows.forEach((r, ri) => { for (let k = 0; k < 5; k++) { const x = 40 + k * 44, y = 80 + ri * 44; if (r) { g.fillStyle = C_[r[k]]; g.fillRect(x, y, 40, 40); } else { g.strokeStyle = "#cfcfcf"; g.lineWidth = 2; g.strokeRect(x + 1, y + 1, 38, 38); } } });
+  g.fillStyle = "#e4e4e0"; g.fillRect(0, 0, w, 18);
 });
 const nb = new THREE.Group(); nb.position.set(0, 0.845, 0); nb.rotation.y = 0.45; wtab.add(nb);
-B(0.64, 0.04, 0.84, MS(0x23407e, 0.1, 0.5), 0, 0, 0, nb); B(0.61, 0.02, 0.81, 0xf3ecd8, 0, 0.025, 0, nb);
+B(0.64, 0.04, 0.84, MS(0xdadde2, 0.1, 0.5), 0, 0, 0, nb); B(0.61, 0.02, 0.81, 0xfbfbf8, 0, 0.025, 0, nb);
 const nbp = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.8), new THREE.MeshStandardMaterial({ map: nbTex, roughness: 0.7, metalness: 0 })); nbp.rotation.x = -Math.PI / 2; nbp.position.y = 0.037; nb.add(nbp);
+for (let i = 0; i < 11; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.007, 6, 14), MS(0xc9ccd2, 0.95, 0.25)); r.position.set(-0.25 + i * 0.05, 0.05, -0.39); r.rotation.y = Math.PI / 2; r.rotation.x = 0.3; nb.add(r); }
 plate('WORDLE', 0.95, 0.16, '#6dff8a', '#e8ffe8', 0, 0.72, 0.58, wtab);
 
 
@@ -394,15 +402,15 @@ function hit(game, label, w, h, d, x, y, z) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
   m.position.set(x, y, z); m.userData.game = game; m.userData.label = label; scene.add(m); hits.push(m);
 }
-hit("blackjack", "Blackjack", 2.1, 0.5, 1.8, -1.1, 1.05, -0.3);
-hit("poker", "Poker", 2.1, 0.5, 1.8, 1.1, 1.05, -0.3);
+hit("poker", "Poker", 2.1, 0.5, 1.8, -1.1, 1.05, -0.3);
+hit("blackjack", "Blackjack", 2.1, 0.5, 1.8, 1.1, 1.05, -0.3);
 hit("slot", "Slot 777", 1.3, 2.8, 1.1, 3.0, 1.3, -3.3);
 hit("mastermind", "Mastermind", 1.3, 1.9, 1.0, -3.05, 0.95, -3.5);
 hit("roulette", "Roulette", 1.5, 0.6, 1.5, -1.2, 0.95, 2.0);
 hit("scratch", "Gratta e Vinci", 1.2, 2.8, 0.8, 0, 1.4, -4.1);
 hit("aviator", "Aviator", 1.5, 1.1, 0.5, -2.95, 2.4, -4.3);
 hit("wordle", "Wordle", 1.6, 0.5, 1.3, 1.3, 0.95, 2.0);
-const TARGETS = { blackjack: halfBJ, poker: halfPK, slot, mastermind: safe, roulette: roul, scratch: kiosk, aviator: ptab, wordle: wtab };
+const TARGETS = { poker: halfBJ, blackjack: halfPK, slot, mastermind: safe, roulette: roul, scratch: kiosk, aviator: ptab, wordle: wtab };
 let glow = null;
 function endGlow() { if (!glow) return; glow.list.forEach((e) => { e.o.material = e.orig; e.mat.dispose(); }); glow = null; }
 let aviT = 0;
