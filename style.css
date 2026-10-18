@@ -320,3 +320,30 @@ body.has3d #hub3d{visibility:visible}
 /* roulette */
 .rl-wrap{position:relative}
 .rl-wrap canvas{display:block}
+
+/* intestazione con ingranaggio */
+.toprow{display:flex;gap:10px;align-items:stretch}
+.toprow .player{flex:1;min-width:0}
+.gearbtn{pointer-events:auto;flex:0 0 58px;font-size:26px;line-height:1;cursor:pointer;color:inherit;background:var(--panel);border:1px solid rgba(232,195,106,.35);border-radius:16px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 4px 18px rgba(0,0,0,.45);display:grid;place-items:center}
+.gearbtn:active{filter:brightness(1.3)}
+.set-ov{position:absolute;inset:0;z-index:9;background:rgba(4,2,8,.82);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)}
+.set-card{width:min(380px,100%);max-height:92%;overflow-y:auto;background:linear-gradient(180deg,#160a22,#0b0512);border:1px solid rgba(255,61,176,.55);border-radius:18px;padding:16px 16px 14px;
+  box-shadow:0 0 28px rgba(255,61,176,.3)}
+.set-card h2{font-family:"Bungee","Oswald",sans-serif;font-weight:400;font-size:16px;letter-spacing:2px;text-align:center;color:#ffd6ef;text-shadow:0 0 10px rgba(255,61,176,.8);margin-bottom:6px}
+.set-sec{margin:12px 0 4px;font-size:13px;letter-spacing:1.5px;color:#9fe8f2}
+.set-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.set-lab{flex:1;font-size:15px;color:#f1e6ff}
+.set-seg{display:flex;gap:4px}
+.set-seg button,.set-sw{font:inherit;font-size:13px;font-weight:600;padding:6px 10px;border-radius:10px;color:#d7fbff;background:rgba(53,230,255,.08);border:1px solid rgba(53,230,255,.4);cursor:pointer}
+.set-seg button.on,.set-sw.on{color:#fff;background:linear-gradient(180deg,#ff6fc8,#c71d78);border-color:#ff3db0;box-shadow:0 0 10px rgba(255,61,176,.5)}
+.set-sw{min-width:52px}
+.set-rng{width:120px;accent-color:#ff3db0}
+.set-val{width:38px;text-align:right;font-size:13px;color:#9fe8f2}
+.set-ok{display:block;width:100%;margin-top:14px;font:inherit;font-size:16px;font-weight:600;padding:11px;border:0;border-radius:12px;color:#fff;background:linear-gradient(180deg,#ff6fc8,#c71d78);cursor:pointer}
+/* invio del Wordle accanto al messaggio */
+.gm-msgrow{position:relative}
+.msg-enter{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:inherit;font-size:14px;font-weight:600;letter-spacing:.5px;padding:7px 14px;border:0;border-radius:10px;color:#fff;
+  background:linear-gradient(180deg,#ff6fc8,#c71d78);box-shadow:0 0 12px rgba(255,61,176,.5);cursor:pointer}
+.msg-enter:disabled{opacity:.45;box-shadow:none}
+.gm-msgrow.has-enter .gm-msg{padding-right:96px;padding-left:96px}

@@ -31,6 +31,7 @@
   function haptic(kind) {
     try {
       if (!tg || !tg.HapticFeedback) return;
+      if (window.ArcadeSettings && window.ArcadeSettings.vib === false) return;
       if (kind === "ok") tg.HapticFeedback.notificationOccurred("success");
       else if (kind === "bad") tg.HapticFeedback.notificationOccurred("error");
       else if (kind === "med") tg.HapticFeedback.impactOccurred("medium");

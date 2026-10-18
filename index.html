@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Rye&family=Bungee&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -183,13 +183,16 @@
   <!-- ===== INTESTAZIONE (HTML sopra la scena) ===== -->
   <header id="top">
     <div class="brand">SDROGOBOT <span>ARCADE HUB</span></div>
-    <div class="player" id="player">
+    <div class="toprow">
+        <div class="player" id="player">
       <div class="avatar" id="avatar">?</div>
       <div class="who">
         <div class="name" id="pname">Caricamento…</div>
         <div class="detail" id="pdetail" hidden></div>
         <div class="bal" id="pbal"><span class="coin">💳</span> <b id="pcoins">—</b> <i>$SDG</i></div>
       </div>
+    </div>
+    <button id="gear" class="gearbtn" type="button" aria-label="Impostazioni">⚙️</button>
     </div>
   </header>
 
@@ -267,7 +270,7 @@
       <div class="avi-bal">💳 <b id="g4Bal">—</b></div>
     </div>
     <div class="g4-stage" id="g4Stage"></div>
-    <div class="gm-msg" id="g4Msg"></div>
+    <div class="gm-msgrow"><div class="gm-msg" id="g4Msg"></div><button id="g4Enter" type="button" class="msg-enter" hidden>INVIO</button></div>
     <div class="avi-panel">
       <div class="avi-bets" id="g4Bets"></div>
       <div class="g4-pad" id="g4Pad"></div>
@@ -289,13 +292,15 @@
   </div>
 </main>
 
-<script src="config.js?v=7"></script>
-<script src="app.js?v=7"></script>
-<script src="aviator.js?v=7"></script>
-<script src="games3.js?v=7"></script>
-<script src="games4.js?v=7"></script>
-<script src="social.js?v=7"></script>
-<script type="module" src="hub3d.js?v=7"></script>
+<script src="config.js?v=8"></script>
+<script src="app.js?v=8"></script>
+<script src="aviator.js?v=8"></script>
+<script src="games3.js?v=8"></script>
+<script src="games4.js?v=8"></script>
+<script src="social.js?v=8"></script>
+<script src="audio.js?v=8"></script>
+<script src="settings.js?v=8"></script>
+<script type="module" src="hub3d.js?v=8"></script>
 <script>
 // se il 3D non parte entro 6 secondi (telefono vecchio, WebGL assente) si mostra la sala 2D
 setTimeout(function () { if (!document.body.classList.contains("has3d")) { var s = document.getElementById("scene"); if (s) s.classList.add("show"); } }, 6000);

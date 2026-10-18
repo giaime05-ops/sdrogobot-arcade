@@ -16,7 +16,8 @@ const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 60);
 const TARGET = new THREE.Vector3(0, 2.3, 0);
 const QUAL = [{ n: "alta", pr: 2, sh: true }, { n: "media", pr: 1.5, sh: true }, { n: "bassa", pr: 1, sh: false }];
 let qi = 0, animOn = true, yaw = 0, yawTarget = 0;
-try { const sv = parseInt(localStorage.getItem("arc3dq"), 10); if (sv >= 0 && sv < 3) qi = sv; } catch (e) {}
+let autoQ = true;
+try { const st = JSON.parse(localStorage.getItem("arc_settings") || "{}"); if (st.q !== undefined && st.q !== "auto") { qi = Math.max(0, Math.min(2, +st.q)); autoQ = false; } else { const sv = parseInt(localStorage.getItem("arc3dq"), 10); if (sv >= 0 && sv < 3) qi = sv; } if (st.anim === false) animOn = false; } catch (e) {}
 
 // ---------- utilità ----------
 const matCache = {};
@@ -505,9 +506,10 @@ document.addEventListener("visibilitychange", checkVisible);
 checkVisible();
 
 // ---------- ciclo di disegno + qualità automatica ----------
-let last = performance.now(), time = 0, ready = false;
+let last = performance.now(), time = 0, ready = false, skipN = 0;
 let accT = 0, accF = 0, lowStreak = 0, dead = false;
 function degrade() {
+  if (!autoQ) return;
   if (qi < QUAL.length - 1) { qi++; try { localStorage.setItem("arc3dq", String(qi)); } catch (e) {} resize(); lowStreak = 0; return; }
   fallback2D();
 }
@@ -521,6 +523,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   if (!hubVisible) { accT = 0; accF = 0; return; }
+  if (!animOn && !glow && aviT <= 0) { skipN = (skipN + 1) % 6; if (skipN) return; }
   time += dt;
   accT += dt; accF++;
   if (accT >= 1.5) {                                   // ogni 1,5 s: se il telefono fatica, abbassa la qualità
@@ -546,4 +549,9 @@ function frame(now) {
   try { await Promise.race([Promise.all([document.fonts.load("100px Bungee"), document.fonts.load("100px Rye"), document.fonts.load("20px Oswald")]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) {}
   for (const t of texAll) { const c = t.image; if (t.userData.fn) t.userData.fn(c.getContext("2d"), c.width, c.height); t.needsUpdate = true; }
 })();
+window.Arcade3D = Object.assign(window.Arcade3D || {}, {
+  setQuality(v) { if (v === "auto") { autoQ = true; } else { autoQ = false; qi = Math.max(0, Math.min(2, +v)); } resize(); },
+  setAnim(b) { animOn = !!b; }
+});
 requestAnimationFrame(frame);
+

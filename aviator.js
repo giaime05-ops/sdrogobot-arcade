@@ -83,7 +83,7 @@
     S.gid = v.gid;
     S.t0 = now() - (v.elapsed || 0) * 1000 - (rtt || 0) / 2 + LAG;
     S.phase = "flying"; S.res = null; S.fx = [];
-    msg("", ""); notes([]);
+    msg("", ""); notes([]); if (window.ArcadeAudio) window.ArcadeAudio.sfx("whoosh");
     elMult.className = "avi-mult";
     renderBets(); renderGo();
     startPolling();
@@ -125,14 +125,14 @@
     if (res.result === "cashout") {
       elMult.className = "avi-mult win";
       elMult.textContent = fmt2(res.mult) + "x";
-      msg("💰 Incassato: +" + A.fmt(res.net) + " $SDG  (sarebbe volato via a " + fmt2(res.crash) + "x)", "win");
-      A.haptic("ok");
+      msg("💰 Incassato: +" + A.fmt(res.net) + " $SDG  (sarebbe esploso a " + fmt2(res.crash) + "x)", "win");
+      A.haptic("ok"); if (window.ArcadeAudio) window.ArcadeAudio.sfx("bigwin");
       spawnConfetti();
     } else {
       elMult.className = "avi-mult lose";
       elMult.textContent = fmt2(res.crash) + "x";
-      msg("💥 L'aereo è volato via a " + fmt2(res.crash) + "x — persi " + A.fmt(res.bet) + " $SDG" + (res.late ? " (clic troppo tardi)" : ""), "lose");
-      A.haptic("bad");
+      msg("💥 L'aereo è esploso a " + fmt2(res.crash) + "x — persi " + A.fmt(res.bet) + " $SDG" + (res.late ? " (clic troppo tardi)" : ""), "lose");
+      A.haptic("bad"); if (window.ArcadeAudio) window.ArcadeAudio.sfx("boom");
       spawnExplosion();
     }
     notes(res.notes);
@@ -261,19 +261,21 @@
     // oscillando; è il "righello" dei moltiplicatori a scendere (a ×5 l'1x esce, a ×10 escono 2x, 3x, 4x...).
     var mc = (p === "flying" || p === "cashing") ? Math.exp(S.rate * t) : Math.max(1, m);
     var lnm = Math.log(mc);
-    var pps = gw * 0.78 / 8;
-    var x0 = padL + Math.min(t, 8) * pps;
-    function X(tv) { return x0 - (t - tv) * pps; }
+    // Asse orizzontale: l'aereo avanza e rallenta dolcemente verso ~74% dello schermo, poi è il mondo a scorrere (nessuno scatto).
+    // Asse verticale (scala logaritmica): la quota sale e si stabilizza in modo morbido; sulla traiettoria c'è una leggera ondulazione,
+    // calcolata sul tempo, così l'aereo resta sempre sopra la sua scia.
+    var Ax = gw * 0.74, wsp = Ax / 8;
+    function X(tv) { return padL + Ax * (1 - Math.exp(-wsp * t / Ax)) - (t - tv) * wsp; }
     var K = gh * 0.62 / Math.log(5);
-    var yBottom = padT + gh, yCruise = padT + gh * 0.36;
-    var yPlane = Math.max(yCruise, yBottom - K * lnm);
-    function Y(mv) { return yPlane + K * (lnm - Math.log(mv)); }
-    var cb = Math.max(0, Math.min(1, (K * lnm - gh * 0.55) / (gh * 0.12)));     // 0 = in salita, 1 = a quota di crociera
+    var yb = padT + gh - 8, yc = padT + gh * 0.34, span = yb - yc;
+    var yBase = yc + span * Math.exp(-K * lnm / span);
+    function wob(tv) { return 4.5 * Math.sin(tv * 1.5) * (1 - Math.exp(-tv / 2.5)) + 1.6 * Math.sin(tv * 3.3 + 1) * (1 - Math.exp(-tv / 3)); }
+    function Y(mv, tv) { return yBase + K * (lnm - Math.log(mv)) + wob(tv); }
 
     var showCurve = p === "flying" || p === "cashing" || ended;
     if (showCurve && t > 0) {
       var pts = [], n = 60, tS = Math.max(0, t - 10);
-      for (var j = 0; j <= n; j++) { var tj = tS + (t - tS) * j / n; pts.push([X(tj), Y(Math.max(1, Math.exp(S.rate * tj)))]); }
+      for (var j = 0; j <= n; j++) { var tj = tS + (t - tS) * j / n; pts.push([X(tj), Y(Math.max(1, Math.exp(S.rate * tj)), tj)]); }
       ctx.save(); ctx.beginPath(); ctx.rect(padL - 2, padT - 12, W, gh + padB + 12); ctx.clip();
       var ex = pts[n][0], ey = pts[n][1];
       // scia: nastro che si assottiglia e sfuma verso il passato, rosa -> azzurro, con bagliore
@@ -302,11 +304,10 @@
       var ang = Math.atan2(ey - pa[1], ex - pa[0]);
       var since = ended ? (now() - S.endAt) / 1000 : 0;
       if (!ended) {
-        var bob = Math.sin(tt * 2.6) * 5 * cb;               // oscillazione a quota di crociera
-        plane(ex, ey + bob, ang * (0.9 - 0.6 * cb) + Math.sin(tt * 2.1) * 0.06 * cb, 1, 1);
+        plane(ex, ey, ang * 0.9, 1.3, 1);
       } else if (S.res && S.res.result === "cashout") {
         // l'aereo prosegue e esce dallo schermo
-        plane(ex + since * 260, ey - since * 140 * (1 + since), ang * 0.9, 1, Math.max(0, 1 - since * 1.2));
+        plane(ex + since * 260, ey - since * 140 * (1 + since), ang * 0.9, 1.3, Math.max(0, 1 - since * 1.2));
       } else {
         // esplosione al punto di crash
         S.fx.forEach(function (f) {
@@ -328,7 +329,7 @@
         ctx.globalAlpha = 1;
       }
     } else if (p === "idle" || p === "starting") {
-      plane(padL + 30, padT + gh - 14 + Math.sin(tt * 2) * 3, -0.15, 1, 0.9);   // aereo fermo sulla pista
+      plane(padL + 30, padT + gh - 14 + Math.sin(tt * 2) * 3, -0.15, 1.3, 0.9);   // aereo fermo sulla pista
     }
 
     // testo moltiplicatore

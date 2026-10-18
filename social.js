@@ -244,4 +244,28 @@
   new MutationObserver(syncCoins).observe($("pcoins"), { childList: true, characterData: true, subtree: true });
   window.ArcadeTabs = { show: show, refreshBadge: refreshBadge, setBadge: setBadge };
   setTimeout(refreshBadge, 1200);
+
+  // ---------- tasto Indietro di Telegram (anche il tasto/gesto "indietro" del telefono) ----------
+  (function () {
+    var tg = A.tg; if (!tg || !tg.BackButton) return;
+    var GB = { avi: "aviBack", gm: "gmBack", g4: "g4Back" };
+    function openGame() { var r = null; Object.keys(GB).forEach(function (id) { var n = $(id); if (n && !n.hidden) r = id; }); return r; }
+    function settingsOpen() { return !!(window.ArcadeSettingsUI && window.ArcadeSettingsUI.isOpen()); }
+    function onBack() {
+      if (settingsOpen()) { window.ArcadeSettingsUI.close(); return; }
+      var g = openGame();
+      if (g) { var b = $(GB[g]); if (b && b.disabled) A.toast("Termina prima la partita"); else if (b) b.click(); return; }
+      if (cur !== "hub") show("hub", true);
+    }
+    function update() {
+      try { if (openGame() || cur !== "hub" || settingsOpen()) tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {}
+    }
+    try { tg.BackButton.onClick(onBack); } catch (e) { return; }
+    var mo = new MutationObserver(update);
+    Object.keys(GB).forEach(function (id) { var n = $(id); if (n) mo.observe(n, { attributes: true, attributeFilter: ["hidden"] }); });
+    mo.observe(document.body, { attributes: true, attributeFilter: ["data-tab"] });
+    var st = $("settings"); if (st) mo.observe(st, { attributes: true, attributeFilter: ["hidden"] });
+    setTimeout(function () { var st2 = $("settings"); if (st2) mo.observe(st2, { attributes: true, attributeFilter: ["hidden"] }); update(); }, 600);
+    update();
+  })();
 })();

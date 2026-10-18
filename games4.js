@@ -9,7 +9,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var root = $("g4"), stage = $("g4Stage"), elTitle = $("g4Title"), elBal = $("g4Bal"), elBack = $("g4Back"),
-      elMsg = $("g4Msg"), elBets = $("g4Bets"), elPad = $("g4Pad"), elActs = $("g4Acts"), elNotes = $("g4Notes");
+      elMsg = $("g4Msg"), elEnter = $("g4Enter"), elBets = $("g4Bets"), elPad = $("g4Pad"), elActs = $("g4Acts"), elNotes = $("g4Notes");
 
   var S = { game: null, busy: false, balance: 0, bet: 10 };
   var timers = [];
@@ -212,11 +212,12 @@
       elPad.innerHTML = "";
       var active = wd.st && wd.st.active && !wd.res;
       elPad.hidden = !active;
+      elEnter.hidden = !active; elEnter.parentNode.classList.toggle("has-enter", !!active);
+      elEnter.disabled = !!S.busy; elEnter.onclick = function () { wd.submit(); };
       if (!active) return;
       var kb = el("div", "kb");
       KB.forEach(function (row, ri) {
         var r = el("div", "kb-row");
-        if (ri === 2) { var en = el("button", "key wide", "INVIO"); en.type = "button"; en.addEventListener("click", wd.submit); en.disabled = S.busy; r.appendChild(en); }
         row.split("").forEach(function (ch) {
           var k = el("button", "key " + (wd.keyst[ch] || ""), ch); k.type = "button"; k.disabled = S.busy;
           k.addEventListener("click", function () { if (!S.busy && wd.cur.length < 5) { wd.cur += ch; A.haptic("light"); wd.paintRows(); } });
@@ -455,6 +456,7 @@
     S.game = game; S.busy = false;
     root.hidden = false; elTitle.textContent = game.title;
     msg("", ""); notes([]); elBets.hidden = true; elPad.innerHTML = ""; elActs.innerHTML = "";
+    elEnter.hidden = true; elEnter.parentNode.classList.remove("has-enter");
     game.build();
     A.api("/api/me").then(function (j) { var u = j.user || {}; if (typeof u.balance === "number") { setBalance(u.balance); game.render(); } }).catch(function () {});
     game.render();
@@ -464,7 +466,7 @@
     if (S.busy) { A.toast("Aspetta un attimo…"); return; }
     var g = S.game;
     var live = g && ((g.st && g.st.active && !g.res));
-    clearTimers(); S.game = null; root.hidden = true; stage.innerHTML = ""; elPad.innerHTML = ""; elActs.innerHTML = "";
+    clearTimers(); S.game = null; root.hidden = true; elEnter.hidden = true; elEnter.parentNode.classList.remove("has-enter"); stage.innerHTML = ""; elPad.innerHTML = ""; elActs.innerHTML = "";
     if (live) A.toast("Partita salvata: hai 5 minuti per riprenderla");
     A.refreshMe();
   }
