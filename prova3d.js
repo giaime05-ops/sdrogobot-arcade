@@ -60,11 +60,11 @@ function MS(color, metal, rough, extra) {
 }
 const NEONM = (c) => new THREE.MeshBasicMaterial({ color: c });
 function plate(text, w, h, glow, core, x, y, z, parent, rotX) {
-  const t = tex(512, Math.round(512 * h / w), (g, W, H) => {
+  const t = tex(1024, Math.round(1024 * h / w), (g, W, H) => {
     g.clearRect(0, 0, W, H); g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
     let size = H * 0.7; g.font = size + "px " + FONT; while (g.measureText(text).width > W * 0.92 && size > 10) { size -= 4; g.font = size + "px " + FONT; }
-    g.shadowColor = glow; g.shadowBlur = 24; g.lineWidth = size * 0.12; g.strokeStyle = glow; g.strokeText(text, W / 2, H / 2 + size * 0.04);
-    g.shadowBlur = 8; g.lineWidth = size * 0.06; g.strokeStyle = glow; g.strokeText(text, W / 2, H / 2 + size * 0.04);
+    g.shadowColor = glow; g.shadowBlur = 40; g.lineWidth = size * 0.12; g.strokeStyle = glow; g.strokeText(text, W / 2, H / 2 + size * 0.04);
+    g.shadowBlur = 14; g.lineWidth = size * 0.06; g.strokeStyle = glow; g.strokeText(text, W / 2, H / 2 + size * 0.04);
     g.shadowBlur = 0; g.fillStyle = core; g.fillText(text, W / 2, H / 2 + size * 0.04);
   });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
@@ -113,25 +113,40 @@ for (const s of [-1, 1]) {
 // soffitto a cassettoni con pannelli illuminati e doppi neon
 const ceilY = 6.4;
 const ceilTex = tex(896, 1024, (g, W, H) => {
-  g.fillStyle = "#2a1210"; g.fillRect(0, 0, W, H);
-  const cols = 7, rows = 8, bw = 26;
+  g.fillStyle = "#1e0d0c"; g.fillRect(0, 0, W, H);
+  const cols = 7, rows = 8, bw = 30;
   for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
     const x = i * W / cols + bw / 2, y = j * H / rows + bw / 2, w = W / cols - bw, h = H / rows - bw;
-    const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, "#d83a9a"); gr.addColorStop(1, "#6a1a5e"); g.fillStyle = gr; g.fillRect(x, y, w, h);
-    g.strokeStyle = "rgba(0,0,0,.45)"; g.lineWidth = 5; g.strokeRect(x, y, w, h);
+    const gr = g.createRadialGradient(x + w / 2, y + h / 2, 4, x + w / 2, y + h / 2, Math.max(w, h) * 0.7); gr.addColorStop(0, "#ff5cbb"); gr.addColorStop(0.55, "#b02a86"); gr.addColorStop(1, "#4a0f44"); g.fillStyle = gr; g.fillRect(x, y, w, h);
+    g.strokeStyle = "rgba(0,0,0,.65)"; g.lineWidth = 8; g.strokeRect(x, y, w, h);
+    g.strokeStyle = "rgba(255,140,210,.35)"; g.lineWidth = 3; g.strokeRect(x + 6, y + 6, w - 12, h - 12);
   }
-  for (let i = 0; i <= cols; i++) { g.fillStyle = "#4a2418"; g.fillRect(i * W / cols - bw / 2, 0, bw, H); g.fillStyle = "rgba(255,160,120,.18)"; g.fillRect(i * W / cols - bw / 2, 0, 3, H); }
-  for (let j = 0; j <= rows; j++) { g.fillStyle = "#4a2418"; g.fillRect(0, j * H / rows - bw / 2, W, bw); g.fillStyle = "rgba(255,160,120,.18)"; g.fillRect(0, j * H / rows - bw / 2, W, 3); }
 });
 const ceil = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), new THREE.MeshBasicMaterial({ map: ceilTex, color: 0xcfcfcf })); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, ceilY, 3.4); scene.add(ceil);
-const beam = M(0x4a2a1a);
-for (let i = -3; i <= 3; i++) B(0.2, 0.18, 15, beam, i * 2.0, ceilY - 0.09, 3.0);
-for (let k = 0; k < 7; k++) B(14, 0.18, 0.2, beam, 0, ceilY - 0.09, -4.3 + k * 1.9);
-B(14, 1.5, 0.12, 0x1c0e08, 0, 0.75, -4.52); B(14, 0.12, 0.2, WOOD, 0, 1.52, -4.5);
-const PNK = NEONM(0xff4aa8), BLU = NEONM(0x4ab8ff);
-for (const dy of [6.22, 6.0]) B(8.9, 0.1, 0.1, PNK, 0, dy, -4.5);
-for (const sx of [-1, 1]) for (const dy of [6.22, 6.0]) B(0.1, 0.1, 14, BLU, sx * 3.85, dy, 2.4);
-B(8.7, 0.08, 0.08, PNK, 0, ceilY - 0.14, 6.0);
+const beam = new THREE.MeshStandardMaterial({ map: woodTex(256, 128, "#4a2418", 3), roughness: 0.4, metalness: 0.1, envMapIntensity: 0.9 });
+const beamTrim = MS(0xb7863f, 0.9, 0.3);
+for (let i = -3; i <= 3; i++) { B(0.3, 0.3, 15, beam, i * 2.0, ceilY - 0.15, 3.0); B(0.34, 0.03, 15, beamTrim, i * 2.0, ceilY - 0.31, 3.0); }
+for (let k = 0; k < 7; k++) { B(14, 0.3, 0.3, beam, 0, ceilY - 0.15, -4.3 + k * 1.9); B(14, 0.03, 0.34, beamTrim, 0, ceilY - 0.31, -4.3 + k * 1.9); }
+// LED: canalina in alluminio + tubo diffusore luminoso + alone
+const glowTex = tex(16, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.5, "rgba(255,255,255,1)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+const alu = MS(0x3a3d44, 0.9, 0.35);
+function ledTube(axis, len, col, x, y, z, faceDir) {
+  const g = new THREE.Group(); g.position.set(x, y, z); scene.add(g);
+  const along = (m) => { if (axis === "z") m.rotation.y = Math.PI / 2; return m; };
+  g.add(along(new THREE.Mesh(new THREE.BoxGeometry(len, 0.11, 0.11), alu)));
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, len - 0.1, 14), new THREE.MeshBasicMaterial({ color: new THREE.Color(col).lerp(new THREE.Color(0xffffff), 0.45) }));
+  tube.rotation.z = Math.PI / 2; if (axis === "z") tube.rotation.set(Math.PI / 2, 0, 0); tube.position.set(0, 0, 0.0); 
+  const off = axis === "x" ? [0, 0, 0.055] : [faceDir * 0.055, 0, 0]; tube.position.set(off[0], off[1], off[2]); g.add(tube);
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(len + 0.4, 1.0), new THREE.MeshBasicMaterial({ map: glowTex, color: col, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+  if (axis === "x") { halo.position.set(0, 0, 0.07); } else { halo.rotation.y = faceDir * Math.PI / 2; halo.position.set(faceDir * 0.07, 0, 0); halo.rotation.z = 0; }
+  g.add(halo);
+  const n = Math.max(2, Math.round(len / 1.3));
+  for (let i = 0; i <= n; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(axis === "x" ? 0.05 : 0.15, 0.15, axis === "x" ? 0.15 : 0.05), alu); const t = -len / 2 + 0.05 + (len - 0.1) * i / n; c.position.set(axis === "x" ? t : 0, 0, axis === "x" ? 0 : t); g.add(c); }
+  return g;
+}
+for (const dy of [6.22, 5.98]) ledTube("x", 8.0, 0xff3d9a, 0, dy, -4.5);
+for (const sx of [-1, 1]) for (const dy of [6.22, 5.98]) ledTube("z", 13.4, 0x35a8ff, sx * 3.84, dy, 2.4, -sx);
+ledTube("x", 7.6, 0xb05cff, 0, ceilY - 0.14, 6.0);
 
 // insegna al neon: immagine reale, senza cartellone, appesa con due cavi
 const loader = new THREE.TextureLoader();
@@ -267,71 +282,91 @@ const lever = new THREE.Group(); lever.position.set(-0.58, 1.15, 0.1); slot.add(
 C(0.022, 0.022, 0.55, chrome, -0.12, 0.25, 0, lever, 10).rotation.z = 0.38;
 { const bl = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 14), chrome); bl.position.set(-0.22, 0.52, 0); lever.add(bl); }
 
-// ---------- cassaforte / Mastermind (angolo in fondo a sinistra) ----------
+// ---------- Mastermind: cassaforte futuristica (angolo in fondo a sinistra) ----------
 const safe = new THREE.Group(); safe.position.set(-3.05, 0, -3.5); safe.scale.setScalar(1.1); scene.add(safe);
-const burn = MS(0x2a2d33, 0.85, 0.3), door = MS(0x3b3f47, 0.85, 0.25);
-B(1.15, 1.35, 0.9, burn, 0, 0.675, 0, safe); B(0.98, 1.18, 0.06, door, 0, 0.7, 0.47, safe);
-for (const [w, h, x, y] of [[1.04, 0.04, 0, 1.3], [1.04, 0.04, 0, 0.1], [0.04, 1.24, -0.5, 0.7], [0.04, 1.24, 0.5, 0.7]]) B(w, h, 0.05, chrome, x, y, 0.5, safe);
-C(0.24, 0.24, 0.05, chrome, 0, 0.85, 0.52, safe, 8).rotation.x = Math.PI / 2;
-C(0.17, 0.17, 0.07, dark, 0, 0.85, 0.54, safe, 8).rotation.x = Math.PI / 2;
-B(0.04, 0.17, 0.04, NEONM(0xff2e4d), 0, 0.93, 0.58, safe);
-B(0.1, 0.34, 0.08, chrome, 0.38, 0.75, 0.53, safe);
-for (const y of [0.3, 1.1]) B(0.06, 0.16, 0.08, chrome, -0.52, y, 0.5, safe);
-[[-0.2, 0xff2e4d], [0, 0xffd34d], [0.2, 0x25e1d3]].forEach(([x, c]) => { B(0.1, 0.07, 0.04, NEONM(c), x, 0.38, 0.52, safe); });
-plate('MASTERMIND', 1.1, 0.2, '#35d0ff', '#e0f8ff', 0, 1.5, 0.46, safe);
+const brushed = MS(0x2d3036, 0.85, 0.32);
+B(1.15, 1.35, 0.9, brushed, 0, 0.675, 0, safe);
+B(1.15, 0.12, 0.9, MS(0x3b3f47, 0.85, 0.3), 0, 1.38, 0, safe);                     // coperchio
+for (const sx of [-0.575, 0.575]) { const e = B(0.06, 1.35, 0.9, MS(0x3b3f47, 0.85, 0.3), sx, 0.675, 0, safe); }
+const mmTex = tex(512, 640, (g, W, H) => {
+  g.fillStyle = "#0a0c10"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#04090c"; g.fillRect(40, 40, W - 80, 110); g.strokeStyle = "rgba(60,230,255,.5)"; g.lineWidth = 3; g.strokeRect(40, 40, W - 80, 110);
+  g.textAlign = "center"; g.textBaseline = "middle"; g.font = "56px " + FONT; g.shadowColor = "#35e6ff"; g.shadowBlur = 20; g.fillStyle = "#bff8ff"; g.fillText("MASTERMIND", W / 2, 96); g.shadowBlur = 0;
+  const cx = W / 2, cy = 300;
+  g.strokeStyle = "rgba(60,230,255,.4)"; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, 122, 0, 7); g.stroke();
+  const dots = ["#ff3b3b", "#ffa633", "#ffe94d", "#46e06a", "#35d0ff", "#5a6bff", "#ff5fd0"];
+  for (let i = 0; i < 28; i++) { const a = i / 28 * Math.PI * 2; g.fillStyle = dots[i % dots.length]; g.shadowColor = g.fillStyle; g.shadowBlur = 8; g.beginPath(); g.arc(cx + Math.cos(a) * 104, cy + Math.sin(a) * 104, 7, 0, 7); g.fill(); }
+  g.shadowBlur = 0; const q = [["#ff3b3b", -34, -34], ["#46e06a", 8, -34], ["#ffe94d", -34, 8], ["#3d6bff", 8, 8]];
+  q.forEach(([c, dx, dy]) => { g.fillStyle = c; g.shadowColor = c; g.shadowBlur = 22; g.fillRect(cx + dx, cy + dy, 28, 28); }); g.shadowBlur = 0;
+  const keys = ["#ff3b3b", "#ffa633", "#46e06a", "#35d0ff", "#5a6bff", "#ff5fd0", "#ffe94d", "#46e06a", "#ff3b3b"];
+  for (let i = 0; i < 9; i++) { g.fillStyle = keys[i]; g.fillRect(120 + (i % 3) * 36, 470 + Math.floor(i / 3) * 30, 30, 24); }
+  g.fillStyle = "#1a1c22"; g.fillRect(300, 462, 70, 80); g.fillStyle = "#35e6a0"; g.fillRect(312, 474, 46, 56);
+  g.strokeStyle = "#ff5fd0"; g.shadowColor = "#ff5fd0"; g.shadowBlur = 16; g.lineWidth = 5; g.strokeRect(190, 575, 130, 22);
+});
+const mmFace = new THREE.Mesh(new THREE.PlaneGeometry(0.98, 1.22), new THREE.MeshStandardMaterial({ map: mmTex, emissiveMap: mmTex, emissive: 0xffffff, emissiveIntensity: 0.9, roughness: 0.4, metalness: 0.3 })); mmFace.position.set(0, 0.7, 0.452); safe.add(mmFace);
+for (const [w, h, x, y] of [[1.0, 0.035, 0, 1.32], [1.0, 0.035, 0, 0.08], [0.035, 1.28, -0.5, 0.7], [0.035, 1.28, 0.5, 0.7]]) B(w, h, 0.03, NEONM(0x35e6ff), x, y, 0.46, safe);
 
-// ---------- roulette (tavolino in legno lucido con ruota numerata) ----------
+// ---------- roulette (ruota nera lucida con filo oro, come nel modello) ----------
 const roul = new THREE.Group(); roul.position.set(-1.2, 0.12, 2.0); roul.scale.setScalar(1.0); scene.add(roul);
-const rwood = new THREE.MeshStandardMaterial({ map: woodTex(512, 256, "#5a2c18", 3), roughness: 0.32, metalness: 0.1, envMapIntensity: 1.0 });
 const rwoodD = new THREE.MeshStandardMaterial({ map: woodTex(512, 256, "#3d1d10", 3), roughness: 0.35, metalness: 0.1, envMapIntensity: 1.0 });
-const gold = MS(0xd9a94a, 0.95, 0.25);
+const blackG = MS(0x0e0f12, 0.5, 0.16), gold = MS(0xd9a94a, 0.95, 0.22);
 C(0.16, 0.24, 0.76, rwoodD, 0, 0.38, 0, roul, 28); C(0.34, 0.4, 0.07, rwoodD, 0, 0.035, 0, roul, 32);
-C(0.78, 0.74, 0.1, rwoodD, 0, 0.79, 0, roul, 40); C(0.7, 0.78, 0.08, rwood, 0, 0.88, 0, roul, 40);
-C(0.62, 0.66, 0.05, rwood, 0, 0.94, 0, roul, 40);
-const wheel = new THREE.Group(); wheel.position.set(0, 0.97, 0); roul.add(wheel);
-const rouTex = tex(512, 512, (g, W, H) => {
+C(0.78, 0.74, 0.1, rwoodD, 0, 0.79, 0, roul, 40);
+C(0.66, 0.7, 0.08, blackG, 0, 0.88, 0, roul, 48);                       // vasca nera lucida
+{ const gr1 = new THREE.Mesh(new THREE.TorusGeometry(0.665, 0.014, 8, 64), gold); gr1.rotation.x = Math.PI / 2; gr1.position.y = 0.925; roul.add(gr1); const bv = new THREE.Mesh(new THREE.TorusGeometry(0.69, 0.03, 10, 64), blackG); bv.rotation.x = Math.PI / 2; bv.position.y = 0.88; roul.add(bv); }
+const wheel = new THREE.Group(); wheel.position.set(0, 0.935, 0); roul.add(wheel);
+const rouTex = tex(1024, 1024, (g, W, H) => {
   const cx = W / 2, cy = H / 2, seq = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
-  g.fillStyle = "#3d1d10"; g.beginPath(); g.arc(cx, cy, 250, 0, 7); g.fill();
-  g.fillStyle = "#a07030"; g.beginPath(); g.arc(cx, cy, 214, 0, 7); g.fill();
+  const gr0 = g.createRadialGradient(cx, cy, 40, cx, cy, 500); gr0.addColorStop(0, "#202228"); gr0.addColorStop(1, "#0a0b0e"); g.fillStyle = gr0; g.beginPath(); g.arc(cx, cy, 500, 0, 7); g.fill();
+  g.strokeStyle = "#d9a94a"; g.lineWidth = 6; g.beginPath(); g.arc(cx, cy, 486, 0, 7); g.stroke();
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + Math.PI / 8; g.strokeStyle = "rgba(217,169,74,.7)"; g.lineWidth = 4; g.beginPath(); g.moveTo(cx + Math.cos(a) * 330, cy + Math.sin(a) * 330); g.lineTo(cx + Math.cos(a) * 470, cy + Math.sin(a) * 470); g.stroke(); g.fillStyle = "#d9a94a"; g.beginPath(); g.ellipse(cx + Math.cos(a + Math.PI / 8) * 420, cy + Math.sin(a + Math.PI / 8) * 420, 22, 4, a + Math.PI / 8 + Math.PI / 2, 0, 7); g.fill(); }
+  g.fillStyle = "#d9a94a"; g.beginPath(); g.arc(cx, cy, 330, 0, 7); g.fill();
   const n = seq.length;
   for (let i = 0; i < n; i++) {
     const a0 = i / n * Math.PI * 2 - Math.PI / 2 - Math.PI / n, a1 = a0 + Math.PI * 2 / n;
-    g.fillStyle = seq[i] === 0 ? "#12803f" : (i % 2 ? "#14141a" : "#b8142a");
-    g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 208, a0, a1); g.closePath(); g.fill();
-    g.fillStyle = "#e6c36a"; g.beginPath(); g.moveTo(cx + Math.cos(a0) * 150, cy + Math.sin(a0) * 150); g.lineTo(cx + Math.cos(a0) * 208, cy + Math.sin(a0) * 208); g.lineWidth = 3; g.strokeStyle = "#e6c36a"; g.stroke();
-    const am = (a0 + a1) / 2; g.save(); g.translate(cx + Math.cos(am) * 182, cy + Math.sin(am) * 182); g.rotate(am + Math.PI / 2); g.fillStyle = "#fff"; g.font = "bold 20px Oswald, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(seq[i]), 0, 0); g.restore();
+    g.fillStyle = seq[i] === 0 ? "#18a64f" : (i % 2 ? "#17181c" : "#cc1a2e");
+    g.beginPath(); g.arc(cx, cy, 322, a0, a1); g.arc(cx, cy, 250, a1, a0, true); g.closePath(); g.fill();
+    g.strokeStyle = "#d9a94a"; g.lineWidth = 3; g.beginPath(); g.moveTo(cx + Math.cos(a0) * 190, cy + Math.sin(a0) * 190); g.lineTo(cx + Math.cos(a0) * 322, cy + Math.sin(a0) * 322); g.stroke();
+    const am = (a0 + a1) / 2; g.save(); g.translate(cx + Math.cos(am) * 288, cy + Math.sin(am) * 288); g.rotate(am + Math.PI / 2); g.fillStyle = "#fff"; g.font = "bold 36px Oswald, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(seq[i]), 0, 0); g.restore();
   }
-  g.fillStyle = "#2a1a10"; g.beginPath(); g.arc(cx, cy, 150, 0, 7); g.fill();
-  const gr = g.createRadialGradient(cx, cy, 10, cx, cy, 150); gr.addColorStop(0, "#caa24a"); gr.addColorStop(1, "#6a4a1c"); g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, 140, 0, 7); g.fill();
-  g.strokeStyle = "rgba(255,230,160,.6)"; g.lineWidth = 5; for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * 140, cy + Math.sin(a) * 140); g.stroke(); }
+  g.fillStyle = "#d9a94a"; g.beginPath(); g.arc(cx, cy, 248, 0, 7); g.fill();
+  const gr = g.createRadialGradient(cx, cy, 10, cx, cy, 236); gr.addColorStop(0, "#2a2c33"); gr.addColorStop(1, "#0d0e12"); g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, 236, 0, 7); g.fill();
+  for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; g.strokeStyle = "rgba(217,169,74,.65)"; g.lineWidth = 3; g.beginPath(); g.moveTo(cx + Math.cos(a) * 60, cy + Math.sin(a) * 60); g.lineTo(cx + Math.cos(a) * 236, cy + Math.sin(a) * 236); g.stroke(); }
 });
-const rdisc = new THREE.Mesh(new THREE.CircleGeometry(0.5, 48), new THREE.MeshStandardMaterial({ map: rouTex, roughness: 0.3, metalness: 0.25, envMapIntensity: 0.9 })); rdisc.rotation.x = -Math.PI / 2; rdisc.position.y = 0.03; wheel.add(rdisc);
-{ const rr = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.03, 10, 48), gold); rr.rotation.x = Math.PI / 2; rr.position.y = 0.03; wheel.add(rr); }
-C(0.05, 0.07, 0.14, gold, 0, 0.1, 0, wheel, 16); { const kn = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 14), gold); kn.position.y = 0.19; wheel.add(kn); }
-for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; const sp = B(0.3, 0.02, 0.025, gold, Math.cos(a) * 0.16, 0.1, Math.sin(a) * 0.16, wheel); sp.rotation.y = -a; }
-plate("ROULETTE", 0.7, 0.16, "#ffb340", "#fff0d0", 0, 0.8, 0.77, roul);
+const rdisc = new THREE.Mesh(new THREE.CircleGeometry(0.6, 64), new THREE.MeshStandardMaterial({ map: rouTex, roughness: 0.22, metalness: 0.3, envMapIntensity: 1.0 })); rdisc.rotation.x = -Math.PI / 2; rdisc.position.y = 0.0; wheel.add(rdisc);
+C(0.05, 0.075, 0.1, gold, 0, 0.06, 0, wheel, 16); C(0.025, 0.025, 0.18, gold, 0, 0.17, 0, wheel, 12); { const kn = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 14), gold); kn.position.y = 0.27; wheel.add(kn); }
+for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; const arm = C(0.012, 0.012, 0.36, gold, Math.cos(a) * 0.18, 0.18, Math.sin(a) * 0.18, wheel, 8); arm.rotation.set(0, 0, 0); arm.rotation.z = Math.PI / 2; arm.rotation.y = -a; const ball2 = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 10), gold); ball2.position.set(Math.cos(a) * 0.36, 0.18, Math.sin(a) * 0.36); wheel.add(ball2); }
+plate("ROULETTE", 0.8, 0.17, "#ffb340", "#fff0d0", 0, 0.62, 0.9, roul);
 const rball = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.3 })); roul.add(rball);
 
-// ---------- Gratta e Vinci (distributore metallico, contro la parete) ----------
+// ---------- Gratta e Vinci: distributore futuristico con insegna neon ----------
 const kiosk = new THREE.Group(); kiosk.position.set(0, 0, -4.1); kiosk.scale.setScalar(1.2); scene.add(kiosk);
+const kdark = MS(0x14151a, 0.7, 0.28);
+B(0.9, 1.6, 0.55, kdark, 0, 0.8, 0, kiosk);
+B(0.9, 0.08, 0.55, MS(0x23252c, 0.8, 0.3), 0, 1.64, 0, kiosk);
+for (const sx of [-0.46, 0.46]) B(0.035, 1.62, 0.58, NEONM(0xff3db0), sx, 0.82, 0.01, kiosk);
 const kTex = tex(256, 400, (g, w, h) => {
-  g.fillStyle = "#f2c94c"; g.fillRect(0, 0, w, h); g.fillStyle = "#b3121f"; g.font = "46px " + FONT; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText("GRATTA", w / 2, 50); g.font = "34px " + FONT; g.fillStyle = "#7a1220"; g.fillText("E VINCI", w / 2, 100);
-  g.fillStyle = "#b9bdc6"; g.fillRect(34, 140, w - 68, 90); g.strokeStyle = "#eceff4"; g.lineWidth = 9; g.lineCap = "round";
-  for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(60 + i * 40, 215); g.lineTo(90 + i * 40, 155); g.stroke(); }
-  g.fillStyle = "#ffd34d"; g.beginPath(); g.arc(190, 185, 24, 0, 7); g.fill(); g.fillStyle = "#7a1220"; g.font = "bold 30px sans-serif"; g.fillText("7", 190, 187);
-  g.fillStyle = "#2a1a10"; g.fillRect(40, 280, w - 80, 24);
+  g.fillStyle = "#06070a"; g.fillRect(0, 0, w, h);
+  g.strokeStyle = "rgba(255,61,176,.5)"; g.lineWidth = 3; g.strokeRect(14, 14, w - 28, 250);
+  const grad = g.createRadialGradient(w / 2, 140, 10, w / 2, 140, 130); grad.addColorStop(0, "rgba(60,230,255,.35)"); grad.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = grad; g.fillRect(14, 14, w - 28, 250);
+  g.save(); g.translate(w / 2, 140); g.rotate(-0.5); g.shadowColor = "#35e6ff"; g.shadowBlur = 24; g.strokeStyle = "#8ff3ff"; g.lineWidth = 6; g.strokeRect(-56, -80, 112, 160);
+  g.strokeStyle = "#ff7ad9"; g.lineWidth = 4; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(-34 + i * 18, -30); g.lineTo(-12 + i * 18, 20); g.stroke(); } g.beginPath(); g.arc(18, -48, 12, 0, 7); g.stroke(); g.restore();
+  g.shadowBlur = 12; g.shadowColor = "#fff"; g.fillStyle = "#fff"; for (const [x, y] of [[50, 60], [200, 90], [60, 210], [190, 220], [210, 40]]) { g.fillRect(x, y, 4, 4); }
 });
-B(0.9, 1.75, 0.6, steel, 0, 0.875, 0, kiosk);
-for (const sx of [-0.45, 0.45]) B(0.05, 1.78, 0.64, chrome, sx, 0.89, 0, kiosk);
-B(0.96, 0.05, 0.64, chrome, 0, 1.77, 0, kiosk); B(0.96, 0.04, 0.64, chrome, 0, 0.02, 0, kiosk);
-B(0.8, 0.04, 0.04, NEONM(0xffd34d), 0, 1.7, 0.32, kiosk);
-const kface = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 1.22), new THREE.MeshStandardMaterial({ map: kTex, emissiveMap: kTex, emissive: 0xffffff, emissiveIntensity: 0.5, roughness: 0.5, metalness: 0.1 })); kface.position.set(0, 1.1, 0.31); kiosk.add(kface);
-[[0xf2d16b, -0.05], [0xff7aa0, 0.05], [0x7ad7ff, 0.13]].forEach(([c, x], i) => { const t = B(0.22, 0.3, 0.015, c, x, 0.5 + i * 0.02, 0.4 + i * 0.03, kiosk); t.rotation.z = (i - 1) * 0.15; });
+const kface = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 1.12), new THREE.MeshStandardMaterial({ map: kTex, emissiveMap: kTex, emissive: 0xffffff, emissiveIntensity: 0.8, roughness: 0.4, metalness: 0.2 })); kface.position.set(0, 1.0, 0.285); kiosk.add(kface);
+for (const [w, h, x, y] of [[0.74, 0.03, 0, 1.57], [0.74, 0.03, 0, 0.43], [0.03, 1.14, -0.37, 1.0], [0.03, 1.14, 0.37, 1.0]]) B(w, h, 0.03, NEONM(0xff3db0), x, y, 0.29, kiosk);
+// vassoio magenta con biglietti
+B(0.52, 0.2, 0.08, NEONM(0xff3db0), 0, 0.3, 0.3, kiosk); B(0.44, 0.13, 0.1, MS(0x0a0a0e, 0.5, 0.4), 0, 0.3, 0.31, kiosk);
+[[0xf2d16b, -0.08], [0xff7aa0, 0.0], [0x7ad7ff, 0.08]].forEach(([c, x], i) => { const t = B(0.16, 0.2, 0.012, MS(c, 0.1, 0.6, { emissive: c, emissiveIntensity: 0.25 }), x, 0.31 + i * 0.01, 0.36 + i * 0.012, kiosk); t.rotation.z = (i - 1) * 0.12; });
+// insegna neon sulla cima
+B(1.0, 0.58, 0.08, MS(0x0c0a10, 0.6, 0.4), 0, 1.98, 0.02, kiosk);
+B(1.0, 0.025, 0.09, NEONM(0xff3db0), 0, 2.27, 0.03, kiosk); B(1.0, 0.025, 0.09, NEONM(0xff3db0), 0, 1.69, 0.03, kiosk);
+plate("GRATTA", 0.9, 0.24, "#ff3db0", "#ffd6ef", 0, 2.1, 0.07, kiosk); plate("E VINCI", 0.9, 0.24, "#ff3db0", "#ffd6ef", 0, 1.84, 0.07, kiosk);
 
 // ---------- Aviator: insegna neon con aeroplano di carta (parete di fondo, sopra la cassaforte) ----------
 const ptab = new THREE.Group(); ptab.position.set(-2.95, 2.45, -4.4); scene.add(ptab);
 const ppMat = new THREE.MeshBasicMaterial({ map: loadTex("assets/paperplane.png"), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const haloAv = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); haloAv.position.set(0, 0, -0.01); ptab.add(haloAv);
 const pp = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 1.25 * 405 / 640), ppMat); pp.position.set(0, 0.15, 0); ptab.add(pp);
 plate("AVIATOR", 1.3, 0.24, "#ffffff", "#ffffff", 0, -0.45, 0.01, ptab);
 
@@ -350,7 +385,7 @@ const nbTex = tex(300, 400, (g, w, h) => {
 const nb = new THREE.Group(); nb.position.set(0, 0.845, 0); nb.rotation.y = 0.45; wtab.add(nb);
 B(0.64, 0.04, 0.84, MS(0x23407e, 0.1, 0.5), 0, 0, 0, nb); B(0.61, 0.02, 0.81, 0xf3ecd8, 0, 0.025, 0, nb);
 const nbp = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.8), new THREE.MeshStandardMaterial({ map: nbTex, roughness: 0.7, metalness: 0 })); nbp.rotation.x = -Math.PI / 2; nbp.position.y = 0.037; nb.add(nbp);
-plate('WORDLE', 0.9, 0.15, '#6dff8a', '#e8ffe8', 0, 0.78, 0.505, wtab);
+plate('WORDLE', 0.95, 0.16, '#6dff8a', '#e8ffe8', 0, 0.72, 0.58, wtab);
 
 
 // ---------- zone toccabili (invisibili) ----------
@@ -364,7 +399,7 @@ hit("poker", "Poker", 2.1, 0.5, 1.8, 1.1, 1.05, -0.3);
 hit("slot", "Slot 777", 1.3, 2.8, 1.1, 3.0, 1.3, -3.3);
 hit("mastermind", "Mastermind", 1.3, 1.9, 1.0, -3.05, 0.95, -3.5);
 hit("roulette", "Roulette", 1.5, 0.6, 1.5, -1.2, 0.95, 2.0);
-hit("scratch", "Gratta e Vinci", 1.2, 2.1, 0.8, 0, 1.05, -4.1);
+hit("scratch", "Gratta e Vinci", 1.2, 2.8, 0.8, 0, 1.4, -4.1);
 hit("aviator", "Aviator", 1.5, 1.1, 0.5, -2.95, 2.4, -4.3);
 hit("wordle", "Wordle", 1.6, 0.5, 1.3, 1.3, 0.95, 2.0);
 const TARGETS = { blackjack: halfBJ, poker: halfPK, slot, mastermind: safe, roulette: roul, scratch: kiosk, aviator: ptab, wordle: wtab };
@@ -454,13 +489,13 @@ function frame(now) {
   if (animOn) {
     ppMat.opacity = 0.9 + 0.1 * Math.sin(time * 2.2);
     const ph = time % 8; reelMats.forEach((t, i) => { const spinning = ph < 2.2 + i * 0.5; if (spinning) { reelState[i] += dt * (3.2 + i * 0.4); } else { const target = Math.round(reelState[i] * SYM.length) / SYM.length; reelState[i] += (target - reelState[i]) * Math.min(1, dt * 10); } t.offset.y = -reelState[i] / 1; });
-    wheel.rotation.y += dt * 1.2; rball.position.set(Math.cos(-time * 3.1) * 0.42, 1.015, Math.sin(-time * 3.1) * 0.42);
+    wheel.rotation.y += dt * 1.2; rball.position.set(Math.cos(-time * 3.1) * 0.5, 0.97, Math.sin(-time * 3.1) * 0.5);
     bulbs.forEach((b, i) => { b.scale.setScalar(0.85 + 0.2 * Math.sin(time * 4 + i * 1.3)); });
     const fl = Math.sin(time * 37) * Math.sin(time * 5.3) > 0.93 ? 0.45 : 1; signMat.color.setScalar(0.8 + 0.2 * fl); neonL.intensity = 1.6 * Math.PI * (0.65 + 0.35 * fl);
     lever.rotation.z = (time % 8) < 0.4 ? -0.5 : 0;
   }
   stepGlow(dt);
-  if (aviT > 0) { aviT -= dt; ppMat.color.setScalar(1 + Math.sin(Math.max(0, 1 - aviT / 0.5) * Math.PI) * 0.5); } else ppMat.color.setScalar(1);
+  if (aviT > 0) { aviT -= dt; const k = Math.sin(Math.max(0, 1 - aviT / 0.5) * Math.PI); haloAv.material.opacity = k * 0.9; pp.scale.setScalar(1 + k * 0.1); } else { haloAv.material.opacity = 0; pp.scale.setScalar(1); }
   placeCamera(); renderer.render(scene, camera);
   if (Math.floor(now / 500) !== Math.floor((now - dt * 1000) / 500)) {
     const i = renderer.info.render;
