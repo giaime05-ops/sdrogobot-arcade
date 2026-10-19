@@ -1,4 +1,4 @@
-/* Sdrogo Arcade – sezioni: Saloon (hub), Classifica, Diario.
+/* Sdrogo Arcade – sezioni: Casino (hub), Classifica, Diario.
  * La barra in basso sta SOTTO ai giochi (z-index minore): quando un gioco è aperto non si vede e non copre nulla.
  * Si cambia sezione toccando la barra oppure con uno swipe laterale (solo quando nessun gioco è aperto). */
 (function () {
@@ -82,10 +82,9 @@
       loaded.lead = true; cat = j.cat; renderCats(j.cats);
       box.innerHTML = "";
       if (!j.top.length) { empty(box, "Nessuno in questa classifica, per ora."); return; }
-      var medals = ["🥇", "🥈", "🥉"];
       j.top.forEach(function (r) {
-        var row = el("div", "row" + (r.me ? " me" : ""));
-        row.appendChild(el("div", "rk", r.rank <= 3 ? medals[r.rank - 1] : String(r.rank)));
+        var row = el("div", "row" + (r.rank <= 3 ? " r" + r.rank : "") + (r.me ? " me" : ""));
+        row.appendChild(el("div", "rk", String(r.rank)));
         row.appendChild(el("div", "nm", r.name + (r.me ? " (tu)" : "")));
         row.appendChild(el("div", "vl", A.fmt(r.value) + " " + j.unit));
         box.appendChild(row);
@@ -166,12 +165,6 @@
     A.api("/api/social/diary").then(function (j) {
       loaded.diary = true; if (sub !== "history") return;
       box.innerHTML = "";
-      var s = j.stats, sum = el("div", "pg-sum");
-      [[(s.net_profit >= 0 ? "+" : "") + A.fmt(s.net_profit), "netto totale"], [A.fmt(s.casino_wins), "vittorie casinò"], [A.fmt(s.duels_wins), "duelli vinti"]].forEach(function (x) {
-        var d = el("div"); d.appendChild(el("b", "", x[0])); d.appendChild(document.createTextNode(x[1])); sum.appendChild(d);
-      });
-      box.appendChild(sum);
-      box.appendChild(speedBox());
       if (!j.history.length) { box.appendChild(el("div", "pg-empty", "Nessuna giocata registrata, per ora.")); return; }
       var ic = { vinta: "✅", persa: "❌", pareggio: "⚖️" };
       j.history.forEach(function (h) {
@@ -184,6 +177,42 @@
     }).catch(function (e) { if (!loaded.diary) empty(box, errMsg(e)); else A.toast(errMsg(e)); })
       .then(function () { busy.diary = false; });
   }
+
+
+  // ---------- profilo personale (si apre toccando la barra col nome) ----------
+  function profOv() {
+    var ov = $("profile");
+    if (!ov) {
+      ov = el("div", "set-ov"); ov.id = "profile"; ov.hidden = true;
+      ov.addEventListener("click", function (e) { if (e.target === ov) closeProfile(); });
+      document.getElementById("app").appendChild(ov);
+    }
+    return ov;
+  }
+  profOv();
+  function openProfile() {
+    var ov = profOv();
+    ov.innerHTML = ""; var card = el("div", "set-card prof-card");
+    card.appendChild(el("h2", "", "IL TUO PROFILO"));
+    var head = el("div", "prof-head"); head.appendChild(el("div", "avatar", ($("avatar") && $("avatar").textContent) || "?"));
+    var wh = el("div", "prof-who"); wh.appendChild(el("b", "", $("pname") ? $("pname").textContent : ""));
+    wh.appendChild(el("span", "", "💳 " + ($("pcoins") ? $("pcoins").textContent : "—") + " $SDG")); head.appendChild(wh); card.appendChild(head);
+    var grid = el("div", "pg-sum"); card.appendChild(grid);
+    var tail = el("div"); card.appendChild(tail);
+    tail.appendChild(speedBox());
+    var ok = el("button", "set-ok", "CHIUDI"); ok.type = "button"; ok.addEventListener("click", closeProfile); card.appendChild(ok);
+    ov.appendChild(card); ov.hidden = false;
+    grid.appendChild(el("div", "pg-empty", "Carico…"));
+    A.api("/api/social/diary").then(function (j) {
+      var s = j.stats; grid.innerHTML = "";
+      [[(s.net_profit >= 0 ? "+" : "") + A.fmt(s.net_profit), "netto totale"], [A.fmt(s.casino_wins), "vittorie casinò"], [A.fmt(s.single_played), "partite single player"],
+       [A.fmt(s.duels_wins), "duelli vinti"], [A.fmt(s.duels_played), "duelli giocati"], [A.fmt(s.quizzes_won), "quiz vinti"]].forEach(function (x) {
+        var d = el("div"); d.appendChild(el("b", "", x[0])); d.appendChild(document.createTextNode(x[1])); grid.appendChild(d);
+      });
+    }).catch(function (e) { grid.innerHTML = ""; grid.appendChild(el("div", "pg-empty", errMsg(e))); });
+  }
+  function closeProfile() { var ov = $("profile"); if (ov) ov.hidden = true; }
+  (function () { var p = $("player"); if (p) { p.classList.add("tappable"); p.addEventListener("click", function () { A.haptic("light"); openProfile(); }); } })();
 
   // ---------- test di velocità (dal tuo telefono al bot) ----------
   function speedBox() {
@@ -252,18 +281,20 @@
     function openGame() { var r = null; Object.keys(GB).forEach(function (id) { var n = $(id); if (n && !n.hidden) r = id; }); return r; }
     function settingsOpen() { return !!(window.ArcadeSettingsUI && window.ArcadeSettingsUI.isOpen()); }
     function onBack() {
+      var pv = $("profile"); if (pv && !pv.hidden) { closeProfile(); return; }
       if (settingsOpen()) { window.ArcadeSettingsUI.close(); return; }
       var g = openGame();
       if (g) { var b = $(GB[g]); if (b && b.disabled) A.toast("Termina prima la partita"); else if (b) b.click(); return; }
       if (cur !== "hub") show("hub", true);
     }
     function update() {
-      try { if (openGame() || cur !== "hub" || settingsOpen()) tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {}
+      try { var pv = $("profile"); if (openGame() || cur !== "hub" || settingsOpen() || (pv && !pv.hidden)) tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {}
     }
     try { tg.BackButton.onClick(onBack); } catch (e) { return; }
     var mo = new MutationObserver(update);
     Object.keys(GB).forEach(function (id) { var n = $(id); if (n) mo.observe(n, { attributes: true, attributeFilter: ["hidden"] }); });
     mo.observe(document.body, { attributes: true, attributeFilter: ["data-tab"] });
+    var pv0 = $("profile"); if (pv0) mo.observe(pv0, { attributes: true, attributeFilter: ["hidden"] });
     var st = $("settings"); if (st) mo.observe(st, { attributes: true, attributeFilter: ["hidden"] });
     setTimeout(function () { var st2 = $("settings"); if (st2) mo.observe(st2, { attributes: true, attributeFilter: ["hidden"] }); update(); }, 600);
     update();

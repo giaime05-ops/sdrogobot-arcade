@@ -101,6 +101,11 @@
       $("bjPT").textContent = bj.res ? bj.res.player_total : (st.total != null ? st.total : "–");
       var dt = "–";
       if (bj.res && bj.dFinal) dt = bj.res.dealer_total;
+      else if (bj.res && bj.dShown != null && bj.D.length) {          // il banco pesca: il totale segue ogni carta scoperta
+        var tot = 0, aces = 0; bj.D.slice(0, bj.dShown).forEach(function (c) { tot += c.v; if (c.v === 11) aces++; });
+        while (tot > 21 && aces) { tot -= 10; aces--; }
+        dt = tot;
+      }
       else if (bj.D.length) dt = bj.D[0].v === 11 ? 11 : bj.D[0].v;
       $("bjDT").textContent = dt;
     },

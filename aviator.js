@@ -269,7 +269,7 @@
     var K = gh * 0.62 / Math.log(5);
     var yb = padT + gh - 8, yc = padT + gh * 0.34, span = yb - yc;
     var yBase = yc + span * Math.exp(-K * lnm / span);
-    function wob(tv) { return 4.5 * Math.sin(tv * 1.5) * (1 - Math.exp(-tv / 2.5)) + 1.6 * Math.sin(tv * 3.3 + 1) * (1 - Math.exp(-tv / 3)); }
+    function wob(tv) { return 7 * Math.sin(tv * 0.55) * (1 - Math.exp(-tv / 3)) + 2.4 * Math.sin(tv * 1.15 + 1) * (1 - Math.exp(-tv / 4)); }   // onde lente: ogni tanto cala un poco mentre il resto sale
     function Y(mv, tv) { return yBase + K * (lnm - Math.log(mv)) + wob(tv); }
 
     var showCurve = p === "flying" || p === "cashing" || ended;

@@ -1,6 +1,6 @@
 /* Sdrogo Arcade – audio.
  * Tutto sintetizzato dal telefono con WebAudio: nessun file da scaricare.
- *  - musica "lounge" della sala (generativa: accordi, tonalità e melodia cambiano di continuo, quindi non si ripete uguale)
+ *  - musica da casinò della sala (swing generativo: accordi, tonalità e melodia cambiano di continuo, più rumori di sala)
  *  - musica dei giochi (più ritmata, sempre sintetica)
  *  - effetti (click, fiche, carte, rulli, roulette, vincita, sconfitta, esplosione…)
  * I volumi si regolano da Impostazioni. Il browser fa partire l'audio solo dopo il primo tocco.
@@ -74,62 +74,85 @@
     tone(dest, "triangle", f * 4, t, 0.18, vol * 0.12, { a: 0.003 });
   }
 
-  // ---------- musica lounge (generativa) ----------
-  var CH = { maj7: [0, 4, 7, 11], m7: [0, 3, 7, 10], dom7: [0, 4, 7, 10], m9: [0, 3, 7, 10, 14] };
+  // ---------- musica della sala: swing da casinò (generativa) ----------
+  // basso che cammina, piano/ottoni a stacchi, vibrafono, spazzola swing e, ogni tanto, rumori di sala (fiches, monete, slot).
+  var CH = { maj7: [0, 4, 7, 11], m7: [0, 3, 7, 10], dom7: [0, 4, 7, 10], m9: [0, 3, 7, 10, 14], dom9: [0, 4, 7, 10, 14] };
   var PROGS = [
-    [[2, "m7"], [7, "dom7"], [0, "maj7"], [9, "m7"]],
-    [[0, "maj7"], [9, "m7"], [2, "m7"], [7, "dom7"]],
-    [[4, "m7"], [9, "m7"], [2, "m9"], [7, "dom7"]],
-    [[0, "maj7"], [5, "maj7"], [4, "m7"], [9, "m7"]],
-    [[9, "m7"], [2, "m7"], [7, "dom7"], [0, "maj7"]]
+    [[2, "m7"], [7, "dom7"], [0, "maj7"], [9, "dom7"]],
+    [[0, "maj7"], [9, "dom7"], [2, "m7"], [7, "dom7"]],
+    [[0, "dom7"], [5, "dom7"], [0, "dom7"], [7, "dom7"]],
+    [[4, "m7"], [9, "dom7"], [2, "m7"], [7, "dom7"]],
+    [[0, "maj7"], [4, "dom7"], [9, "m7"], [2, "dom9"]]
   ];
-  var KEYS = [48, 50, 53, 55, 57, 45];
-  var lounge = { next: 0, bpm: 76, key: 48, prog: null, barIdx: 0, last: 72, progCount: 0 };
+  var KEYS = [48, 50, 53, 55, 51, 46];
+  var lounge = { next: 0, bpm: 118, key: 48, prog: null, barIdx: 0, last: 72, progCount: 0 };
+  function bell(dest, midi, t, dur, vol, send) {        // vibrafono
+    var f = mtof(midi);
+    tone(dest, "sine", f, t, dur, vol, { a: 0.004, send: send });
+    tone(dest, "sine", f * 4, t, Math.min(dur, 0.25), vol * 0.28, { a: 0.002 });
+    tone(dest, "sine", f * 10, t, 0.08, vol * 0.1, { a: 0.001 });
+  }
+  function ambience(t) {                                  // rumori di casinò in sottofondo (bassi, non invadenti)
+    var k = Math.random();
+    if (k < 0.45) { noise(gHub, t, 0.05, 0.05, "bandpass", 3500, 4); tone(gHub, "sine", 2300, t, 0.09, 0.03, { slide: 1700 }); tone(gHub, "sine", 3100, t + 0.045, 0.07, 0.022); }
+    else if (k < 0.8) { tone(gHub, "sine", 2637, t, 0.4, 0.03, { a: 0.002 }); tone(gHub, "sine", 3951, t + 0.06, 0.5, 0.026, { a: 0.002 }); }
+    else { [60, 64, 67, 72, 76].forEach(function (m, i) { tone(gHub, "triangle", mtof(m + 24), t + i * 0.06, 0.18, 0.02, { a: 0.003 }); }); }
+  }
   function loungeBar(t) {
-    var L = lounge, beat = 60 / L.bpm, bar = beat * 4;
+    var L = lounge;
     if (!L.prog || L.barIdx >= 4) {
       L.barIdx = 0; L.progCount++;
       L.prog = pick(PROGS);
-      if (L.progCount % 2 === 0 || !L.key) L.key = pick(KEYS);
-      L.bpm = pick([72, 76, 80, 84]);
+      if (L.progCount % 2 === 0) L.key = pick(KEYS);
+      L.bpm = pick([112, 118, 124]);
     }
-    beat = 60 / L.bpm; bar = beat * 4;
+    var beat = 60 / L.bpm, bar = beat * 4, sw = beat * 0.667;
+    var nxt = L.prog[L.barIdx % 4 === 3 ? 0 : (L.barIdx % 4) + 1];
     var ch = L.prog[L.barIdx++], root = L.key + ch[0], ivs = CH[ch[1]];
-    // pad
-    ivs.forEach(function (iv, i) {
-      var f = mtof(root + 12 + iv);
-      [-5, 5].forEach(function (dt) {
-        var o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
-        o.type = "triangle"; o.frequency.value = f; o.detune.value = dt; lp.type = "lowpass"; lp.frequency.value = 800;
-        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.022, t + 0.7); g.gain.linearRampToValueAtTime(0.016, t + bar * 0.8); g.gain.linearRampToValueAtTime(0.0001, t + bar + 0.5);
-        o.connect(lp); lp.connect(g); g.connect(gHub); o.start(t); o.stop(t + bar + 0.6);
+    // basso che cammina
+    var wb = [root - 12, root - 12 + ivs[1], root - 12 + ivs[2], (L.key + nxt[0] - 12) + pick([-1, 1])];
+    wb.forEach(function (m, i) { tone(gHub, "triangle", mtof(m), t + i * beat, beat * 0.9, 0.2, { a: 0.012, lp: 700 }); });
+    // piano a stacchi (Charleston) con voicing aperto
+    var vc = [ivs[1], ivs[2], ivs[3], ivs[0] + 12];
+    function comp(b, len, vol) {
+      vc.forEach(function (iv, k) {
+        var f = mtof(root + 12 + iv + (k === 3 ? 0 : 0));
+        tone(gHub, "triangle", f, t + b + k * 0.008, len, vol, { a: 0.004, lp: 2600, send: delaySend });
+        tone(gHub, "sine", f * 2, t + b + k * 0.008, len * 0.5, vol * 0.3, { a: 0.003 });
       });
-    });
-    // basso
-    tone(gHub, "sine", mtof(root - 12), t, beat * 1.6, 0.2, { a: 0.02, lp: 500 });
-    tone(gHub, "sine", mtof(root - 12 + (Math.random() < 0.5 ? 7 : 0)), t + beat * 2.5, beat * 1.3, 0.16, { a: 0.02, lp: 500 });
-    if (Math.random() < 0.4) tone(gHub, "sine", mtof(root - 5), t + beat * 3.5, beat * 0.45, 0.1, { a: 0.02, lp: 500 });
-    // accompagnamento (accordi spezzati)
-    var rh = pick([[0.5, 2, 3], [1.5, 2.5], [0.5, 1.5, 3.0], [1, 3]]);
-    rh.forEach(function (b) {
-      var cn = [ivs[1], ivs[2], ivs[3]]; cn.forEach(function (iv, k) { epiano(gHub, root + 12 + iv + (k === 2 ? 0 : 0), t + b * beat + k * 0.012, beat * 1.2, 0.035, delaySend); });
-    });
-    // melodia: note a caso dalla scala, con pause
+    }
+    comp(0, beat * 0.5, 0.045);
+    comp(beat + sw, beat * 0.5, 0.04);
+    if (Math.random() < 0.5) comp(beat * 3 + sw, beat * 0.4, 0.035);
+    // stacco di ottoni
+    if (Math.random() < 0.55) {
+      var bt = pick([beat * 2 + sw, beat * 3, beat * 3 + sw]);
+      [0, 4, 7, 10].forEach(function (iv) {
+        [-6, 6].forEach(function (dt) { tone(gHub, "sawtooth", mtof(root + 12 + iv), t + bt, beat * 0.4, 0.014, { a: 0.02, lp: 1500, detune: dt }); });
+      });
+    }
+    // vibrafono: frasi a caso sulla scala, in levare
     var pool = []; ivs.forEach(function (iv) { pool.push(root + 24 + iv); pool.push(root + 12 + iv); });
     [0, 2, 4, 7, 9].forEach(function (iv) { pool.push(L.key + 24 + iv); pool.push(L.key + 36 + iv); });
-    pool.sort(function (a, b) { return a - b; });
-    pool = pool.filter(function (n) { return n >= 66 && n <= 88; });
+    pool.sort(function (x, y) { return x - y; });
+    pool = pool.filter(function (n) { return n >= 67 && n <= 90; });
     var pi = pool.reduce(function (best, n, i) { return Math.abs(n - L.last) < Math.abs(pool[best] - L.last) ? i : best; }, 0);
     for (var e = 0; e < 8; e++) {
-      if (Math.random() < (e === 0 ? 0.55 : 0.32)) {
+      if (Math.random() < (e === 0 ? 0.5 : 0.36)) {
         pi = Math.max(0, Math.min(pool.length - 1, pi + pick([-2, -1, -1, 0, 1, 1, 2])));
         L.last = pool[pi];
-        epiano(gHub, pool[pi], t + e * beat * 0.5 + rnd(0, 0.02), beat * pick([0.9, 1.4, 2]), 0.05, delaySend);
+        bell(gHub, pool[pi], t + Math.floor(e / 2) * beat + (e % 2 ? sw : 0), beat * pick([0.5, 0.9, 1.5]), 0.05, delaySend);
       }
     }
-    // spazzola leggera + cassa morbida
-    for (var h = 0; h < 8; h++) noise(gHub, t + h * beat * 0.5, 0.05, h % 2 ? 0.018 : 0.01, "highpass", 6500, 0.7);
-    tone(gHub, "sine", 110, t, 0.22, 0.12, { slide: 45, a: 0.004 }); tone(gHub, "sine", 110, t + beat * 2, 0.22, 0.09, { slide: 45, a: 0.004 });
+    // spazzola swing: ride a terzine, charleston del pedale sul 2 e 4
+    for (var q = 0; q < 4; q++) {
+      noise(gHub, t + q * beat, 0.09, 0.02, "highpass", 7000, 0.7);
+      if (q % 2) noise(gHub, t + q * beat + sw, 0.07, 0.014, "highpass", 7000, 0.7);
+      if (q % 2 === 1) noise(gHub, t + q * beat, 0.05, 0.03, "bandpass", 4500, 1.1);
+    }
+    tone(gHub, "sine", 100, t, 0.18, 0.08, { slide: 45, a: 0.004 }); tone(gHub, "sine", 100, t + beat * 2, 0.18, 0.06, { slide: 45, a: 0.004 });
+    // rumori di sala
+    if (Math.random() < 0.55) ambience(t + rnd(0.2, bar - 0.3));
     return bar;
   }
 
@@ -189,13 +212,14 @@
     win: function (t) { [72, 76, 79, 84].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.085, 0.38, 0.14, { a: 0.008 }); tone(gSfx, "sine", mtof(m + 12), t + i * 0.085, 0.3, 0.05); }); noise(gSfx, t + 0.3, 0.3, 0.05, "highpass", 8000, 0.7); },
     bigwin: function (t) { [67, 72, 76, 79, 84, 88, 91].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.075, 0.5, 0.14, { a: 0.008 }); tone(gSfx, "sine", mtof(m + 12), t + i * 0.075, 0.4, 0.06); }); for (var i = 0; i < 6; i++) tone(gSfx, "sine", rnd(2500, 5000), t + 0.5 + i * 0.07, 0.1, 0.04); },
     lose: function (t) { tone(gSfx, "sine", 330, t, 0.35, 0.16, { slide: 220 }); tone(gSfx, "sine", 247, t + 0.2, 0.5, 0.14, { slide: 150 }); },
+    creak: function (t, p) { p = p || 0; tone(gSfx, "sawtooth", 70 + p * 150, t, 0.11, 0.07, { slide: 55 + p * 120, lp: 700 }); noise(gSfx, t, 0.07, 0.05, "bandpass", 900 + p * 1400, 3); },
     boom: function (t) { noise(gSfx, t, 0.9, 0.35, "lowpass", 2400, 0.8, 120); tone(gSfx, "sine", 130, t, 0.8, 0.4, { slide: 38 }); tone(gSfx, "sawtooth", 80, t, 0.5, 0.12, { slide: 30, lp: 400 }); }
   };
-  function sfx(name) {
+  function sfx(name, arg) {
     if (!started || !ctx || ctx.state !== "running" || cfg.sfx < 0.01) return;
     var f = SFX[name]; if (!f) return;
-    if (!once("s_" + name, name === "tick" || name === "key" ? 25 : 60)) return;
-    try { f(ctx.currentTime + 0.005); } catch (e) {}
+    if (!once("s_" + name, name === "tick" || name === "key" ? 25 : (name === "creak" || name === "scratch" ? 40 : 60))) return;
+    try { f(ctx.currentTime + 0.005, arg); } catch (e) {}
   }
 
   // ---------- collegamenti automatici ----------
