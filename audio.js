@@ -202,7 +202,10 @@
   var SFX = {
     click: function (t) { tone(gSfx, "triangle", 1100, t, 0.05, 0.12, { slide: 700 }); },
     chip: function (t) { noise(gSfx, t, 0.05, 0.14, "bandpass", 3500, 4); tone(gSfx, "sine", 2300, t, 0.09, 0.07, { slide: 1700 }); tone(gSfx, "sine", 3100, t + 0.045, 0.07, 0.05); },
-    card: function (t) { noise(gSfx, t, 0.09, 0.1, "bandpass", 2200, 0.9, 5200); },
+    card: function (t) {
+      if (cardBuf) { var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = cardBuf; src.playbackRate.value = 0.94 + Math.random() * 0.12; g.gain.value = 0.9; src.connect(g); g.connect(gSfx); src.start(t); return; }
+      noise(gSfx, t, 0.09, 0.1, "bandpass", 2200, 0.9, 5200);
+    },
     key: function (t) { tone(gSfx, "square", 760, t, 0.03, 0.05, { lp: 2000 }); },
     tick: function (t) { tone(gSfx, "triangle", 1800, t, 0.025, 0.1, { slide: 1100 }); },
     scratch: function (t) { noise(gSfx, t, 0.16, 0.1, "bandpass", 3000, 1.2, 1500); },
@@ -215,7 +218,17 @@
     creak: function (t, p) { p = p || 0; tone(gSfx, "sawtooth", 70 + p * 150, t, 0.11, 0.07, { slide: 55 + p * 120, lp: 700 }); noise(gSfx, t, 0.07, 0.05, "bandpass", 900 + p * 1400, 3); },
     boom: function (t) { noise(gSfx, t, 0.9, 0.35, "lowpass", 2400, 0.8, 120); tone(gSfx, "sine", 130, t, 0.8, 0.4, { slide: 38 }); tone(gSfx, "sawtooth", 80, t, 0.5, 0.12, { slide: 30, lp: 400 }); }
   };
+  var cardBuf = null, cardLoading = false;
+  function loadCard() {                                    // suono vero delle carte (assets/card.wav); finché non è pronto vale quello sintetico
+    if (cardBuf || cardLoading || !ctx) return; cardLoading = true;
+    try {
+      fetch("assets/card.wav?v=18").then(function (r) { return r.arrayBuffer(); })
+        .then(function (b) { return new Promise(function (ok, ko) { ctx.decodeAudioData(b, ok, ko); }); })
+        .then(function (buf) { cardBuf = buf; }).catch(function () { cardLoading = false; });
+    } catch (e) { cardLoading = false; }
+  }
   function sfx(name, arg) {
+    if (!cardBuf) loadCard();
     if (!started || !ctx || ctx.state !== "running" || cfg.sfx < 0.01) return;
     var f = SFX[name]; if (!f) return;
     if (!once("s_" + name, name === "tick" || name === "key" ? 25 : (name === "creak" || name === "scratch" ? 40 : 60))) return;
