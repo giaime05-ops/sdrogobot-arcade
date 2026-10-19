@@ -87,8 +87,24 @@
     };
   }
 
+  var tipT = null;
+  function tip(anchor, text) {                              // piccolo fumetto sopra l'elemento, sparisce dopo 3 secondi
+    var old = document.getElementById("miniTip"); if (old) old.remove(); clearTimeout(tipT);
+    var t = document.createElement("div"); t.id = "miniTip"; t.className = "mini-tip"; t.textContent = text; document.body.appendChild(t);
+    var r = anchor.getBoundingClientRect(), w = t.offsetWidth;
+    t.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
+    t.style.top = Math.max(8, r.top - t.offsetHeight - 8) + "px";
+    tipT = setTimeout(function () { t.classList.add("off"); setTimeout(function () { t.remove(); }, 250); }, 3000);
+  }
+  function starEl(n) {
+    var st = document.createElement("span"); st.className = "pstar";
+    st.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.6l-6 3.4 1.3-6.7-5-4.7 6.8-.8z"/></svg>' + (n > 1 ? "<b>" + n + "</b>" : "");
+    st.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(st, n > 1 ? "Vittorie a Strogo Heist: " + n : "Vittoria a Strogo Heist"); });
+    return st;
+  }
   function badgeEl(b) {
     var e = document.createElement("span"); e.className = "bdg"; e.title = "Strogobot v1 — Re del Casinò originale";
+    e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re del Casinò — Strogobot V1"); });
     e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>V1';
     return e;
   }
@@ -98,12 +114,9 @@
     ME.admin = !!me.admin;
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     var pn = $("pname"); pn.textContent = name;
-    if (me.badge || me.admin) pn.appendChild(badgeEl(me.badge));
-    if (me.stars > 0) {                                       // Stelle Heist accanto al nome
-      var st = document.createElement("span"); st.className = "pstar"; st.title = "Stelle Heist";
-      st.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.6l-6 3.4 1.3-6.7-5-4.7 6.8-.8z"/></svg>' + (me.stars > 1 ? "<b>" + me.stars + "</b>" : "");
-      pn.appendChild(st);
-    }
+    if (me.badge) pn.appendChild(badgeEl(me.badge));
+    ME.stars = me.stars; ME.badge = me.badge;
+    if (me.stars > 0) pn.appendChild(starEl(me.stars));
     $("avatar").textContent = (name.trim()[0] || "?").toUpperCase();
     $("pcoins").textContent = me.coins === null || me.coins === undefined ? "—" : fmt(me.coins);
     if (me.banco !== null && me.banco !== undefined) { $("bancoVal").textContent = fmt(me.banco); $("bancoChip").hidden = false; }
@@ -196,7 +209,7 @@
     return refreshMe();
   }
 
-  window.Arcade = { badgeEl: badgeEl, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  window.Arcade = { badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 

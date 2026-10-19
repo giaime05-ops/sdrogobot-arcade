@@ -613,3 +613,10 @@ button,input,select{font-family:inherit}
 /* Mastermind: numeri meno abbaglianti */
 .mm-num{font-family:"Rajdhani","Bungee",sans-serif;font-weight:700;text-shadow:0 0 3px rgba(0,0,0,.6);filter:saturate(.75) brightness(.92);opacity:.95}
 .mm-slot .mm-num{font-size:40px}.mm-key .mm-num{font-size:24px}.mm-line b .mm-num{font-size:22px}.mm-inl .mm-num{font-size:22px}
+/* v19 */
+.mini-tip{position:fixed;z-index:99;max-width:240px;padding:7px 11px;border-radius:10px;font-size:14px;font-weight:600;color:#fff;background:rgba(20,8,36,.96);border:1px solid #ff3db0;box-shadow:0 0 14px rgba(255,61,176,.45);transition:opacity .25s;pointer-events:none}
+.mini-tip.off{opacity:0}
+.bdg,.pstar{cursor:pointer}
+.qcard.grp{background:linear-gradient(135deg,rgba(255,170,40,.18),rgba(255,61,176,.14) 60%,rgba(53,230,255,.1));border-color:rgba(255,190,70,.55);box-shadow:0 0 18px rgba(255,170,40,.18)}
+/* Mastermind: numeri, via di mezzo */
+.mm-num{font-family:"Rajdhani","Bungee",sans-serif;font-weight:700;filter:none;opacity:1;text-shadow:0 0 4px currentColor,0 0 9px rgba(255,255,255,.12)}

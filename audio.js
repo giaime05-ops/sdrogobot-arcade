@@ -40,8 +40,8 @@
   function applyVol() {
     if (!ctx) return;
     var t = ctx.currentTime;
-    gHub.gain.setTargetAtTime(mode === "hub" ? cfg.mHub * 0.5 : 0, t, 0.6);
-    gGame.gain.setTargetAtTime(mode === "game" ? cfg.mGame * 0.5 : 0, t, 0.6);
+    gHub.gain.setTargetAtTime(mode === "hub" ? cfg.mHub * 0.5 : 0, t, 0.25);
+    gGame.gain.setTargetAtTime(0, t, 0.2);          // nei giochi niente musica di fondo: solo gli effetti
     gSfx.gain.setTargetAtTime(cfg.sfx, t, 0.05);
   }
 
@@ -183,7 +183,7 @@
       if (lounge.next < now) lounge.next = now + 0.1;
       while (lounge.next < now + 0.7) lounge.next += loungeBar(lounge.next);
     } else lounge.next = 0;
-    if (mode === "game" && cfg.mGame > 0.001) {
+    if (false) {
       if (arcade.next < now) arcade.next = now + 0.1;
       while (arcade.next < now + 0.7) arcade.next += arcadeBar(arcade.next);
     } else arcade.next = 0;
@@ -206,6 +206,12 @@
       if (cardBuf) { var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = cardBuf; src.playbackRate.value = 0.94 + Math.random() * 0.12; g.gain.value = 0.9; src.connect(g); g.connect(gSfx); src.start(t); return; }
       noise(gSfx, t, 0.09, 0.1, "bandpass", 2200, 0.9, 5200);
     },
+    letter: function (t) { noise(gSfx, t, 0.03, 0.12, "bandpass", 1800, 2); tone(gSfx, "triangle", 520, t, 0.05, 0.08, { slide: 380 }); },
+    digit: function (t, m) { tone(gSfx, "sine", mtof(60 + (m || 0) * 2), t, 0.22, 0.14, { a: 0.004 }); tone(gSfx, "sine", mtof(72 + (m || 0) * 2), t, 0.12, 0.04); },
+    flip: function (t) {
+      if (cardBuf) { var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = cardBuf; src.playbackRate.value = 1.25 + Math.random() * 0.2; g.gain.setValueAtTime(0.55, t); g.gain.linearRampToValueAtTime(0, t + 0.16); src.connect(g); g.connect(gSfx); src.start(t); src.stop(t + 0.18); return; }
+      noise(gSfx, t, 0.05, 0.07, "bandpass", 3000, 1.2, 5000);
+    },
     key: function (t) { tone(gSfx, "square", 760, t, 0.03, 0.05, { lp: 2000 }); },
     tick: function (t) { tone(gSfx, "triangle", 1800, t, 0.025, 0.1, { slide: 1100 }); },
     scratch: function (t) { noise(gSfx, t, 0.16, 0.1, "bandpass", 3000, 1.2, 1500); },
@@ -222,7 +228,7 @@
   function loadCard() {                                    // suono vero delle carte (assets/card.wav); finché non è pronto vale quello sintetico
     if (cardBuf || cardLoading || !ctx) return; cardLoading = true;
     try {
-      fetch("assets/card.wav?v=18").then(function (r) { return r.arrayBuffer(); })
+      fetch("assets/card.wav?v=20").then(function (r) { return r.arrayBuffer(); })
         .then(function (b) { return new Promise(function (ok, ko) { ctx.decodeAudioData(b, ok, ko); }); })
         .then(function (buf) { cardBuf = buf; }).catch(function () { cardLoading = false; });
     } catch (e) { cardLoading = false; }
@@ -238,7 +244,7 @@
   // ---------- collegamenti automatici ----------
   function bindUI() {
     var unlock = function () { start(); };
-    ["pointerdown", "touchstart", "click", "keydown"].forEach(function (ev) { document.addEventListener(ev, unlock, { capture: true, passive: true }); });
+    ["pointerdown", "pointerup", "touchstart", "touchend", "click", "keydown"].forEach(function (ev) { document.addEventListener(ev, unlock, { capture: true, passive: true }); });
     document.addEventListener("visibilitychange", function () {
       if (!ctx) return;
       if (document.hidden) ctx.suspend(); else ctx.resume();
@@ -249,7 +255,8 @@
       if (!t || t.disabled) return;
       var c = t.className || "";
       if (/\bavi-bet\b/.test(c)) sfx("chip");
-      else if (/\bkey\b/.test(c)) sfx("key");
+      else if (/\bmm-key\b/.test(c)) sfx("digit", parseInt((t.textContent || "").replace(/\D/g, ""), 10) || ((t.querySelector && t.querySelector(".mm-sym")) ? Math.floor(Math.random() * 10) : 0));
+      else if (/\bkey\b/.test(c)) sfx("letter");
       else if (/\btile\b/.test(c)) sfx("scratch");
       else sfx("click");
     }, true);
@@ -262,12 +269,40 @@
         prev = c;
       }).observe(n, { attributes: true, childList: true, characterData: true, subtree: true });
     });
-    // carte distribuite
-    var st = document.getElementById("g4Stage");
-    if (st) new MutationObserver(function (ms) {
-      var n = 0; ms.forEach(function (m) { Array.prototype.forEach.call(m.addedNodes, function (x) { if (x.classList && x.classList.contains("pcard") && !x.classList.contains("empty")) n++; }); });
-      for (var i = 0; i < Math.min(n, 3); i++) setTimeout(function () { sfx("card"); }, i * 110);
+    // carte: suono di "distribuzione" solo all'inizio mano (e al flop); poi un singolo suono per ogni carta girata
+    var st = document.getElementById("g4Stage"), lastN = 0, lastBack = 0;
+    function dealSnd(n) { for (var i = 0; i < n; i++) setTimeout(function () { sfx("card"); }, i * 130); }
+    if (st) new MutationObserver(function () {
+      var cards = st.querySelectorAll(".pcard:not(.empty)"), n = cards.length, b = st.querySelectorAll(".pcard.back").length;
+      var d = n - lastN;
+      if (n === 0) { /* tavolo vuoto */ }
+      else if (lastN === 0 && n >= 2) dealSnd(2);                   // le prime carte della mano
+      else if (d >= 3) dealSnd(1);                                  // flop: tre carte insieme
+      else if (d > 0) { for (var k = 0; k < d; k++) setTimeout(function () { sfx("flip"); }, k * 260); }
+      else if (b < lastBack) sfx("flip");                           // carta coperta girata
+      lastN = n; lastBack = b;
     }).observe(st, { childList: true, subtree: true });
+    // Aviator: motore dell'aereo che sale con il moltiplicatore
+    var am = document.getElementById("aviMult");
+    if (am) {
+      var eng = null, engT = 0;
+      var engOff = function () { if (!eng) return; try { eng.g.gain.setTargetAtTime(0, ctx.currentTime, 0.08); var e = eng; setTimeout(function () { try { e.o.stop(); e.o2.stop(); e.n.stop(); } catch (x) {} }, 500); } catch (x) {} eng = null; };
+      new MutationObserver(function () {
+        if (!ctx || !started || ctx.state !== "running" || cfg.sfx < 0.01) return;
+        var m = parseFloat(am.textContent) || 1, over = /win|lose/.test(am.className);
+        if (over || m <= 1.001) { if (over) engOff(); return; }
+        if (!eng) {
+          var o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter(), n = ctx.createBufferSource();
+          o.type = "sawtooth"; o2.type = "sine"; f.type = "lowpass"; f.frequency.value = 900; n.buffer = noiseBuf; n.loop = true;
+          var ng = ctx.createGain(); ng.gain.value = 0.25; n.connect(ng); ng.connect(f);
+          o.connect(f); o2.connect(f); f.connect(g); g.connect(gSfx); g.gain.value = 0; g.gain.setTargetAtTime(0.09, ctx.currentTime, 0.15);
+          o.start(); o2.start(); n.start(); eng = { o: o, o2: o2, g: g, f: f, n: n };
+        }
+        var fr = 70 + Math.min(m, 12) * 22; eng.o.frequency.setTargetAtTime(fr, ctx.currentTime, 0.1); eng.o2.frequency.setTargetAtTime(fr * 2.02, ctx.currentTime, 0.1);
+        eng.f.frequency.setTargetAtTime(700 + Math.min(m, 12) * 180, ctx.currentTime, 0.1);
+        clearTimeout(engT); engT = setTimeout(engOff, 700);          // niente aggiornamenti = volo finito
+      }).observe(am, { childList: true, characterData: true, subtree: true, attributes: true });
+    }
     // musica: sala o gioco
     var secs = ["avi", "gm", "g4"].map(function (id) { return document.getElementById(id); }).filter(Boolean);
     function upd() { setMode(secs.some(function (s) { return !s.hidden; }) ? "game" : "hub"); }

@@ -91,7 +91,7 @@
       j.top.forEach(function (r) {
         var row = el("div", "row" + (r.rank <= 3 ? " r" + r.rank : "") + (r.me ? " me" : ""));
         row.appendChild(el("div", "rk", String(r.rank)));
-        var nm = el("div", "nm", r.name + (r.me ? " (tu)" : "")); if ((r.badge || (r.me && A.isAdmin && A.isAdmin())) && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
+        var nm = el("div", "nm", r.name + (r.me ? " (tu)" : "")); if (r.badge && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
         row.appendChild(nm);
         row.appendChild(el("div", "vl", A.fmt(r.value) + " " + j.unit));
         box.appendChild(row);
@@ -127,7 +127,7 @@
     A.api("/api/social/quests").then(function (j) {
       loaded[key] = true; setBadge((j.quests || []).filter(function (q) { return q.done && !q.claimed; }).length); if (sub !== "quests") return;
       box.innerHTML = "";
-      var ch = j.challenge, card = el("div", "qcard"); card.appendChild(el("h3", "", "🎯 SFIDA DI GRUPPO"));
+      var ch = j.challenge, card = el("div", "qcard grp"); card.appendChild(el("h3", "", "🎯 SFIDA DI GRUPPO"));
       if (ch.active) {
         var pct = Math.min(100, Math.floor(ch.spent * 100 / ch.goal));
         card.appendChild(el("div", "qtxt", "Spendete " + A.fmt(ch.goal) + " $SDG nei giochi: premio " + A.fmt(ch.reward) + " $SDG + Boost Fortuna a ogni partecipante."));
@@ -202,7 +202,10 @@
     ov.innerHTML = ""; var card = el("div", "set-card prof-card");
     card.appendChild(el("h2", "", "PORTAFOGLIO E PROFILO"));
     var head = el("div", "prof-head"); head.appendChild(el("div", "avatar", ($("avatar") && $("avatar").textContent) || "?"));
-    var wh = el("div", "prof-who"); wh.appendChild(el("b", "", $("pname") ? $("pname").textContent : ""));
+    var wh = el("div", "prof-who"); var nb = el("b", "", ""), pnEl = $("pname");
+    nb.appendChild(document.createTextNode(pnEl && pnEl.firstChild ? pnEl.firstChild.textContent : ""));
+    var mm = A.me ? A.me() : {}; if (mm.badge && A.badgeEl) nb.appendChild(A.badgeEl(mm.badge)); if (mm.stars > 0 && A.starEl) nb.appendChild(A.starEl(mm.stars));
+    wh.appendChild(nb);
     var bl = el("span", "", ""); bl.appendChild(el("i", "ci")); bl.appendChild(document.createTextNode(" " + ($("pcoins") ? $("pcoins").textContent : "—") + " $SDG"));
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
     var grid = el("div", "pg-sum"); card.appendChild(grid);
