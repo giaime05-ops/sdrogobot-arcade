@@ -202,14 +202,17 @@
   var SFX = {
     click: function (t) { tone(gSfx, "triangle", 1100, t, 0.05, 0.12, { slide: 700 }); },
     chip: function (t) { noise(gSfx, t, 0.05, 0.14, "bandpass", 3500, 4); tone(gSfx, "sine", 2300, t, 0.09, 0.07, { slide: 1700 }); tone(gSfx, "sine", 3100, t + 0.045, 0.07, 0.05); },
-    card: function (t) {
-      if (cardBuf) { var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = cardBuf; src.playbackRate.value = 0.94 + Math.random() * 0.12; g.gain.value = 0.9; src.connect(g); g.connect(gSfx); src.start(t); return; }
+    card: function (t) {                                   // distribuzione: scorrimento di carta, alternando due suoni
+      var bf = (cardN++ % 2 === 0 ? B.slide2 : B.slide) || B.slide || B.slide2;
+      if (bf) { playBuf(bf, t, 0.96 + Math.random() * 0.1, 0.9); return; }
       noise(gSfx, t, 0.09, 0.1, "bandpass", 2200, 0.9, 5200);
     },
+    ball: function (t) { if (B.ball) playBuf(B.ball, t, 1, 0.8, 7.2); else noise(gSfx, t, 0.5, 0.1, "bandpass", 400, 1.2, 1800); },
     letter: function (t) { noise(gSfx, t, 0.03, 0.12, "bandpass", 1800, 2); tone(gSfx, "triangle", 520, t, 0.05, 0.08, { slide: 380 }); },
     digit: function (t, m) { tone(gSfx, "sine", mtof(60 + (m || 0) * 2), t, 0.22, 0.14, { a: 0.004 }); tone(gSfx, "sine", mtof(72 + (m || 0) * 2), t, 0.12, 0.04); },
-    flip: function (t) {
-      if (cardBuf) { var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = cardBuf; src.playbackRate.value = 1.25 + Math.random() * 0.2; g.gain.setValueAtTime(0.55, t); g.gain.linearRampToValueAtTime(0, t + 0.16); src.connect(g); g.connect(gSfx); src.start(t); src.stop(t + 0.18); return; }
+    flip: function (t) {                                   // carta singola girata/pescata
+      var bf = (cardN++ % 3 === 2 ? B.slide : B.pick) || B.pick || B.slide;
+      if (bf) { playBuf(bf, t, 0.95 + Math.random() * 0.12, 0.85); return; }
       noise(gSfx, t, 0.05, 0.07, "bandpass", 3000, 1.2, 5000);
     },
     key: function (t) { tone(gSfx, "square", 760, t, 0.03, 0.05, { lp: 2000 }); },
@@ -224,17 +227,26 @@
     creak: function (t, p) { p = p || 0; tone(gSfx, "sawtooth", 70 + p * 150, t, 0.11, 0.07, { slide: 55 + p * 120, lp: 700 }); noise(gSfx, t, 0.07, 0.05, "bandpass", 900 + p * 1400, 3); },
     boom: function (t) { noise(gSfx, t, 0.9, 0.35, "lowpass", 2400, 0.8, 120); tone(gSfx, "sine", 130, t, 0.8, 0.4, { slide: 38 }); tone(gSfx, "sawtooth", 80, t, 0.5, 0.12, { slide: 30, lp: 400 }); }
   };
-  var cardBuf = null, cardLoading = false;
-  function loadCard() {                                    // suono vero delle carte (assets/card.wav); finché non è pronto vale quello sintetico
-    if (cardBuf || cardLoading || !ctx) return; cardLoading = true;
+  var cardBuf = null, cardLoading = false, B = {};          // B: slide (slidecard03), slide2 (card-slide), pick (pickupcard05), ball (roulette)
+  function loadOne(key, url) {
     try {
-      fetch("assets/card.wav?v=21").then(function (r) { return r.arrayBuffer(); })
+      fetch(url).then(function (r) { return r.arrayBuffer(); })
         .then(function (b) { return new Promise(function (ok, ko) { ctx.decodeAudioData(b, ok, ko); }); })
-        .then(function (buf) { cardBuf = buf; }).catch(function () { cardLoading = false; });
-    } catch (e) { cardLoading = false; }
+        .then(function (buf) { B[key] = buf; if (key === "slide") cardBuf = buf; }).catch(function () {});
+    } catch (e) {}
   }
+  function loadCard() {                                    // suoni veri (assets/); finché non sono pronti valgono quelli sintetici
+    if (cardLoading || !ctx) return; cardLoading = true;
+    loadOne("slide", "assets/card.wav?v=22"); loadOne("slide2", "assets/card_slide.wav?v=22"); loadOne("pick", "assets/card_pick.wav?v=22"); loadOne("ball", "assets/roulette_ball.mp3?v=22");
+  }
+  function playBuf(buf, t, rate, vol, maxDur) {
+    var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf; src.playbackRate.value = rate; g.gain.setValueAtTime(vol, t);
+    if (maxDur) { g.gain.setValueAtTime(vol, t + maxDur - 0.6); g.gain.linearRampToValueAtTime(0, t + maxDur); src.stop(t + maxDur + 0.02); }
+    src.connect(g); g.connect(gSfx); src.start(t);
+  }
+  var cardN = 0;
   function sfx(name, arg) {
-    if (!cardBuf) loadCard();
+    if (!cardLoading) loadCard();
     if (!started || !ctx || ctx.state !== "running" || cfg.sfx < 0.01) return;
     var f = SFX[name]; if (!f) return;
     if (!once("s_" + name, name === "tick" || name === "key" ? 25 : (name === "creak" || name === "scratch" ? 40 : 60))) return;

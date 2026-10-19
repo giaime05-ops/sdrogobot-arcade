@@ -321,7 +321,7 @@
     go: function () {
       var bet = S.bet, choice = roul.choice;
       setBusy(true); msg("", ""); notes([]); clearBanner();
-      showBal(S.balance - bet); A.haptic("med"); snd("spin");
+      showBal(S.balance - bet); A.haptic("med"); snd("ball");
       var t0 = performance.now();
       A.api("/api/roulette/spin", "POST", { bet: bet, choice: choice }).then(function (j) {
         var res = j.result, idx = ORDER.indexOf(res.number);
