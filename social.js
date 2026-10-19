@@ -5,10 +5,10 @@
   "use strict";
   var A = window.Arcade; if (!A) return;
   var $ = function (id) { return document.getElementById(id); };
-  var ORDER = ["shop", "act", "hub", "lead"];
+  var ORDER = ["shop", "act", "hub", "mp", "lead"];
   var cur = "hub", cat = "coins", sub = "quests", loaded = {}, busy = {};
   var tabs = document.querySelectorAll(".tab");
-  var views = { hub: $("pgHub"), lead: $("pgLead"), act: $("pgAct"), shop: $("pgShop") };
+  var views = { hub: $("pgHub"), lead: $("pgLead"), act: $("pgAct"), shop: $("pgShop"), mp: $("pgMp") };
   var pos = 2, offTimer = null, badgeBusy = false;
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -62,9 +62,13 @@
     if (name === "shop" && window.ArcadeShop) window.ArcadeShop.load();
     if (name === "hub") { A.refreshMe(); refreshBadge(); }
   }
-  views.lead.style.transform = "translate3d(100%,0,0)"; views.act.style.transform = "translate3d(-100%,0,0)"; views.shop.style.transform = "translate3d(-200%,0,0)";
+  views.mp.style.transform = "translate3d(100%,0,0)"; views.lead.style.transform = "translate3d(200%,0,0)"; views.act.style.transform = "translate3d(-100%,0,0)"; views.shop.style.transform = "translate3d(-200%,0,0)";
   document.body.setAttribute("data-tab", "hub");
-  Array.prototype.forEach.call(tabs, function (t) { t.addEventListener("click", function () { show(t.getAttribute("data-tab"), true); }); });
+  Array.prototype.forEach.call(tabs, function (t) { t.addEventListener("click", function () {
+    var n = t.getAttribute("data-tab");
+    if (n === "mp") { A.haptic("light"); A.toast("Multiplayer: in arrivo!"); return; }       // non ancora accessibile
+    show(n, true);
+  }); });
 
   // ---------- classifica ----------
   function renderCats(cats) {
@@ -112,7 +116,7 @@
       loadAct();
     });
   });
-  function loadAct() { if (sub === "quests") loadQuests(); else loadDiary(); }
+  function loadAct() { if (sub === "quests") loadQuests(); else if (sub === "extra") { if (window.ArcadeExtra) window.ArcadeExtra.load($("actBody")); } else loadDiary(); }
 
   function loadQuests() {
     var box = $("actBody"), key = "quests";
@@ -275,6 +279,8 @@
     var t = (e.changedTouches && e.changedTouches[0]) || { clientX: s.x }, dx = t.clientX - s.x, v = dx / Math.max(1, Date.now() - s.t);
     var target = s.base;
     if (Math.abs(dx) > W() * 0.22 || Math.abs(v) > 0.45) target = s.base + (dx < 0 ? 1 : -1);
+    target = Math.max(0, Math.min(ORDER.length - 1, target));
+    if (ORDER[target] === "mp") { target += (target > s.base ? 1 : -1); if (target === s.base) A.toast("Multiplayer: in arrivo!"); }   // la sezione non è ancora aperta: si scavalca
     target = Math.max(0, Math.min(ORDER.length - 1, target));
     show(ORDER[target], target !== s.base);
   }

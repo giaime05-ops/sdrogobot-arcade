@@ -19,7 +19,7 @@
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
   function setBalance(n) { S.balance = n; elBal.textContent = A.fmt(n); A.setCoins(n); }
   function showBal(n) { elBal.textContent = A.fmt(n); A.setCoins(n); }
-  function msg(t, cls) { elMsg.textContent = t || ""; elMsg.className = "gm-msg" + (cls ? " " + cls : ""); }
+  function msg(t, cls, html) { if (html) elMsg.innerHTML = html; else elMsg.textContent = t || ""; elMsg.className = "gm-msg" + (cls ? " " + cls : ""); }
   function notes(l) { elNotes.textContent = (l && l.length) ? l.join("  •  ") : ""; }
   function errText(e) { return e && e.network ? "Server non raggiungibile." : ((e && e.message) || "Errore."); }
   function setBusy(b) { S.busy = b; elBack.disabled = b; if (S.game) S.game.render(); }
@@ -310,10 +310,17 @@
     '<path d="M15.5 3A9 9 0 1 0 21 14.5 7.5 7.5 0 0 1 15.5 3z"/>',
     '<path d="M13.5 2 5 13.5h5.5L9.5 22 19 9.5h-5.7z"/>'
   ];
+  function mmMode() {
+    try { var m = sessionStorage.getItem("arc_mmmode"); if (m === "num" || m === "sym") return m; } catch (e) {}
+    return mmNewMode();
+  }
+  function mmNewMode() { var m = Math.random() < 0.5 ? "num" : "sym"; try { sessionStorage.setItem("arc_mmmode", m); } catch (e) {} return m; }
   function mmSym(d) {
     var i = +d, c = MM_COL[i];
+    if (mmMode() === "num") return '<span class="mm-num" style="color:' + c + '">' + d + '</span>';
     return '<svg viewBox="0 0 24 24" class="mm-sym" style="color:' + c + '"><g fill="' + c + '" fill-opacity=".18" stroke="' + c + '" stroke-width="1.9" stroke-linejoin="round">' + MM_SH[i] + '</g></svg>';
   }
+  function mmCode(code) { return '<span class="mm-inl">' + String(code).split("").map(mmSym).join("") + "</span>"; }
   function mmLights(hits, present) {
     var w = el("span", "mm-lights");
     for (var i = 0; i < 3; i++) w.appendChild(el("i", i < hits ? "hit" : (i < hits + present ? "pre" : "")));
@@ -323,7 +330,7 @@
     title: "🔐 MASTERMIND", st: null, cur: "", res: null,
     build: function () {
       stage.innerHTML = '<div class="mm-slots" id="mmSlots"></div><div class="mm-hist" id="mmHist"></div>' +
-        '<div class="gm-hint">Codice segreto di 3 simboli tutti diversi, 5 tentativi.<br>Luce piena = simbolo giusto al posto giusto · luce vuota = giusto ma altrove<br>Premio: +40 entro il 3° tentativo, +20 al 4° o 5°</div>';
+        '<div class="gm-hint">Codice segreto di 3 tutti diversi, 5 tentativi.<br>Le luci non seguono l\'ordine: piena = giusto al posto giusto · vuota = presente ma altrove<br>Premio: +40 entro il 3° tentativo, +20 al 4° o 5°</div>';
       mm.cur = ""; mm.res = null;
     },
     paint: function () {
@@ -371,6 +378,7 @@
     },
     start: function () {
       setBusy(true); msg("", ""); notes([]); A.haptic("med");
+      mmNewMode();
       A.api("/api/g/mm/start", "POST", {}).then(function (j) {
         mm.res = null; mm.cur = ""; mm.apply(j); S.busy = false; elBack.disabled = false;
         msg("Tentativo " + ((mm.st.attempts || 0) + 1) + "/5", ""); mm.render();
@@ -383,10 +391,10 @@
         mm.apply(j); mm.cur = ""; mm.res = j.result || null; S.busy = false; elBack.disabled = false;
         if (j.result) {
           var r = j.result;
-          if (r.won) { msg("🎉 Esatto! Il codice era " + r.secret + " · +" + A.fmt(r.net) + " $SDG netti", "win"); A.haptic("ok"); }
-          else { msg("💥 Game over: il codice era " + r.secret + " (-10 $SDG)", "lose"); A.haptic("bad"); }
+          if (r.won) { msg("", "win", "🎉 Esatto! Il codice era " + mmCode(r.secret) + " · +" + A.fmt(r.net) + " $SDG netti"); A.haptic("ok"); }
+          else { msg("", "lose", "💥 Game over: il codice era " + mmCode(r.secret) + " (-10 $SDG)"); A.haptic("bad"); }
           setBalance(r.balance); notes(r.notes); A.refreshMe();
-        } else msg("🎯 " + j.hits + "   🔄 " + j.present + "   ·   tentativo " + (j.state.attempts + 1) + "/5", "");
+        } else msg("Tentativo " + (j.state.attempts + 1) + "/5", "");
         mm.render();
       }).catch(function (e) {
         msg(errText(e), "lose"); S.busy = false; elBack.disabled = false; mm.render();

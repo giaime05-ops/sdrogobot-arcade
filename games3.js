@@ -96,70 +96,72 @@
       '<path d="M32 8C18 8 12 18 12 28C12 36 16 40 20 42V53H44V42C48 40 52 36 52 28C52 18 46 8 32 8Z" fill="url(#icS)" stroke="#f1f3ff" stroke-width="1.2"/>' +
       '<circle cx="23" cy="30" r="6" fill="#1a1030"/><circle cx="41" cy="30" r="6" fill="#1a1030"/><path d="M32 36L28 44H36Z" fill="#1a1030"/><path d="M26 47V53M32 47V53M38 47V53" stroke="#1a1030" stroke-width="2"/></svg>'
   };
-  var EMO = { "🍒": "cherry", "🍋": "lemon", "🔔": "bell", "💎": "diamond", "7️⃣": "seven", "💰": "coin", "👑": "crown", "💀": "skull" };
+  ICON.star = '<svg viewBox="0 0 64 64"><defs><linearGradient id="icStar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset="1" stop-color="#ffb21e"/></linearGradient></defs><path d="m32 5 8.2 17.6 19.3 2.2-14.3 13.1 3.9 19L32 47.5 14.9 56.9l3.9-19L4.5 24.8l19.3-2.2z" fill="url(#icStar)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  ICON.ticket = '<svg viewBox="0 0 64 64"><defs><linearGradient id="icTk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#ff9a1f"/></linearGradient></defs><path d="M6 18h52v10a4 4 0 0 0 0 8v10H6V36a4 4 0 0 0 0-8z" fill="url(#icTk)" stroke="#fff" stroke-width="1.6"/><path d="M40 18v28" stroke="#7a4a00" stroke-width="2" stroke-dasharray="3 3"/><path d="M20 27l2.5 5 5.5.8-4 3.8 1 5.4-5-2.7-5 2.7 1-5.4-4-3.8 5.5-.8z" fill="#7a4a00"/></svg>';
+  var EMO = { "⭐": "star", "🎟️": "ticket", "🍒": "cherry", "🍋": "lemon", "🔔": "bell", "💎": "diamond", "7️⃣": "seven", "💰": "coin", "👑": "crown", "💀": "skull" };
   function iconOf(sym) { return EMO[sym] ? ICON[EMO[sym]] : '<span class="emo">' + sym + '</span>'; }
 
-  // ---------- roulette: ruota ferma con numeri grandi e dritti, la pallina gira lungo la pista e rimbalza tra le caselle ----------
+  // ---------- roulette: ruota ferma con numeri grandi, la pallina gira lungo la pista e cade nella casella ----------
   function makeRoulette(size) {
     var dpr = Math.min(window.devicePixelRatio || 1, 2), n = ORDER.length, sl = Math.PI * 2 / n;
     var cv = document.createElement("canvas"); cv.style.width = size + "px"; cv.style.height = size + "px";
     cv.width = Math.round(size * dpr); cv.height = Math.round(size * dpr);
     var c = cv.getContext("2d"), cx = size / 2, cy = size / 2, k = size / 300;
-    var r0 = size / 2 - 5, r1 = r0 - 9 * k, r2 = r1 - 24 * k, rpIn = r2 - 58 * k, rBall = (r1 + r2) / 2 + 3, rPk = r2 - 15 * k;
-    var fnt = Math.max(13, Math.round(size / 21));
+    var r0 = size / 2 - 5, r1 = r0 - 9 * k, r2 = r1 - 26 * k, rpIn = r2 - 52 * k, rBall = (r1 + r2) / 2 + 3, rPk = r2 - 11 * k;
     var W = { cv: cv, ball: { a: -Math.PI / 2, r: rBall }, hub: 0, win: -1, raf: 0 };
     function ang(i) { return -Math.PI / 2 + i * sl; }
     W.draw = function () {
       c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size);
+      // bordo esterno: nero lucido con filo neon
       var g0 = c.createRadialGradient(cx - 30, cy - 40, 10, cx, cy, r0); g0.addColorStop(0, "#2b2233"); g0.addColorStop(1, "#08050c");
       c.beginPath(); c.arc(cx, cy, r0, 0, 7); c.fillStyle = g0; c.fill();
       c.save(); c.shadowColor = "#ff3db0"; c.shadowBlur = 12; c.strokeStyle = "#ff6fc8"; c.lineWidth = 2.4; c.beginPath(); c.arc(cx, cy, r0, 0, 7); c.stroke(); c.restore();
+      // pista della pallina
       var g1 = c.createLinearGradient(0, cy - r1, 0, cy + r1); g1.addColorStop(0, "#1c1626"); g1.addColorStop(0.5, "#0c0812"); g1.addColorStop(1, "#1c1626");
       c.beginPath(); c.arc(cx, cy, r1, 0, 7); c.arc(cx, cy, r2, 0, 7, true); c.fillStyle = g1; c.fill("evenodd");
       c.strokeStyle = "rgba(53,230,255,.35)"; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, r1, 0, 7); c.stroke();
+      // caselle
       for (var i = 0; i < n; i++) {
         var num = ORDER[i], a0 = ang(i) - sl / 2, a1 = a0 + sl;
         c.beginPath(); c.arc(cx, cy, r2, a0, a1); c.arc(cx, cy, rpIn, a1, a0, true); c.closePath();
         c.fillStyle = num === 0 ? "#0f9b52" : (RED.indexOf(num) >= 0 ? "#c9162c" : "#14101c"); c.fill();
-        if (W.win === i) { c.fillStyle = "rgba(255,255,255,.4)"; c.fill(); }
+        if (W.win === i) { c.fillStyle = "rgba(255,255,255,.35)"; c.fill(); }
         c.strokeStyle = "rgba(232,195,106,.8)"; c.lineWidth = 1; c.stroke();
-      }
-      // numeri sempre dritti: si leggono bene anche nella metà bassa
-      c.font = "700 " + fnt + "px Oswald, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
-      for (var j = 0; j < n; j++) {
-        var px = cx + Math.cos(ang(j)) * rPk, py = cy + Math.sin(ang(j)) * rPk;
-        c.lineWidth = 3; c.strokeStyle = "rgba(0,0,0,.65)"; c.strokeText(String(ORDER[j]), px, py);
-        c.fillStyle = W.win === j ? "#fff36a" : "#fff"; c.fillText(String(ORDER[j]), px, py);
+        c.save(); c.translate(cx, cy); c.rotate(ang(i)); c.translate(rPk, 0); c.rotate(Math.PI / 2);
+        c.fillStyle = "#fff"; c.font = "700 " + Math.round(14 * k) + "px Rajdhani, Oswald, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(String(num), 0, 0); c.restore();
       }
       c.strokeStyle = "#e8c36a"; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, rpIn, 0, 7); c.stroke();
+      // cono centrale con croce dorata che gira piano
       var g2 = c.createRadialGradient(cx - 8, cy - 10, 4, cx, cy, rpIn); g2.addColorStop(0, "#3a2d4a"); g2.addColorStop(1, "#0d0814");
       c.beginPath(); c.arc(cx, cy, rpIn - 1, 0, 7); c.fillStyle = g2; c.fill();
       c.save(); c.translate(cx, cy); c.rotate(W.hub); c.strokeStyle = "#e8c36a"; c.lineWidth = 4; c.lineCap = "round";
       c.beginPath(); c.moveTo(-rpIn * 0.62, 0); c.lineTo(rpIn * 0.62, 0); c.moveTo(0, -rpIn * 0.62); c.lineTo(0, rpIn * 0.62); c.stroke();
       c.fillStyle = "#e8c36a"; c.beginPath(); c.arc(0, 0, 8, 0, 7); c.fill(); c.restore();
+      // pallina
       var bx = cx + Math.cos(W.ball.a) * W.ball.r, by = cy + Math.sin(W.ball.a) * W.ball.r;
-      c.save(); c.shadowColor = "rgba(255,255,255,.95)"; c.shadowBlur = 10;
-      var gb = c.createRadialGradient(bx - 2, by - 2, 1, bx, by, 7); gb.addColorStop(0, "#fff"); gb.addColorStop(1, "#b9c2d6");
-      c.fillStyle = gb; c.beginPath(); c.arc(bx, by, 6.2, 0, 7); c.fill(); c.restore();
+      c.save(); c.shadowColor = "rgba(255,255,255,.9)"; c.shadowBlur = 9;
+      var gb = c.createRadialGradient(bx - 2, by - 2, 1, bx, by, 6); gb.addColorStop(0, "#fff"); gb.addColorStop(1, "#b9c2d6");
+      c.fillStyle = gb; c.beginPath(); c.arc(bx, by, 5.5, 0, 7); c.fill(); c.restore();
     };
-    // la pallina orbita, scende verso le caselle e rimbalza più volte tra i numeri prima di fermarsi
+    // tre "caratteri" di tiro scelti a caso: secco (un rimbalzo), medio, lungo (la pallina torna indietro tra le caselle)
+    var STYLES = [
+      { ms: 0.86, amp: 0.55, fr: 26, rad: 3 },
+      { ms: 0.80, amp: 1.6, fr: 15, rad: 4 },
+      { ms: 0.72, amp: 3.2, fr: 9, rad: 5, back: true }
+    ];
     W.spinTo = function (idx, ms, done) {
-      W.win = -1; var t0 = performance.now(), thf = ang(idx), D = Math.PI * 2 * (6 + Math.random() * 1.5), h0 = W.hub, lastBin = null;
+      W.win = -1; var t0 = performance.now(), thf = ang(idx), D = Math.PI * 2 * (6 + Math.random() * 1.5), h0 = W.hub, st = STYLES[Math.floor(Math.random() * STYLES.length)];
+      if (st.back) ms = ms * 1.18;
       cancelAnimationFrame(W.raf);
       (function step(now) {
-        var p = Math.min(1, (now - t0) / ms), a, r;
-        if (p < 0.7) {
-          var u = p / 0.7; a = thf - D * Math.pow(1 - u, 2.2);
-          var land = Math.max(0, Math.min(1, (u - 0.62) / 0.38)), ls = land * land * (3 - 2 * land);
-          r = rBall + (rPk - rBall) * ls;
-        } else {
-          var kk = Math.min(1, (p - 0.7) / 0.3), dec = Math.pow(1 - kk, 1.4), env = dec * (1 - Math.exp(-kk * 9));
-          a = thf + Math.sin(kk * 16) * sl * 4.5 * env;
-          r = rPk + Math.abs(Math.sin(kk * 24)) * 15 * k * dec;
+        var p = Math.min(1, (now - t0) / ms), q = 1 - p;
+        var a = thf - D * Math.pow(q, 2.3);
+        var land = Math.max(0, Math.min(1, (p - st.ms + 0.24) / 0.3)), ls = land * land * (3 - 2 * land);
+        var r = rBall + (rPk - rBall) * ls;
+        if (p > st.ms && p < 1) {
+          var kk = (p - st.ms) / (1 - st.ms), env = st.back ? Math.pow(1 - kk, 1.6) : (1 - kk);
+          a += Math.sin(kk * st.fr) * sl * st.amp * env; r += Math.sin(kk * 20) * st.rad * k * (1 - kk);
         }
-        var bin = Math.floor(a / sl + 0.5);
-        if (lastBin !== null && bin !== lastBin && p > 0.35) snd("tick");
-        lastBin = bin;
         W.ball.a = a; W.ball.r = r; W.hub = h0 + (now - t0) / 1000 * 1.4;
         W.draw();
         if (p < 1) W.raf = requestAnimationFrame(step); else { W.win = idx; W.ball.a = thf; W.ball.r = rPk; W.draw(); done && done(); }
@@ -221,7 +223,7 @@
       stage.innerHTML = '<div class="sl-cab"><i class="sl-b t"></i><i class="sl-b b"></i><i class="sl-b l"></i><i class="sl-b r"></i>' +
         '<div class="reels" id="slReels"><div class="reel"></div><div class="reel"></div><div class="reel"></div></div></div>' +
         '<div class="gm-hint pay"><div class="pr"><span>' + hintIcons("seven", 0, 3) + ' ×10</span><span>' + hintIcons("diamond", 0, 3) + ' ×6</span><span>' + hintIcons("bell", 0, 3) + ' ×5</span>' +
-        '<span>' + hintIcons("lemon", 0, 3) + ' ×4</span><span>' + hintIcons("cherry", 0, 3) + ' ×3</span></div><div class="pr2">Doppia <i class="hi">' + ICON.seven + '</i> o <i class="hi">' + ICON.diamond + '</i> ×2 · altre doppie: rimborso</div></div>' +
+        '<span>' + hintIcons("lemon", 0, 3) + ' ×4</span><span>' + hintIcons("cherry", 0, 3) + ' ×3</span></div><div class="pr2">Doppia <i class="hi">' + ICON.seven + '</i> o <i class="hi">' + ICON.diamond + '</i> ×2 · altre doppie: rimborso<br><i class="hi">' + ICON.star + '</i><i class="hi">' + ICON.star + '</i><i class="hi">' + ICON.star + '</i> = 3 GIRI GRATIS</div></div>' +
         '<div class="sl-last"><div class="sl-lt">ULTIME USCITE</div><div class="sl-lr" id="slLast"></div></div>';
       slot.paintLast();
       slot.box = $("slReels"); slot.reels = Array.prototype.slice.call(slot.box.querySelectorAll(".reel")).map(makeReel);
@@ -242,17 +244,19 @@
       });
     },
     onOpen: function () {
-      A.api("/api/me").then(function (j) { /* il saldo arriva dal profilo */ }).catch(function () {});
+      A.api("/api/slot/state").then(function (j) { slot.freeLeft = j.free_left || 0; if (slot.freeLeft) msg("Hai " + slot.freeLeft + " giri gratis!", "win"); renderGo(); }).catch(function () {});
       msg("Scegli la puntata e gira!", "");
     },
+    freeLeft: 0,
     goLabel: function () {
+      if (slot.freeLeft > 0) return { text: "GIRO GRATIS  (" + slot.freeLeft + ")", busyText: "GIRANO…" };
       if (S.balance < S.bet) return { text: "SALDO INSUFFICIENTE", disabled: true };
       return { text: "GIRA  " + S.bet + " $SDG", busyText: "GIRANO…" };
     },
     go: function () {
-      var bet = S.bet, t0 = performance.now();
+      var bet = S.bet, t0 = performance.now(), isFree = slot.freeLeft > 0;
       setBusy(true); msg("", ""); notes([]); clearBanner(); slot.box.classList.remove("win", "hype");
-      showBal(S.balance - bet);
+      if (!isFree) showBal(S.balance - bet);
       slot.reels.forEach(function (r) { r.box.classList.remove("stop"); r.spin(); }); reelsStart();
       A.haptic("med"); snd("spin");
       A.api("/api/slot/spin", "POST", { bet: bet }).then(function (j) {
@@ -273,11 +277,12 @@
         if (e && e.body && e.body.error) A.refreshMe();
       });
       function finish(res) {
-        setBalance(res.balance); slot.pushLast(res);
-        if (res.kind === "triple") { slot.box.classList.add("win"); msg((res.reels[0] === SYM.s ? "🔥 JACKPOT 777! " : "🎉 TRIS! ") + "+" + A.fmt(res.net) + " $SDG", "win"); banner(res.reels[0] === SYM.s ? "JACKPOT 777!" : "TRIS!", "+" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
+        setBalance(res.balance); slot.pushLast(res); slot.freeLeft = res.free_left || 0;
+        if (res.kind === "bonus") { slot.box.classList.add("win"); msg("⭐ BONUS! " + res.free_left + " giri gratis!", "win"); banner("BONUS!", res.free_left + " GIRI GRATIS", "win"); A.haptic("ok"); }
+        else if (res.kind === "triple") { slot.box.classList.add("win"); msg((res.reels[0] === SYM.s ? "🔥 JACKPOT 777! " : "🎉 TRIS! ") + "+" + A.fmt(res.net) + " $SDG", "win"); banner(res.reels[0] === SYM.s ? "JACKPOT 777!" : "TRIS!", "+" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
         else if (res.kind === "pair" && res.net > 0) { slot.box.classList.add("win"); msg("✨ Doppia d'oro! +" + A.fmt(res.net) + " $SDG", "win"); banner("DOPPIA D'ORO", "+" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
         else if (res.kind === "pair") msg("✨ Doppia: recuperi la puntata.", "");
-        else { msg("💸 Nessuna combinazione: -" + A.fmt(res.bet) + " $SDG", "lose"); A.haptic("bad"); }
+        else { msg(res.free ? "Nessuna vincita (giro gratis)" : "💸 Nessuna combinazione: -" + A.fmt(res.bet) + " $SDG", res.free ? "" : "lose"); A.haptic(res.free ? "light" : "bad"); }
         notes(res.notes); setBusy(false); A.refreshMe();
       }
     }
@@ -348,16 +353,18 @@
     c.strokeStyle = "rgba(255,255,255,.10)"; c.lineWidth = 7;
     for (var i = -TS; i < TS * 2; i += 18) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i + TS, TS); c.stroke(); }
     for (var k = 0; k < 90; k++) { c.fillStyle = "rgba(255,255,255," + (0.05 + Math.random() * 0.16).toFixed(2) + ")"; c.fillRect(Math.random() * TS, Math.random() * TS, 1.6, 1.6); }
-    c.save(); c.font = "400 " + Math.round(TS * 0.66) + "px Bungee, Impact, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
-    c.shadowColor = "#ff3db0"; c.shadowBlur = 12; c.lineWidth = 4; c.strokeStyle = "#2a0b3d"; c.strokeText("S", TS / 2, TS / 2 + 3);
+    c.save(); c.font = "700 " + Math.round(TS * 0.74) + "px Rajdhani, Oswald, Impact, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+    c.shadowColor = "#ff3db0"; c.shadowBlur = 12; c.lineWidth = 3; c.strokeStyle = "#2a0b3d"; c.strokeText("S", TS / 2, TS / 2 + 3);
     var gg = c.createLinearGradient(0, TS * 0.2, 0, TS * 0.8); gg.addColorStop(0, "#ff9be0"); gg.addColorStop(1, "#ff2a9a");
-    c.fillStyle = gg; c.fillText("S", TS / 2, TS / 2 + 3); c.restore();
+    c.fillStyle = gg; c.fillText("S", TS / 2, TS / 2 + 3);
+    c.lineCap = "round"; c.lineWidth = TS * 0.045; c.strokeStyle = "#ff9be0";            // le stanghette del dollaro
+    c.beginPath(); c.moveTo(TS / 2, TS * 0.13); c.lineTo(TS / 2, TS * 0.27); c.moveTo(TS / 2, TS * 0.73); c.lineTo(TS / 2, TS * 0.87); c.stroke(); c.restore();
     c.strokeStyle = "rgba(255,255,255,.4)"; c.lineWidth = 2; c.strokeRect(1, 1, TS - 2, TS - 2);
   }
   var scr = {
     title: "🎟️ GRATTA E VINCI", bets: false, active: false, left: 3, cost: 20, tiles: [], finished: false, cur: null,
     build: function () {
-      stage.innerHTML = '<div class="scr" id="scGrid"></div><div class="gm-hint">Gratta 3 caselle col dito: <i class="hi">' + ICON.skull + '</i> vuoto · <i class="hi">' + ICON.coin + '</i> 10 · <i class="hi">' + ICON.diamond + '</i> 25 · <i class="hi">' + ICON.crown + '</i> 100 $SDG<br>Il premio è la somma delle tre.</div>';
+      stage.innerHTML = '<div class="scr" id="scGrid"></div><div class="gm-hint">Gratta 3 caselle col dito: <i class="hi">' + ICON.skull + '</i> vuoto · <i class="hi">' + ICON.coin + '</i> 10 · <i class="hi">' + ICON.diamond + '</i> 25 · <i class="hi">' + ICON.crown + '</i> 100 $SDG<br>Il premio è la somma delle tre. Tre monete uguali = un biglietto gratis; con il biglietto dorato <i class="hi">' + ICON.ticket + '</i> ne vinci 10!</div>';
       var g = $("scGrid"); scr.tiles = []; scr.cur = null;
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
       for (var i = 0; i < 9; i++) {
@@ -370,7 +377,7 @@
           paintCover(cv); scr.tiles.push(T); scr.bind(T);
         })(i);
       }
-      if (document.fonts && document.fonts.load) document.fonts.load("40px Bungee").then(function () { scr.tiles.forEach(function (T) { if (T.st === "cover" && !T.touched) paintCover(T.cv); }); }).catch(function () {});
+      if (document.fonts && document.fonts.load) document.fonts.load("700 40px Rajdhani").then(function () { scr.tiles.forEach(function (T) { if (T.st === "cover" && !T.touched) paintCover(T.cv); }); }).catch(function () {});
     },
     reset: function () {
       scr.cur = null;
@@ -424,7 +431,8 @@
       T.st = "requesting"; scr.cur = T; S.busy = true; elBack.disabled = true; A.haptic("light");
       A.api("/api/scratch/pick", "POST", { idx: T.i }).then(function (j) {
         T.sym = j.sym; T.result = j.result || null; T.under.innerHTML = iconOf(j.sym); T.st = "scratching";
-        if (j.state) scr.left = (j.state.picks || 3) - j.state.picked.length;
+        if (j.result) scr.left = 0;
+        else if (j.state && j.state.picked) scr.left = (j.state.picks || 3) - j.state.picked.length;
         else scr.left = Math.max(0, scr.left - 1);
         msg("Gratta la casella…", "");
         if (T.autoFinish || (T.tap && !T.down)) scr.finish(T); else scr.check(T);
@@ -441,7 +449,7 @@
         if (T.result) {
           var res = T.result; scr.active = false; scr.finished = true;
           scr.tiles.forEach(function (tt, k) { if (res.picked.indexOf(k) < 0) scr.reveal(tt, res.grid[k], true); });
-          setBalance(res.balance);
+          setBalance(res.balance); scr.free = res.free_left || 0;
           if (res.paid > 0) { msg("🎉 Hai vinto " + A.fmt(res.paid) + " $SDG (" + (res.net >= 0 ? "+" : "") + A.fmt(res.net) + " netti)", "win"); banner("HAI VINTO", "+" + A.fmt(res.paid) + " $SDG", "win"); A.haptic("ok"); }
           else { msg("💸 Nessun premio, ritenta!", "lose"); banner("NESSUN PREMIO", "ritenta!", "lose"); A.haptic("bad"); }
           notes(res.notes);
@@ -452,7 +460,7 @@
     applyView: function (v) {
       if (typeof v.balance === "number") setBalance(v.balance);
       if (v.cost) scr.cost = v.cost;
-      scr.active = !!v.active; scr.enabled = v.enabled !== false;
+      scr.active = !!v.active; scr.enabled = v.enabled !== false; scr.free = v.free || 0;
       scr.reset();
       if (v.active) {
         scr.finished = false;
@@ -467,6 +475,7 @@
     },
     goLabel: function () {
       if (scr.active) return { text: "GRATTA CON IL DITO ☝", disabled: true };
+      if (scr.free > 0) return { text: "BIGLIETTO GRATIS  (" + scr.free + ")", busyText: "…" };
       if (S.balance < scr.cost) return { text: "SALDO INSUFFICIENTE", disabled: true };
       return { text: (scr.finished ? "NUOVO BIGLIETTO  " : "COMPRA BIGLIETTO  ") + scr.cost + " $SDG", busyText: "…" };
     },

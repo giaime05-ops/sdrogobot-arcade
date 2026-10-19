@@ -81,7 +81,8 @@
       banco:  banco,
       follia: !!follia,
       daily:  !!pick(pick(j, ["daily"], {}), ["available"], false),
-      admin:  !!(j && j.admin)
+      admin:  !!(j && j.admin),
+      stars:  +(j && j.stars) || 0
     };
   }
 
@@ -89,7 +90,12 @@
     opts = opts || {};
     ME.admin = !!me.admin;
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
-    $("pname").textContent = name;
+    var pn = $("pname"); pn.textContent = name;
+    if (me.stars > 0) {                                       // Stelle Heist accanto al nome
+      var st = document.createElement("span"); st.className = "pstar"; st.title = "Stelle Heist";
+      st.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.6l-6 3.4 1.3-6.7-5-4.7 6.8-.8z"/></svg>' + (me.stars > 1 ? "<b>" + me.stars + "</b>" : "");
+      pn.appendChild(st);
+    }
     $("avatar").textContent = (name.trim()[0] || "?").toUpperCase();
     $("pcoins").textContent = me.coins === null || me.coins === undefined ? "—" : fmt(me.coins);
     if (me.banco !== null && me.banco !== undefined) { $("bancoVal").textContent = fmt(me.banco); $("bancoChip").hidden = false; }

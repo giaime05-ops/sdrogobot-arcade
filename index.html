@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Rye&family=Bungee&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=16">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -216,6 +216,10 @@
     </div>
     <div class="pg-body" id="shopBody"></div>
   </section>
+  <section class="pg off" id="pgMp" aria-label="Multiplayer">
+    <div class="pg-head"><div class="pg-title">MULTIPLAYER</div></div>
+    <div class="pg-body"><div class="pg-empty">IN ARRIVO</div></div>
+  </section>
   <section class="pg off" id="pgLead" aria-label="Classifica">
     <div class="pg-head"><div class="pg-title">CLASSIFICA</div><div class="pg-bal"><span class="ci"></span> <b class="pgcoins">—</b></div></div>
     <div class="pg-cats" id="leadCats"></div>
@@ -226,6 +230,7 @@
     <div class="pg-cats pg-sub" id="actTabs">
       <button type="button" class="pcat on" data-sub="quests">🎯 Sfide e missioni</button>
       <button type="button" class="pcat" data-sub="history">📜 Storico</button>
+      <button type="button" class="pcat" data-sub="extra">💼 Extra</button>
     </div>
     <div class="pg-body" id="actBody"></div>
   </section>
@@ -233,6 +238,7 @@
     <button type="button" class="tab" data-tab="shop"><span>🛒</span>Shop</button>
     <button type="button" class="tab" data-tab="act"><span>🎯</span>Attività</button>
     <button type="button" class="tab on" data-tab="hub"><span>🎰</span>Casino</button>
+    <button type="button" class="tab" data-tab="mp"><span>⚔️</span>Multi</button>
     <button type="button" class="tab" data-tab="lead"><span>🏆</span>Classifica</button>
   </nav>
 
@@ -302,16 +308,17 @@
   </div>
 </main>
 
-<script src="config.js?v=14"></script>
-<script src="app.js?v=14"></script>
-<script src="aviator.js?v=14"></script>
-<script src="games3.js?v=14"></script>
-<script src="games4.js?v=14"></script>
-<script src="social.js?v=14"></script>
-<script src="shop.js?v=14"></script>
-<script src="audio.js?v=14"></script>
-<script src="settings.js?v=14"></script>
-<script type="module" src="hub3d.js?v=14"></script>
+<script src="config.js?v=16"></script>
+<script src="app.js?v=16"></script>
+<script src="aviator.js?v=16"></script>
+<script src="games3.js?v=16"></script>
+<script src="games4.js?v=16"></script>
+<script src="social.js?v=16"></script>
+<script src="shop.js?v=16"></script>
+<script src="extra.js?v=16"></script>
+<script src="audio.js?v=16"></script>
+<script src="settings.js?v=16"></script>
+<script type="module" src="hub3d.js?v=16"></script>
 <script>
 // se il 3D non parte entro 6 secondi (telefono vecchio, WebGL assente) si mostra la sala 2D
 setTimeout(function () { if (!document.body.classList.contains("has3d")) { var s = document.getElementById("scene"); if (s) s.classList.add("show"); } }, 6000);

@@ -507,3 +507,57 @@ button,input,select{font-family:inherit}
 .sl-li{display:flex;gap:1px;padding:3px 5px;border-radius:8px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12)}
 .sl-li i{display:block;width:17px;height:17px}.sl-li svg{width:100%;height:100%}
 .sl-li.w{border-color:#6bff8f;box-shadow:0 0 8px rgba(107,255,143,.5)}.sl-li.l{opacity:.75}
+/* numeri del Mastermind e lettere del Wordle in stile neon */
+.mm-num{display:grid;place-items:center;font-family:"Bungee","Rajdhani",sans-serif;font-weight:400;line-height:1;text-shadow:0 0 6px currentColor,0 0 14px currentColor}
+.mm-slot .mm-num{font-size:34px}
+.mm-key .mm-num{font-size:20px}
+.mm-line b .mm-num{width:26px;height:26px;font-size:20px}
+.mm-inl{display:inline-flex;gap:6px;vertical-align:middle;margin:0 2px}.mm-inl .mm-sym{width:22px;height:22px}.mm-inl .mm-num{font-size:20px}
+.wd-tile{font-family:"Bungee","Rajdhani",sans-serif;font-weight:400;font-size:24px;border-radius:10px;border:2px solid rgba(53,230,255,.32);background:rgba(10,4,20,.55);
+  color:#e9fbff;text-shadow:0 0 8px rgba(53,230,255,.8)}
+.wd-tile.fill{border-color:#35e6ff;box-shadow:0 0 10px rgba(53,230,255,.5)}
+.wd-tile.G{background:rgba(40,200,110,.28);border-color:#4dff9a;color:#d8ffe8;box-shadow:0 0 12px rgba(77,255,154,.6),inset 0 0 10px rgba(77,255,154,.3);text-shadow:0 0 8px #4dff9a}
+.wd-tile.Y{background:rgba(255,200,40,.24);border-color:#ffd23d;color:#fff4cc;box-shadow:0 0 12px rgba(255,210,61,.55),inset 0 0 10px rgba(255,210,61,.25);text-shadow:0 0 8px #ffd23d}
+.wd-tile.B{background:rgba(40,30,60,.7);border-color:rgba(255,255,255,.16);color:#8d86a8;text-shadow:none;box-shadow:none}
+.key{font-family:"Bungee","Rajdhani",sans-serif;font-weight:400;font-size:13px;border-radius:8px;border:1px solid rgba(255,61,176,.35);background:rgba(255,61,176,.1);color:#ffd6ef}
+.key.G{background:rgba(40,200,110,.35);border-color:#4dff9a;color:#e4ffee}.key.Y{background:rgba(255,200,40,.3);border-color:#ffd23d;color:#fff4cc}.key.B{background:rgba(20,14,34,.8);border-color:rgba(255,255,255,.08);color:#5f5878}
+.key.mm-key{border:1px solid rgba(255,61,176,.35)}
+/* Shop: pannelli colorati per categoria */
+.sh-head{display:inline-block;padding:4px 12px;border-radius:999px;margin:12px 2px 4px;font-size:12px}
+.sh-head.aiuti{background:rgba(53,230,255,.14);border:1px solid rgba(53,230,255,.6);color:#c9fbff;text-shadow:0 0 8px rgba(53,230,255,.8)}
+.sh-head.fastidi{background:rgba(255,46,77,.16);border:1px solid rgba(255,61,120,.65);color:#ffd0dc;text-shadow:0 0 8px rgba(255,46,77,.8)}
+.sh-head.inv{background:rgba(180,132,255,.16);border:1px solid rgba(180,132,255,.6);color:#eadcff}
+.shcard{position:relative;gap:12px;padding:12px;border-radius:16px;border:1px solid transparent;overflow:hidden}
+.shcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.shcard.aiuti{background:linear-gradient(120deg,rgba(53,230,255,.20),rgba(40,200,150,.07) 60%,rgba(8,4,20,.4));border-color:rgba(53,230,255,.45);box-shadow:0 0 16px rgba(53,230,255,.16),inset 0 0 18px rgba(53,230,255,.06)}
+.shcard.aiuti::before{background:#35e6ff;box-shadow:0 0 10px #35e6ff}
+.shcard.fastidi{background:linear-gradient(120deg,rgba(255,46,77,.22),rgba(255,61,176,.08) 60%,rgba(8,4,20,.4));border-color:rgba(255,61,120,.5);box-shadow:0 0 16px rgba(255,46,77,.18),inset 0 0 18px rgba(255,46,77,.07)}
+.shcard.fastidi::before{background:#ff3d78;box-shadow:0 0 10px #ff3d78}
+.shcard.inv{background:linear-gradient(120deg,rgba(180,132,255,.2),rgba(8,4,20,.4));border-color:rgba(180,132,255,.45)}
+.shcard.inv::before{background:#b084ff}
+.shi{flex:0 0 40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(0,0,0,.35);border:1px solid currentColor}
+.shi svg{width:24px;height:24px;filter:drop-shadow(0 0 4px currentColor)}
+.shi.aiuti{color:#35e6ff}.shi.fastidi{color:#ff5a86}.shi.inv{color:#b084ff}
+.shcard.aiuti .shbuy{background:linear-gradient(180deg,#35e6ff,#1590b5);color:#032;box-shadow:0 0 12px rgba(53,230,255,.5)}
+.shcard.fastidi .shbuy{background:linear-gradient(180deg,#ff5a86,#c71d4a);box-shadow:0 0 12px rgba(255,46,77,.5)}
+.shcard .shbuy.poor{background:linear-gradient(180deg,#5a4a73,#3a2d50);color:#cdbfe6;box-shadow:none}
+.shcard .shbuy:disabled{opacity:.55}
+.pstar{display:inline-flex;align-items:center;gap:2px;margin-left:6px;vertical-align:middle;color:#ffd23d}
+.pstar svg{width:16px;height:16px;fill:rgba(255,210,61,.25);stroke:#ffd23d;stroke-width:1.8;stroke-linejoin:round;filter:drop-shadow(0 0 4px #ffd23d)}
+.pstar b{font-size:15px;color:#fff3b0;text-shadow:0 0 6px #ffd23d}
+#tabs .tab{padding:0 2px;font-size:12px}
+/* Extra: lavora e dona */
+.xcard .qtxt{margin-bottom:8px}
+.xbtn{display:block;width:100%;padding:11px;font:700 16px "Rajdhani",sans-serif;letter-spacing:1px;color:#fff;background:linear-gradient(180deg,#ff6fc8,#c71d78);border:0;border-radius:12px;box-shadow:0 0 12px rgba(255,61,176,.45)}
+.xbtn.alt{background:linear-gradient(180deg,#35e6ff,#1590b5);color:#032;box-shadow:0 0 12px rgba(53,230,255,.45)}
+.xbtn:disabled{background:rgba(255,255,255,.08);color:#9a8fb5;box-shadow:none}
+.xpuz{white-space:pre-line;font-size:19px;line-height:1.35;text-align:center;margin:6px 0 10px;color:#fff}
+.xopts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.xopt{padding:14px 6px;font:700 20px "Rajdhani",sans-serif;color:#d7fbff;background:rgba(53,230,255,.08);border:1px solid rgba(53,230,255,.5);border-radius:12px}
+.xopt.ok{background:rgba(77,255,154,.25);border-color:#4dff9a;color:#fff}.xopt.bad{background:rgba(255,46,77,.25);border-color:#ff3d78;color:#fff}
+.dn-search{width:100%;margin:8px 0;padding:10px;border-radius:10px;border:1px solid rgba(53,230,255,.45);background:rgba(10,4,20,.7);color:#fff;font:600 16px "Rajdhani",sans-serif;user-select:text;-webkit-user-select:text}
+.dn-list{max-height:42vh;overflow-y:auto;margin-bottom:8px}
+.dn-row{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:6px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;font:600 17px "Rajdhani",sans-serif;text-align:left}
+.dn-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ff6fc8,#7a5cff);font-weight:700}
+.dn-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dn-go{color:#8ff3ff;font-size:14px}
