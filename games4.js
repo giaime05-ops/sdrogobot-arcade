@@ -332,7 +332,7 @@
     title: "🔐 MASTERMIND", st: null, cur: "", res: null,
     build: function () {
       stage.innerHTML = '<div class="mm-slots" id="mmSlots"></div><div class="mm-hist" id="mmHist"></div>' +
-        '<div class="gm-hint">Codice segreto di 3 tutti diversi, 5 tentativi.<br>Per ogni tentativo ti dico QUANTE cifre sono giuste, non quali:<br><span class="mm-leg hit"><i></i> giuste al posto giusto</span> <span class="mm-leg pre"><i></i> presenti ma in un altro posto</span><br>Premio: +40 entro il 3° tentativo, +20 al 4° o 5°</div>';
+        '<div class="gm-hint">Codice segreto di 3 tutti diversi, 5 tentativi.<br>Per ogni tentativo ti dico QUANTE cifre sono giuste, non quali:<br><span class="mm-leg hit"><i></i> giuste al posto giusto</span> <span class="mm-leg pre"><i></i> presenti ma in un altro posto</span><br>Premio netto: +70 entro il 3° tentativo, +40 al 4°, +25 al 5°</div>';
       mm.cur = ""; mm.res = null;
     },
     paint: function () {
