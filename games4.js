@@ -322,15 +322,17 @@
   }
   function mmCode(code) { return '<span class="mm-inl">' + String(code).split("").map(mmSym).join("") + "</span>"; }
   function mmLights(hits, present) {
-    var w = el("span", "mm-lights");
-    for (var i = 0; i < 3; i++) w.appendChild(el("i", i < hits ? "hit" : (i < hits + present ? "pre" : "")));
+    var w = el("span", "mm-lights mm-chips");
+    var a = el("span", "mm-chip hit"); a.innerHTML = "<i></i><b>" + hits + "</b>";
+    var b = el("span", "mm-chip pre"); b.innerHTML = "<i></i><b>" + present + "</b>";
+    w.appendChild(a); w.appendChild(b);
     return w;
   }
   var mm = {
     title: "🔐 MASTERMIND", st: null, cur: "", res: null,
     build: function () {
       stage.innerHTML = '<div class="mm-slots" id="mmSlots"></div><div class="mm-hist" id="mmHist"></div>' +
-        '<div class="gm-hint">Codice segreto di 3 tutti diversi, 5 tentativi.<br>Le luci non seguono l\'ordine: piena = giusto al posto giusto · vuota = presente ma altrove<br>Premio: +40 entro il 3° tentativo, +20 al 4° o 5°</div>';
+        '<div class="gm-hint">Codice segreto di 3 tutti diversi, 5 tentativi.<br>Per ogni tentativo ti dico QUANTE cifre sono giuste, non quali:<br><span class="mm-leg hit"><i></i> giuste al posto giusto</span> <span class="mm-leg pre"><i></i> presenti ma in un altro posto</span><br>Premio: +40 entro il 3° tentativo, +20 al 4° o 5°</div>';
       mm.cur = ""; mm.res = null;
     },
     paint: function () {
@@ -490,7 +492,7 @@
     if (!A.inTelegram) { A.toast("Apri da Telegram per giocare"); return; }
     clearTimers();
     S.game = game; S.busy = false;
-    root.hidden = false; elTitle.textContent = game.title;
+    root.hidden = false; elTitle.textContent = game.title; root.setAttribute('data-gm', game === bj ? 'bj' : '');
     msg("", ""); notes([]); elBets.hidden = true; elPad.innerHTML = ""; elActs.innerHTML = "";
     elEnter.hidden = true; elEnter.parentNode.classList.remove("has-enter");
     game.build();

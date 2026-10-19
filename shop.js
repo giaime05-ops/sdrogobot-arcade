@@ -77,7 +77,7 @@
   function renderInv(box) {
     if (!data.v2) { empty(box, "L'inventario è riservato a chi ha la V2."); return; }
     var inv = data.inventory, any = false;
-    section(box, "IL TUO INVENTARIO", "Stelle Heist: " + inv.stars, "inv");
+    section(box, "IL TUO INVENTARIO", "", "inv");
     inv.items.forEach(function (it) {
       if (!it.count && !it.active) return; any = true;
       var card = el("div", "shcard " + (it.cat || "inv")), left = el("div", "shl");

@@ -561,3 +561,52 @@ button,input,select{font-family:inherit}
 .dn-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ff6fc8,#7a5cff);font-weight:700}
 .dn-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dn-go{color:#8ff3ff;font-size:14px}
+
+/* ===== v17 ===== */
+/* Mastermind: due contatori chiari */
+.mm-chips{gap:10px}
+.mm-chip,.mm-leg{display:inline-flex;align-items:center;gap:5px}
+.mm-chip b{font-family:"Bungee","Rajdhani",sans-serif;font-weight:400;font-size:17px;color:#fff}
+.mm-chip i,.mm-leg i{display:inline-block;width:14px;height:14px;border-radius:50%}
+.mm-chip.hit i,.mm-leg.hit i{background:#6bff8f;border:2px solid #6bff8f;box-shadow:0 0 9px #6bff8f}
+.mm-chip.pre i,.mm-leg.pre i{background:#ffe14a;border:2px solid #ffe14a;box-shadow:0 0 9px rgba(255,225,74,.8)}
+.mm-leg{font-size:13px;margin:3px 6px;color:#e9dcff}
+/* Wordle: tastiera chiara e leggibile */
+.key{font-family:"Rajdhani","Bungee",sans-serif;font-weight:700;font-size:18px;color:#fff;background:linear-gradient(180deg,#8d86a6,#5f5878);border:1px solid rgba(255,255,255,.35);text-shadow:0 1px 0 rgba(0,0,0,.45)}
+.key.wide{font-size:13px}
+.key.mm-key{font-family:"Bungee",sans-serif;font-size:15px}
+.key.G{background:linear-gradient(180deg,#43d98a,#1f9e5b);border-color:#9dffc4;color:#fff}
+.key.Y{background:linear-gradient(180deg,#ffd84a,#c99a10);border-color:#fff1a0;color:#2a1c00;text-shadow:none}
+.key.B{background:#2a2535;border-color:rgba(255,255,255,.08);color:#7d7694;text-shadow:none}
+/* Attività: schede fisse e simmetriche */
+#actTabs{overflow:visible;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:4px 12px 8px}
+#actTabs .pcat{width:100%;padding:8px 4px;font-size:15px;text-align:center;white-space:nowrap}
+/* Profilo: pulsanti affiancati */
+.prof-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 4px}
+.prof-btns .set-ok{margin-top:0}
+.prof-btns .prof-inv{background:linear-gradient(180deg,#35e6ff,#0a8fb3);color:#031a22}
+.prof-btns .prof-close{background:linear-gradient(180deg,#ff6fc8,#c71d78)}
+.prof-card .pg-speed{margin-top:6px}
+/* badge storico */
+.bdg{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:1px 7px 1px 4px;border-radius:999px;vertical-align:middle;font-family:"Bungee",sans-serif;font-size:10px;letter-spacing:.5px;color:#2a1604;background:linear-gradient(180deg,#fff0a8,#ffb92e 55%,#d9791c);box-shadow:0 0 8px rgba(255,185,46,.7),inset 0 1px 0 rgba(255,255,255,.7)}
+.bdg svg{width:12px;height:12px;fill:#2a1604}
+/* blackjack: sfondo rosso morbido */
+#g4[data-gm="bj"] .gm-stage{background:radial-gradient(120% 80% at 50% 0%,#5a1626 0%,#2e0b18 55%,#14060c 100%)}
+/* multiplayer */
+.mp-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:55vh;border-radius:18px;margin:8px 4px;
+  background:radial-gradient(120% 90% at 50% 0%,#3a1560 0%,#14072a 60%,#07040d 100%);border:1px solid rgba(255,61,176,.25)}
+.mp-soon b{font-family:"Bungee",sans-serif;font-weight:400;font-size:30px;letter-spacing:3px;color:#fff;text-shadow:0 0 18px #ff3db0}
+.mp-soon span{margin-top:8px;font-size:15px;color:#cdbfe6}
+.mp-sec{font-family:"Bungee",sans-serif;font-size:14px;letter-spacing:1px;color:#8ff3ff;margin:14px 2px 6px}
+.mp-card{border:1px solid rgba(255,61,176,.3);background:rgba(255,61,176,.07);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.mp-row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.mp-row .pcat{font-size:14px;padding:6px 10px}
+.mp-go{display:block;width:100%;margin-top:8px;font:inherit;font-size:16px;font-weight:700;padding:11px;border:0;border-radius:12px;color:#fff;background:linear-gradient(180deg,#ff6fc8,#c71d78);cursor:pointer}
+.mp-go:disabled{opacity:.45}
+.mp-vs{display:flex;justify-content:space-between;align-items:center;text-align:center;margin:8px 0;font-family:"Bungee",sans-serif}
+.mp-vs div{flex:1}.mp-vs .big{font-size:42px}.mp-vs small{display:block;font-family:"Rajdhani",sans-serif;font-size:14px;color:#cdbfe6}
+.mp-hand{display:flex;gap:10px;justify-content:center;margin:10px 0}
+.mp-hand button{font-size:38px;width:78px;height:78px;border-radius:16px;border:1px solid rgba(53,230,255,.5);background:rgba(53,230,255,.08);cursor:pointer}
+.mp-seat{display:inline-block;width:46%;margin:2%;padding:10px 4px;text-align:center;border-radius:12px;border:1px dashed rgba(255,255,255,.25);font-size:14px;color:#e9dcff;box-sizing:border-box}
+.mp-seat.me{border:1px solid #ff3db0;background:rgba(255,61,176,.12)}
+.prof-btns .set-ok,.prof-btns .prof-inv{margin:0}

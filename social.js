@@ -60,13 +60,14 @@
     if (name === "lead") loadLead();
     if (name === "act") loadAct();
     if (name === "shop" && window.ArcadeShop) window.ArcadeShop.load();
+    if (name === "mp" && window.ArcadeMulti) window.ArcadeMulti.load();
     if (name === "hub") { A.refreshMe(); refreshBadge(); }
   }
   views.mp.style.transform = "translate3d(100%,0,0)"; views.lead.style.transform = "translate3d(200%,0,0)"; views.act.style.transform = "translate3d(-100%,0,0)"; views.shop.style.transform = "translate3d(-200%,0,0)";
   document.body.setAttribute("data-tab", "hub");
   Array.prototype.forEach.call(tabs, function (t) { t.addEventListener("click", function () {
     var n = t.getAttribute("data-tab");
-    if (n === "mp") { A.haptic("light"); A.toast("Multiplayer: in arrivo!"); return; }       // non ancora accessibile
+    if (n === "mp") A.toast("Multiplayer: in arrivo!");
     show(n, true);
   }); });
 
@@ -90,7 +91,8 @@
       j.top.forEach(function (r) {
         var row = el("div", "row" + (r.rank <= 3 ? " r" + r.rank : "") + (r.me ? " me" : ""));
         row.appendChild(el("div", "rk", String(r.rank)));
-        row.appendChild(el("div", "nm", r.name + (r.me ? " (tu)" : "")));
+        var nm = el("div", "nm", r.name + (r.me ? " (tu)" : "")); if (r.badge && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
+        row.appendChild(nm);
         row.appendChild(el("div", "vl", A.fmt(r.value) + " " + j.unit));
         box.appendChild(row);
       });
@@ -205,11 +207,12 @@
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
     var grid = el("div", "pg-sum"); card.appendChild(grid);
     var tail = el("div"); card.appendChild(tail);
+    var btns = el("div", "prof-btns");
     var inv = el("button", "set-ok prof-inv", "INVENTARIO"); inv.type = "button";
     inv.addEventListener("click", function () { closeProfile(); if (window.ArcadeShop) window.ArcadeShop.openInventory(); });
-    card.appendChild(inv);
-    tail.appendChild(speedBox());
-    var ok = el("button", "set-ok", "CHIUDI"); ok.type = "button"; ok.addEventListener("click", closeProfile); card.appendChild(ok);
+    var ok = el("button", "set-ok prof-close", "CHIUDI"); ok.type = "button"; ok.addEventListener("click", closeProfile);
+    btns.appendChild(inv); btns.appendChild(ok); card.appendChild(btns);
+    card.appendChild(speedBox());
     ov.appendChild(card); ov.hidden = false;
     grid.appendChild(el("div", "pg-empty", "Carico…"));
     A.api("/api/social/wallet").then(function (w) {
@@ -222,9 +225,8 @@
       });
       var wd = el("div", "prof-wheel");
       wd.appendChild(el("b", "", "Ruota Daily"));
-      wd.appendChild(document.createTextNode(" " + (w.wheel_available ? "disponibile oggi!" : "già girata oggi: torna domani") + " · premi: " +
-        w.wheel_prizes.map(function (p) { return p.prize + " (" + p.pct + "%)"; }).join(" · ") + " $SDG"));
-      grid.parentNode.insertBefore(wd, tail);
+      wd.appendChild(document.createTextNode(" " + (w.wheel_available ? "disponibile oggi!" : "già girata oggi: torna domani")));
+      grid.parentNode.insertBefore(wd, btns);
     }).catch(function (e) { grid.innerHTML = ""; grid.appendChild(el("div", "pg-empty", errMsg(e))); });
   }
   function closeProfile() { var ov = $("profile"); if (ov) ov.hidden = true; }
@@ -280,7 +282,6 @@
     var target = s.base;
     if (Math.abs(dx) > W() * 0.22 || Math.abs(v) > 0.45) target = s.base + (dx < 0 ? 1 : -1);
     target = Math.max(0, Math.min(ORDER.length - 1, target));
-    if (ORDER[target] === "mp") { target += (target > s.base ? 1 : -1); if (target === s.base) A.toast("Multiplayer: in arrivo!"); }   // la sezione non è ancora aperta: si scavalca
     target = Math.max(0, Math.min(ORDER.length - 1, target));
     show(ORDER[target], target !== s.base);
   }
