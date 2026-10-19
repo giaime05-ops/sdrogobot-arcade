@@ -5,11 +5,11 @@
   "use strict";
   var A = window.Arcade; if (!A) return;
   var $ = function (id) { return document.getElementById(id); };
-  var ORDER = ["act", "hub", "lead"];
+  var ORDER = ["shop", "act", "hub", "lead"];
   var cur = "hub", cat = "coins", sub = "quests", loaded = {}, busy = {};
   var tabs = document.querySelectorAll(".tab");
-  var views = { hub: $("pgHub"), lead: $("pgLead"), act: $("pgAct") };
-  var pos = 1, offTimer = null, badgeBusy = false;
+  var views = { hub: $("pgHub"), lead: $("pgLead"), act: $("pgAct"), shop: $("pgShop") };
+  var pos = 2, offTimer = null, badgeBusy = false;
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function gameOpen() { return ["avi", "gm", "g4"].some(function (id) { var n = $(id); return n && !n.hidden; }); }
@@ -59,9 +59,10 @@
     syncCoins();
     if (name === "lead") loadLead();
     if (name === "act") loadAct();
+    if (name === "shop" && window.ArcadeShop) window.ArcadeShop.load();
     if (name === "hub") { A.refreshMe(); refreshBadge(); }
   }
-  views.lead.style.transform = "translate3d(100%,0,0)"; views.act.style.transform = "translate3d(-100%,0,0)";
+  views.lead.style.transform = "translate3d(100%,0,0)"; views.act.style.transform = "translate3d(-100%,0,0)"; views.shop.style.transform = "translate3d(-200%,0,0)";
   document.body.setAttribute("data-tab", "hub");
   Array.prototype.forEach.call(tabs, function (t) { t.addEventListener("click", function () { show(t.getAttribute("data-tab"), true); }); });
 
@@ -193,22 +194,33 @@
   function openProfile() {
     var ov = profOv();
     ov.innerHTML = ""; var card = el("div", "set-card prof-card");
-    card.appendChild(el("h2", "", "IL TUO PROFILO"));
+    card.appendChild(el("h2", "", "PORTAFOGLIO E PROFILO"));
     var head = el("div", "prof-head"); head.appendChild(el("div", "avatar", ($("avatar") && $("avatar").textContent) || "?"));
     var wh = el("div", "prof-who"); wh.appendChild(el("b", "", $("pname") ? $("pname").textContent : ""));
-    wh.appendChild(el("span", "", "💳 " + ($("pcoins") ? $("pcoins").textContent : "—") + " $SDG")); head.appendChild(wh); card.appendChild(head);
+    var bl = el("span", "", ""); bl.appendChild(el("i", "ci")); bl.appendChild(document.createTextNode(" " + ($("pcoins") ? $("pcoins").textContent : "—") + " $SDG"));
+    wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
     var grid = el("div", "pg-sum"); card.appendChild(grid);
     var tail = el("div"); card.appendChild(tail);
+    var inv = el("button", "set-ok prof-inv", "INVENTARIO"); inv.type = "button";
+    inv.addEventListener("click", function () { closeProfile(); if (window.ArcadeShop) window.ArcadeShop.openInventory(); });
+    card.appendChild(inv);
     tail.appendChild(speedBox());
     var ok = el("button", "set-ok", "CHIUDI"); ok.type = "button"; ok.addEventListener("click", closeProfile); card.appendChild(ok);
     ov.appendChild(card); ov.hidden = false;
     grid.appendChild(el("div", "pg-empty", "Carico…"));
-    A.api("/api/social/diary").then(function (j) {
-      var s = j.stats; grid.innerHTML = "";
-      [[(s.net_profit >= 0 ? "+" : "") + A.fmt(s.net_profit), "netto totale"], [A.fmt(s.casino_wins), "vittorie casinò"], [A.fmt(s.single_played), "partite single player"],
-       [A.fmt(s.duels_wins), "duelli vinti"], [A.fmt(s.duels_played), "duelli giocati"], [A.fmt(s.quizzes_won), "quiz vinti"]].forEach(function (x) {
+    A.api("/api/social/wallet").then(function (w) {
+      grid.innerHTML = "";
+      var net = (w.net_profit >= 0 ? "+" : "−") + A.fmt(Math.abs(w.net_profit));
+      [[net, "profitto netto"], [A.fmt(w.stars), "stelle Heist"], [A.fmt(w.quizzes_won), "quiz vinti"],
+       [A.fmt(w.casino_wins), "vittorie casinò"], [A.fmt(w.duels_wins), "duelli vinti"], [w.wr_single + "%", "win rate single player"],
+       [w.wr_duels + "%", "win rate duelli"]].forEach(function (x) {
         var d = el("div"); d.appendChild(el("b", "", x[0])); d.appendChild(document.createTextNode(x[1])); grid.appendChild(d);
       });
+      var wd = el("div", "prof-wheel");
+      wd.appendChild(el("b", "", "Ruota Daily"));
+      wd.appendChild(document.createTextNode(" " + (w.wheel_available ? "disponibile oggi!" : "già girata oggi: torna domani") + " · premi: " +
+        w.wheel_prizes.map(function (p) { return p.prize + " (" + p.pct + "%)"; }).join(" · ") + " $SDG"));
+      grid.parentNode.insertBefore(wd, tail);
     }).catch(function (e) { grid.innerHTML = ""; grid.appendChild(el("div", "pg-empty", errMsg(e))); });
   }
   function closeProfile() { var ov = $("profile"); if (ov) ov.hidden = true; }
@@ -271,7 +283,13 @@
 
   // il saldo nelle sezioni segue quello dell'hub
   new MutationObserver(syncCoins).observe($("pcoins"), { childList: true, characterData: true, subtree: true });
-  window.ArcadeTabs = { show: show, refreshBadge: refreshBadge, setBadge: setBadge };
+  function reset() {                      // cambio account (normale <-> prova): tutto da ricaricare
+    loaded = {}; busy = {}; setBadge(0);
+    if (window.ArcadeShop) window.ArcadeShop.reset();
+    if (cur === "lead") loadLead(); else if (cur === "act") loadAct(); else if (cur === "shop" && window.ArcadeShop) window.ArcadeShop.load();
+    refreshBadge();
+  }
+  window.ArcadeTabs = { show: show, refreshBadge: refreshBadge, setBadge: setBadge, reset: reset, current: function () { return cur; } };
   setTimeout(refreshBadge, 1200);
 
   // ---------- tasto Indietro di Telegram (anche il tasto/gesto "indietro" del telefono) ----------
@@ -296,7 +314,7 @@
     mo.observe(document.body, { attributes: true, attributeFilter: ["data-tab"] });
     var pv0 = $("profile"); if (pv0) mo.observe(pv0, { attributes: true, attributeFilter: ["hidden"] });
     var st = $("settings"); if (st) mo.observe(st, { attributes: true, attributeFilter: ["hidden"] });
-    setTimeout(function () { var st2 = $("settings"); if (st2) mo.observe(st2, { attributes: true, attributeFilter: ["hidden"] }); update(); }, 600);
+    setTimeout(function () { ["settings", "adminpg"].forEach(function (id) { var st2 = $(id); if (st2) mo.observe(st2, { attributes: true, attributeFilter: ["hidden"] }); }); update(); }, 600);
     update();
   })();
 })();

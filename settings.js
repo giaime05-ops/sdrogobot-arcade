@@ -48,34 +48,69 @@
     row.appendChild(r); row.appendChild(v); card.appendChild(row);
   }
 
-  section("🖥️ Grafica");
+  // Account admin: primo elemento. Solo l'admin entra; per gli altri il server non lo permette comunque.
+  var adm = el("button", "set-adm", "ACCOUNT ADMIN"); adm.type = "button";
+  adm.addEventListener("click", function () {
+    A.haptic("light");
+    if (!A.isAdmin()) { A.toast("Funzione riservata all'admin."); return; }
+    close(); openAdmin();
+  });
+  card.appendChild(adm);
+  section("Grafica");
   seg("Qualità 3D", [["auto", "Auto"], [0, "Alta"], [1, "Media"], [2, "Bassa"]], function () { return S.q; }, function (v) { S.q = v; save(); apply(); });
   sw("Animazioni della sala", function () { return S.anim; }, function (v) { S.anim = v; save(); apply(); });
-  section("🔊 Audio");
+  section("Audio");
   slider("Musica della sala", function () { return S.mHub; }, function (v) { S.mHub = v; save(); apply(); });
   slider("Musica dei giochi", function () { return S.mGame; }, function (v) { S.mGame = v; save(); apply(); });
   slider("Suoni dei giochi", function () { return S.sfx; }, function (v) { S.sfx = v; save(); apply(); }, function () { if (window.ArcadeAudio) { window.ArcadeAudio.sfx("chip"); setTimeout(function () { window.ArcadeAudio.sfx("win"); }, 250); } });
-  section("📳 Vibrazione");
+  section("Vibrazione");
   sw("Vibrazione", function () { return S.vib; }, function (v) { S.vib = v; save(); if (v) A.haptic("med"); });
   var ok = el("button", "set-ok", "Chiudi"); ok.type = "button"; ok.addEventListener("click", close); card.appendChild(ok);
   box.addEventListener("click", function (e) { if (e.target === box) close(); });
   $("app").appendChild(box);
 
-  var adminDone = false;
-  function open() {
-    box.hidden = false; A.haptic("light");
-    if (adminDone) return; adminDone = true;
-    A.api("/api/wheel/state").then(function (v) {                    // il server dice se sei l'admin
-      if (!v || !v.admin) return;
-      var sec = el("div", "set-sec", "🧪 Prova (solo admin)");
-      var b = el("button", "set-ok", "Prova la Ruota Daily"); b.type = "button"; b.style.marginTop = "6px";
-      b.addEventListener("click", function () { close(); if (window.ArcadeGames && window.ArcadeGames.wheel) window.ArcadeGames.wheel.open({ test: true }); });
-      card.insertBefore(sec, ok); card.insertBefore(b, ok);
-    }).catch(function () { adminDone = false; });
-  }
-  function close() { box.hidden = true; }
+  function open() { box.hidden = false; A.haptic("light"); }
+  function close() { box.hidden = true; var a = $("adminpg"); if (a) a.hidden = true; }
   var g = $("gear"); if (g) g.addEventListener("click", open);
-  window.ArcadeSettingsUI = { open: open, close: close, isOpen: function () { return !box.hidden; } };
+  // ---------- pagina "Account admin": profilo di prova con 30.000.000 $SDG, ruota e missioni illimitate ----------
+  var abox = el("div", "set-ov"); abox.id = "adminpg"; abox.hidden = true;
+  var acard = el("div", "set-card"); abox.appendChild(acard);
+  abox.addEventListener("click", function (e) { if (e.target === abox) abox.hidden = true; });
+  $("app").appendChild(abox);
+  function tool(what, value, msg) {
+    A.api("/api/shop/admin", "POST", { key: what, value: value }).then(function (r) {
+      A.haptic("ok"); A.toast(msg || r.message);
+      if (r.balance != null) A.setCoins(r.balance);
+      if (window.ArcadeTabs) window.ArcadeTabs.reset();
+    }, function (e) { A.toast((e && e.message) || "Errore"); });
+  }
+  function openAdmin() {
+    acard.innerHTML = ""; acard.appendChild(el("h2", "", "ACCOUNT ADMIN"));
+    var on = A.isSandbox();
+    acard.appendChild(el("div", "set-note", on
+      ? "Sei nel profilo di prova: saldo di 30.000.000 $SDG, Ruota Daily illimitata, Banco e sfida di gruppo non vengono toccati. Il tuo account vero resta com'è."
+      : "Entra in un profilo di prova separato dal tuo vero account: 30.000.000 $SDG, Ruota Daily e missioni a volontà per provare tutto."));
+    var sw1 = el("button", "set-ok" + (on ? " off" : ""), on ? "ESCI DALL'ACCOUNT DI PROVA" : "ENTRA NELL'ACCOUNT DI PROVA"); sw1.type = "button";
+    sw1.addEventListener("click", function () { A.setSandbox(!on).then(function () { A.toast(!on ? "Account di prova attivo" : "Sei tornato al tuo account"); if (!on) openAdmin(); else abox.hidden = true; }); });
+    acard.appendChild(sw1);
+    if (on) {
+      acard.appendChild(el("div", "set-sec", "Strumenti di prova"));
+      [["Ruota Daily: ricarica", function () { tool("wheel", 0, "Ruota Daily pronta"); }],
+       ["Nuove missioni", function () { tool("quests_new", 0, "Missioni rigenerate"); }],
+       ["Completa le missioni (prova il pallino)", function () { tool("quests_done", 0, "Missioni completate: guarda Attività"); }],
+       ["+5 di ogni oggetto", function () { tool("items", 0, "Oggetti aggiunti"); }],
+       ["Saldo a 30.000.000", function () { tool("reset", 0, "Saldo ripristinato"); }],
+       ["Saldo a 1.000", function () { tool("coins", 1000, "Saldo a 1.000"); }]].forEach(function (t) {
+        var b = el("button", "set-tool", t[0]); b.type = "button"; b.addEventListener("click", t[1]); acard.appendChild(b);
+      });
+    }
+    var cl = el("button", "set-ok", "Chiudi"); cl.type = "button"; cl.addEventListener("click", function () { abox.hidden = true; });
+    acard.appendChild(cl);
+    abox.hidden = false;
+  }
+  var so = $("sbxOut"); if (so) so.addEventListener("click", function () { A.setSandbox(false).then(function () { A.toast("Sei tornato al tuo account"); }); });
+
+  window.ArcadeSettingsUI = { open: open, close: close, isOpen: function () { return !box.hidden || !abox.hidden; } };
   apply();
   window.addEventListener("load", apply);
   setTimeout(apply, 1500);          // il 3D si carica dopo: gli si ripassano le impostazioni

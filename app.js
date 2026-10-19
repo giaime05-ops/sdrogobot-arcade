@@ -80,12 +80,14 @@
       coins:  pick(u, ["coins", "balance", "saldo", "sdg"], pick(j, ["coins", "balance", "saldo"], null)),
       banco:  banco,
       follia: !!follia,
-      daily:  !!pick(pick(j, ["daily"], {}), ["available"], false)
+      daily:  !!pick(pick(j, ["daily"], {}), ["available"], false),
+      admin:  !!(j && j.admin)
     };
   }
 
   function render(me, opts) {
     opts = opts || {};
+    ME.admin = !!me.admin;
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     $("pname").textContent = name;
     $("avatar").textContent = (name.trim()[0] || "?").toUpperCase();
@@ -145,10 +147,12 @@
   }
 
   // ---------- Chiamate al bot (generiche, usate dai giochi) ----------
+  var SBX = false, ME = { admin: false };
   function api(path, method, body) {
     var url = (CFG.API_BASE || "") + path;
     var init = { method: method || "GET", headers: {}, cache: "no-store" };
     if (body !== undefined) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(body); }
+    if (SBX) init.headers["X-Arcade-Sandbox"] = "1";            // account admin di prova: il server lo accetta solo dall'admin
     if (CFG.AUTH_MODE === "xheader") init.headers["X-Telegram-Init-Data"] = tg.initData;
     else if (CFG.AUTH_MODE === "query") url += (url.indexOf("?") < 0 ? "?" : "&") + "initData=" + encodeURIComponent(tg.initData);
     else init.headers["Authorization"] = "tma " + tg.initData;
@@ -170,7 +174,15 @@
     return api(CFG.ME_PATH || "/api/me").then(function (j) { render(normalizeMe(j)); if (window.ArcadeTabs) window.ArcadeTabs.refreshBadge(); }).catch(function () {});
   }
 
-  window.Arcade = { api: api, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  function setSandbox(on) {
+    SBX = !!on && ME.admin;
+    document.body.classList.toggle("sbx", SBX);
+    var b = $("sbxBar"); if (b) b.hidden = !SBX;
+    if (window.ArcadeTabs && window.ArcadeTabs.reset) window.ArcadeTabs.reset();
+    return refreshMe();
+  }
+
+  window.Arcade = { api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 

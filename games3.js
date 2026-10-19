@@ -583,7 +583,7 @@
       msg("", "");
       A.api("/api/wheel/state").then(function (v) {
         setBalance(v.balance); wh.available = !!v.available; wh.test = !!(v.admin && wh.preset); wh.preset = false;
-        if (v.admin) {                                           // solo admin: modalità prova, il server la accetta solo da lui
+        if (false && v.admin) {                                  // (sostituito dall'Account admin nelle impostazioni): modalità prova, il server la accetta solo da lui
           var tb = document.createElement("button"); tb.type = "button"; tb.className = "gm-pick wh-test" + (wh.test ? " on" : ""); tb.textContent = "🧪 Modalità prova: " + (wh.test ? "ON (nessun premio pagato)" : "OFF");
           tb.addEventListener("click", function () {
             if (S.busy) return; wh.test = !wh.test; tb.classList.toggle("on", wh.test);
