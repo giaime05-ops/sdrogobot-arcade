@@ -228,7 +228,7 @@
   function loadCard() {                                    // suono vero delle carte (assets/card.wav); finché non è pronto vale quello sintetico
     if (cardBuf || cardLoading || !ctx) return; cardLoading = true;
     try {
-      fetch("assets/card.wav?v=20").then(function (r) { return r.arrayBuffer(); })
+      fetch("assets/card.wav?v=21").then(function (r) { return r.arrayBuffer(); })
         .then(function (b) { return new Promise(function (ok, ko) { ctx.decodeAudioData(b, ok, ko); }); })
         .then(function (buf) { cardBuf = buf; }).catch(function () { cardLoading = false; });
     } catch (e) { cardLoading = false; }
@@ -270,37 +270,48 @@
       }).observe(n, { attributes: true, childList: true, characterData: true, subtree: true });
     });
     // carte: suono di "distribuzione" solo all'inizio mano (e al flop); poi un singolo suono per ogni carta girata
-    var st = document.getElementById("g4Stage"), lastN = 0, lastBack = 0;
+    var st = document.getElementById("g4Stage"), prevSig = [];
     function dealSnd(n) { for (var i = 0; i < n; i++) setTimeout(function () { sfx("card"); }, i * 130); }
+    function sigOf() {
+      var out = []; Array.prototype.forEach.call(st.querySelectorAll(".pcard:not(.empty)"), function (c) { out.push(c.classList.contains("back") ? "#BACK" : c.textContent); });
+      return out;
+    }
     if (st) new MutationObserver(function () {
-      var cards = st.querySelectorAll(".pcard:not(.empty)"), n = cards.length, b = st.querySelectorAll(".pcard.back").length;
-      var d = n - lastN;
-      if (n === 0) { /* tavolo vuoto */ }
-      else if (lastN === 0 && n >= 2) dealSnd(2);                   // le prime carte della mano
-      else if (d >= 3) dealSnd(1);                                  // flop: tre carte insieme
-      else if (d > 0) { for (var k = 0; k < d; k++) setTimeout(function () { sfx("flip"); }, k * 260); }
-      else if (b < lastBack) sfx("flip");                           // carta coperta girata
-      lastN = n; lastBack = b;
-    }).observe(st, { childList: true, subtree: true });
-    // Aviator: motore dell'aereo che sale con il moltiplicatore
+      var cur = sigOf(), pool = {}, kept = 0, fresh = 0;
+      prevSig.forEach(function (x) { pool[x] = (pool[x] || 0) + 1; });
+      cur.forEach(function (x) { if (pool[x] > 0) { pool[x]--; kept++; } else fresh++; });
+      prevSig = cur;
+      if (!fresh) return;
+      if (kept === 0 && fresh >= 2) dealSnd(2);                      // nuova mano: le prime carte
+      else if (fresh >= 3) dealSnd(1);                               // flop: tre carte insieme
+      else for (var k = 0; k < fresh; k++) setTimeout(function () { sfx("flip"); }, k * 280);   // ogni altra carta: un suono singolo
+    }).observe(st, { childList: true, subtree: true, characterData: true });
+    // Aviator: scia "galattica" morbida; sale di tono e di velocità con il moltiplicatore (scala logaritmica: si sente anche da 10x a 100x)
     var am = document.getElementById("aviMult");
     if (am) {
       var eng = null, engT = 0;
-      var engOff = function () { if (!eng) return; try { eng.g.gain.setTargetAtTime(0, ctx.currentTime, 0.08); var e = eng; setTimeout(function () { try { e.o.stop(); e.o2.stop(); e.n.stop(); } catch (x) {} }, 500); } catch (x) {} eng = null; };
+      var engOff = function () { if (!eng) return; var e = eng; eng = null; try { e.g.gain.setTargetAtTime(0, ctx.currentTime, 0.12); setTimeout(function () { try { e.o1.stop(); e.o2.stop(); e.o3.stop(); e.l.stop(); } catch (x) {} }, 700); } catch (x) {} };
       new MutationObserver(function () {
         if (!ctx || !started || ctx.state !== "running" || cfg.sfx < 0.01) return;
         var m = parseFloat(am.textContent) || 1, over = /win|lose/.test(am.className);
         if (over || m <= 1.001) { if (over) engOff(); return; }
+        var lg = Math.log(Math.max(1, m)) / Math.LN10;               // 1x→0, 10x→1, 100x→2
+        var t = ctx.currentTime;
         if (!eng) {
-          var o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter(), n = ctx.createBufferSource();
-          o.type = "sawtooth"; o2.type = "sine"; f.type = "lowpass"; f.frequency.value = 900; n.buffer = noiseBuf; n.loop = true;
-          var ng = ctx.createGain(); ng.gain.value = 0.25; n.connect(ng); ng.connect(f);
-          o.connect(f); o2.connect(f); f.connect(g); g.connect(gSfx); g.gain.value = 0; g.gain.setTargetAtTime(0.09, ctx.currentTime, 0.15);
-          o.start(); o2.start(); n.start(); eng = { o: o, o2: o2, g: g, f: f, n: n };
+          var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), o3 = ctx.createOscillator(), l = ctx.createOscillator();
+          var g = ctx.createGain(), f = ctx.createBiquadFilter(), tr = ctx.createGain(), ld = ctx.createGain();
+          o1.type = "sine"; o2.type = "sine"; o3.type = "triangle"; l.type = "sine";
+          f.type = "lowpass"; f.frequency.value = 1200; f.Q.value = 0.7;
+          tr.gain.value = 0.7; ld.gain.value = 0.3; l.connect(ld); ld.connect(tr.gain);     // tremolo lento
+          o1.connect(f); o2.connect(f); o3.connect(f); f.connect(tr); tr.connect(g); g.connect(gSfx);
+          g.gain.value = 0; g.gain.setTargetAtTime(0.05, t, 0.4);
+          o1.start(); o2.start(); o3.start(); l.start(); eng = { o1: o1, o2: o2, o3: o3, l: l, g: g, f: f };
         }
-        var fr = 70 + Math.min(m, 12) * 22; eng.o.frequency.setTargetAtTime(fr, ctx.currentTime, 0.1); eng.o2.frequency.setTargetAtTime(fr * 2.02, ctx.currentTime, 0.1);
-        eng.f.frequency.setTargetAtTime(700 + Math.min(m, 12) * 180, ctx.currentTime, 0.1);
-        clearTimeout(engT); engT = setTimeout(engOff, 700);          // niente aggiornamenti = volo finito
+        var base = 196 * Math.pow(2, lg * 1.1);
+        eng.o1.frequency.setTargetAtTime(base, t, 0.25); eng.o2.frequency.setTargetAtTime(base * 1.505, t, 0.25); eng.o3.frequency.setTargetAtTime(base * 2.01, t, 0.25);
+        eng.l.frequency.setTargetAtTime(2.5 + lg * 5, t, 0.3);
+        eng.f.frequency.setTargetAtTime(900 + lg * 900, t, 0.3);
+        clearTimeout(engT); engT = setTimeout(engOff, 900);
       }).observe(am, { childList: true, characterData: true, subtree: true, attributes: true });
     }
     // musica: sala o gioco

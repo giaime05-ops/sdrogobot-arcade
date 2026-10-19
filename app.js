@@ -99,12 +99,12 @@
   function starEl(n) {
     var st = document.createElement("span"); st.className = "pstar";
     st.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.6l-6 3.4 1.3-6.7-5-4.7 6.8-.8z"/></svg>' + (n > 1 ? "<b>" + n + "</b>" : "");
-    st.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(st, n > 1 ? "Vittorie a Strogo Heist: " + n : "Vittoria a Strogo Heist"); });
+    st.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(st, n > 1 ? "Vittorie a Sdrogo Heist: " + n : "Vittoria a Sdrogo Heist"); });
     return st;
   }
   function badgeEl(b) {
-    var e = document.createElement("span"); e.className = "bdg"; e.title = "Strogobot v1 — Re del Casinò originale";
-    e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re del Casinò — Strogobot V1"); });
+    var e = document.createElement("span"); e.className = "bdg"; e.title = "Sdrogobot v1 — Re del Casinò originale";
+    e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re del Casinò — Sdrogobot V1"); });
     e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>V1';
     return e;
   }
@@ -114,6 +114,7 @@
     ME.admin = !!me.admin;
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     var pn = $("pname"); pn.textContent = name;
+    if (SBX) { me = Object.assign({}, me, { badge: "v1", stars: Math.max(3, me.stars || 0) }); }     // account admin: badge e stelle sempre visibili, per provarli
     if (me.badge) pn.appendChild(badgeEl(me.badge));
     ME.stars = me.stars; ME.badge = me.badge;
     if (me.stars > 0) pn.appendChild(starEl(me.stars));
