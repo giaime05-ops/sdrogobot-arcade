@@ -477,3 +477,33 @@ body{font-weight:600}
 .pg-sum{grid-template-columns:repeat(3,1fr)}
 button,input,select{font-family:inherit}
 #sbxBar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Mastermind a simboli neon */
+.mm-sym{width:70%;height:70%;filter:drop-shadow(0 0 4px currentColor)}
+.mm-slot.full{border-color:rgba(255,61,176,.7);box-shadow:0 0 12px rgba(255,61,176,.35)}
+.mm-slot .mm-sym{width:78%;height:78%}
+.mm-key{display:grid;place-items:center;padding:4px}.mm-key .mm-sym{width:26px;height:26px}.mm-key:disabled{opacity:.3}
+.mm-line b{display:flex;gap:6px;letter-spacing:0}.mm-line b .mm-sym{width:26px;height:26px}
+.mm-lights{display:flex;gap:7px}
+.mm-lights i{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.18);background:transparent}
+.mm-lights i.hit{background:#6bff8f;border-color:#6bff8f;box-shadow:0 0 9px #6bff8f}
+.mm-lights i.pre{border-color:#ffe14a;box-shadow:0 0 8px rgba(255,225,74,.8)}
+/* Slot: cabinet con lampadine al neon e ultime uscite */
+.sl-cab{position:relative;padding:14px;border-radius:26px;background:linear-gradient(180deg,#1b0a2c,#0b0416);border:2px solid rgba(255,61,176,.7);box-shadow:0 0 30px rgba(255,61,176,.45),0 0 60px rgba(120,70,255,.25)}
+.sl-cab .reels{padding:8px;gap:8px}
+.sl-b{position:absolute;pointer-events:none;
+  background:radial-gradient(circle at 8px 4px,#ffe14a 0 2.6px,rgba(255,225,74,.35) 3.4px,transparent 4.6px) 0 0/16px 8px;animation:slchx .9s steps(1) infinite}
+.sl-b.t,.sl-b.b{left:12px;right:12px;height:8px;background-repeat:repeat-x}
+.sl-b.t{top:3px}.sl-b.b{bottom:3px;animation-direction:reverse}
+.sl-b.l,.sl-b.r{top:12px;bottom:12px;width:8px;background-repeat:repeat-y}
+.sl-b.l{left:3px}.sl-b.r{right:3px;animation-direction:reverse}
+@keyframes slchx{0%{filter:brightness(1.3);background-position:0 0}50%{filter:hue-rotate(40deg) brightness(.8);background-position:8px 0}}
+@keyframes slchy{0%{filter:brightness(1.3);background-position:0 0}50%{filter:hue-rotate(40deg) brightness(.8);background-position:0 8px}}
+.sl-b.l,.sl-b.r{animation-name:slchy;background-image:radial-gradient(circle at 4px 8px,#ffe14a 0 2.6px,rgba(255,225,74,.35) 3.4px,transparent 4.6px);background-size:8px 16px}
+.sl-cab:has(.reels.win) .sl-b,.sl-cab:has(.reels.hype) .sl-b{animation-duration:.25s}
+.sl-last{margin-top:12px;text-align:center}
+.sl-lt{font:700 12px "Rajdhani",sans-serif;letter-spacing:2px;color:#ffd6ef;text-shadow:0 0 6px rgba(255,61,176,.7);margin-bottom:6px}
+.sl-lr{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.sl-none{font-size:13px;color:#8d7aa8}
+.sl-li{display:flex;gap:1px;padding:3px 5px;border-radius:8px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12)}
+.sl-li i{display:block;width:17px;height:17px}.sl-li svg{width:100%;height:100%}
+.sl-li.w{border-color:#6bff8f;box-shadow:0 0 8px rgba(107,255,143,.5)}.sl-li.l{opacity:.75}

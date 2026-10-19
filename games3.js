@@ -218,10 +218,28 @@
   var slot = {
     title: "🎰 SLOT 777", bets: true, reels: [], box: null,
     build: function () {
-      stage.innerHTML = '<div class="reels" id="slReels"><div class="reel"></div><div class="reel"></div><div class="reel"></div></div>' +
+      stage.innerHTML = '<div class="sl-cab"><i class="sl-b t"></i><i class="sl-b b"></i><i class="sl-b l"></i><i class="sl-b r"></i>' +
+        '<div class="reels" id="slReels"><div class="reel"></div><div class="reel"></div><div class="reel"></div></div></div>' +
         '<div class="gm-hint pay"><div class="pr"><span>' + hintIcons("seven", 0, 3) + ' ×10</span><span>' + hintIcons("diamond", 0, 3) + ' ×6</span><span>' + hintIcons("bell", 0, 3) + ' ×5</span>' +
-        '<span>' + hintIcons("lemon", 0, 3) + ' ×4</span><span>' + hintIcons("cherry", 0, 3) + ' ×3</span></div><div class="pr2">Doppia <i class="hi">' + ICON.seven + '</i> o <i class="hi">' + ICON.diamond + '</i> ×2 · altre doppie: rimborso</div></div>';
+        '<span>' + hintIcons("lemon", 0, 3) + ' ×4</span><span>' + hintIcons("cherry", 0, 3) + ' ×3</span></div><div class="pr2">Doppia <i class="hi">' + ICON.seven + '</i> o <i class="hi">' + ICON.diamond + '</i> ×2 · altre doppie: rimborso</div></div>' +
+        '<div class="sl-last"><div class="sl-lt">ULTIME USCITE</div><div class="sl-lr" id="slLast"></div></div>';
+      slot.paintLast();
       slot.box = $("slReels"); slot.reels = Array.prototype.slice.call(slot.box.querySelectorAll(".reel")).map(makeReel);
+    },
+    last: (function () { try { return JSON.parse(sessionStorage.getItem("arc_sllast") || "[]"); } catch (e) { return []; } })(),
+    pushLast: function (res) {
+      slot.last.unshift({ r: res.reels, n: res.net }); slot.last = slot.last.slice(0, 8);
+      try { sessionStorage.setItem("arc_sllast", JSON.stringify(slot.last)); } catch (e) {}
+      slot.paintLast();
+    },
+    paintLast: function () {
+      var box = $("slLast"); if (!box) return; box.innerHTML = "";
+      if (!slot.last.length) { var e0 = document.createElement("span"); e0.className = "sl-none"; e0.textContent = "nessuna giocata"; box.appendChild(e0); return; }
+      slot.last.forEach(function (h) {
+        var c = document.createElement("div"); c.className = "sl-li " + (h.n > 0 ? "w" : (h.n < 0 ? "l" : "p"));
+        c.innerHTML = h.r.map(function (x) { return "<i>" + iconOf(x) + "</i>"; }).join("");
+        box.appendChild(c);
+      });
     },
     onOpen: function () {
       A.api("/api/me").then(function (j) { /* il saldo arriva dal profilo */ }).catch(function () {});
@@ -255,7 +273,7 @@
         if (e && e.body && e.body.error) A.refreshMe();
       });
       function finish(res) {
-        setBalance(res.balance);
+        setBalance(res.balance); slot.pushLast(res);
         if (res.kind === "triple") { slot.box.classList.add("win"); msg((res.reels[0] === SYM.s ? "🔥 JACKPOT 777! " : "🎉 TRIS! ") + "+" + A.fmt(res.net) + " $SDG", "win"); banner(res.reels[0] === SYM.s ? "JACKPOT 777!" : "TRIS!", "+" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
         else if (res.kind === "pair" && res.net > 0) { slot.box.classList.add("win"); msg("✨ Doppia d'oro! +" + A.fmt(res.net) + " $SDG", "win"); banner("DOPPIA D'ORO", "+" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
         else if (res.kind === "pair") msg("✨ Doppia: recuperi la puntata.", "");

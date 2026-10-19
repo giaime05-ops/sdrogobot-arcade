@@ -296,22 +296,45 @@
   // ======================================================================
   //  MASTERMIND
   // ======================================================================
+  // simboli al neon al posto delle cifre (il codice resta di cifre 0-9 per il server)
+  var MM_COL = ["#ff3db0", "#35e6ff", "#ffe14a", "#6bff8f", "#ff8a3d", "#b084ff", "#ff5a5a", "#4aa8ff", "#f5f5ff", "#2effd0"];
+  var MM_SH = [
+    '<circle cx="12" cy="12" r="8"/>',
+    '<path d="M12 3.5 21 20H3z"/>',
+    '<rect x="4.5" y="4.5" width="15" height="15" rx="2"/>',
+    '<path d="M12 2.5 21.5 12 12 21.5 2.5 12z"/>',
+    '<path d="m12 2.5 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.3 5.9 20.9l1.5-6.8L2.2 9.5l6.9-.7z"/>',
+    '<path d="M12 2.5 20.2 7.2v9.6L12 21.5 3.8 16.8V7.2z"/>',
+    '<path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z"/>',
+    '<path d="M12 20.5C4 14.5 3 10.5 3 8.3 3 5.5 5.2 3.8 7.4 3.8c1.9 0 3.5 1 4.6 2.7 1.1-1.7 2.7-2.7 4.6-2.7 2.2 0 4.4 1.7 4.4 4.5 0 2.2-1 6.2-9 12.2z"/>',
+    '<path d="M15.5 3A9 9 0 1 0 21 14.5 7.5 7.5 0 0 1 15.5 3z"/>',
+    '<path d="M13.5 2 5 13.5h5.5L9.5 22 19 9.5h-5.7z"/>'
+  ];
+  function mmSym(d) {
+    var i = +d, c = MM_COL[i];
+    return '<svg viewBox="0 0 24 24" class="mm-sym" style="color:' + c + '"><g fill="' + c + '" fill-opacity=".18" stroke="' + c + '" stroke-width="1.9" stroke-linejoin="round">' + MM_SH[i] + '</g></svg>';
+  }
+  function mmLights(hits, present) {
+    var w = el("span", "mm-lights");
+    for (var i = 0; i < 3; i++) w.appendChild(el("i", i < hits ? "hit" : (i < hits + present ? "pre" : "")));
+    return w;
+  }
   var mm = {
     title: "🔐 MASTERMIND", st: null, cur: "", res: null,
     build: function () {
       stage.innerHTML = '<div class="mm-slots" id="mmSlots"></div><div class="mm-hist" id="mmHist"></div>' +
-        '<div class="gm-hint">Codice segreto di 3 cifre tutte diverse, 5 tentativi.<br>🎯 giusta al posto giusto · 🔄 giusta ma altrove<br>Premio: +40 entro il 3° tentativo, +20 al 4° o 5°</div>';
+        '<div class="gm-hint">Codice segreto di 3 simboli tutti diversi, 5 tentativi.<br>Luce piena = simbolo giusto al posto giusto · luce vuota = giusto ma altrove<br>Premio: +40 entro il 3° tentativo, +20 al 4° o 5°</div>';
       mm.cur = ""; mm.res = null;
     },
     paint: function () {
       var sl = $("mmSlots"); if (!sl) return;
       sl.innerHTML = "";
-      for (var i = 0; i < 3; i++) sl.appendChild(el("div", "mm-slot", mm.cur[i] || ""));
+      for (var i = 0; i < 3; i++) { var sv = el("div", "mm-slot" + (mm.cur[i] ? " full" : "")); if (mm.cur[i]) sv.innerHTML = mmSym(mm.cur[i]); sl.appendChild(sv); }
       var h = $("mmHist"); h.innerHTML = "";
       var guesses = (mm.res ? mm.res.guesses : (mm.st && mm.st.guesses)) || [];
       guesses.forEach(function (g) {
-        var line = el("div", "mm-line"); line.appendChild(el("b", "", g.code));
-        line.appendChild(el("span", "", "🎯 " + g.hits + "   🔄 " + g.present));
+        var line = el("div", "mm-line"), cb = el("b", ""); cb.innerHTML = g.code.split("").map(mmSym).join(""); line.appendChild(cb);
+        line.appendChild(mmLights(g.hits, g.present));
         h.appendChild(line);
       });
       h.scrollTop = h.scrollHeight;
@@ -322,7 +345,7 @@
       if (!active) return;
       var pad = el("div", "mm-pad");
       "1234567890".split("").forEach(function (d) {
-        var k = el("button", "key", d); k.type = "button"; k.style.height = "44px"; k.style.fontSize = "19px";
+        var k = el("button", "key mm-key"); k.innerHTML = mmSym(d); k.type = "button"; k.style.height = "44px";
         k.disabled = S.busy || mm.cur.length >= 3 || mm.cur.indexOf(d) >= 0;
         k.addEventListener("click", function () { mm.cur += d; A.haptic("light"); mm.paint(); mm.renderPad(); mm.renderActs(); });
         pad.appendChild(k);
