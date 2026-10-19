@@ -150,7 +150,7 @@
       { ms: 0.72, amp: 3.2, fr: 9, rad: 5, back: true }
     ];
     W.spinTo = function (idx, ms, done) {
-      W.win = -1; var t0 = performance.now(), thf = ang(idx), D = Math.PI * 2 * (6 + Math.random() * 1.5), h0 = W.hub, st = STYLES[Math.floor(Math.random() * STYLES.length)];
+      W.win = -1; W.sg = undefined; var t0 = performance.now(), thf = ang(idx), D = Math.PI * 2 * (6 + Math.random() * 1.5), h0 = W.hub, st = STYLES[Math.floor(Math.random() * STYLES.length)];
       if (st.back) ms = ms * 1.18;
       cancelAnimationFrame(W.raf);
       (function step(now) {
@@ -161,10 +161,13 @@
         if (p > st.ms && p < 1) {
           var kk = (p - st.ms) / (1 - st.ms), env = st.back ? Math.pow(1 - kk, 1.6) : (1 - kk);
           a += Math.sin(kk * st.fr) * sl * st.amp * env; r += Math.sin(kk * 20) * st.rad * k * (1 - kk);
+          var sg = Math.sin(kk * 20) > 0 ? 1 : -1;                  // ogni rimbalzo della pallina nelle caselle: vibrazione e "tic"
+          if (W.sg !== undefined && sg !== W.sg && kk < 0.85) { try { A.haptic("light"); snd("tick"); } catch (e) {} }
+          W.sg = sg;
         }
         W.ball.a = a; W.ball.r = r; W.hub = h0 + (now - t0) / 1000 * 1.4;
         W.draw();
-        if (p < 1) W.raf = requestAnimationFrame(step); else { W.win = idx; W.ball.a = thf; W.ball.r = rPk; W.draw(); done && done(); }
+        if (p < 1) W.raf = requestAnimationFrame(step); else { W.win = idx; W.ball.a = thf; W.ball.r = rPk; W.draw(); try { A.haptic("med"); } catch (e) {} done && done(); }
       })(performance.now());
     };
     W.draw();

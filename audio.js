@@ -237,7 +237,7 @@
   }
   function loadCard() {                                    // suoni veri (assets/); finché non sono pronti valgono quelli sintetici
     if (cardLoading || !ctx) return; cardLoading = true;
-    loadOne("slide", "assets/card.wav?v=22"); loadOne("slide2", "assets/card_slide.wav?v=22"); loadOne("pick", "assets/card_pick.wav?v=22"); loadOne("ball", "assets/roulette_ball.mp3?v=22");
+    loadOne("slide", "assets/card.wav?v=23"); loadOne("slide2", "assets/card_slide.wav?v=23"); loadOne("pick", "assets/card_pick.wav?v=23"); loadOne("ball", "assets/roulette_ball.mp3?v=23");
   }
   function playBuf(buf, t, rate, vol, maxDur) {
     var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf; src.playbackRate.value = rate; g.gain.setValueAtTime(vol, t);
@@ -334,7 +334,7 @@
   }
 
   window.ArcadeAudio = {
-    sfx: sfx, start: start,
+    sfx: sfx, start: start, loaded: function () { return Object.keys(B); },
     set: function (o) { if (o.mHub != null) cfg.mHub = o.mHub; if (o.mGame != null) cfg.mGame = o.mGame; if (o.sfx != null) cfg.sfx = o.sfx; applyVol(); }
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindUI); else bindUI();
