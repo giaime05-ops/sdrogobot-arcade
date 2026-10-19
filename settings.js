@@ -61,7 +61,18 @@
   box.addEventListener("click", function (e) { if (e.target === box) close(); });
   $("app").appendChild(box);
 
-  function open() { box.hidden = false; A.haptic("light"); }
+  var adminDone = false;
+  function open() {
+    box.hidden = false; A.haptic("light");
+    if (adminDone) return; adminDone = true;
+    A.api("/api/wheel/state").then(function (v) {                    // il server dice se sei l'admin
+      if (!v || !v.admin) return;
+      var sec = el("div", "set-sec", "🧪 Prova (solo admin)");
+      var b = el("button", "set-ok", "Prova la Ruota Daily"); b.type = "button"; b.style.marginTop = "6px";
+      b.addEventListener("click", function () { close(); if (window.ArcadeGames && window.ArcadeGames.wheel) window.ArcadeGames.wheel.open({ test: true }); });
+      card.insertBefore(sec, ok); card.insertBefore(b, ok);
+    }).catch(function () { adminDone = false; });
+  }
   function close() { box.hidden = true; }
   var g = $("gear"); if (g) g.addEventListener("click", open);
   window.ArcadeSettingsUI = { open: open, close: close, isOpen: function () { return !box.hidden; } };

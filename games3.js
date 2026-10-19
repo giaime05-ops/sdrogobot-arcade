@@ -582,16 +582,16 @@
     onOpen: function () {
       msg("", "");
       A.api("/api/wheel/state").then(function (v) {
-        setBalance(v.balance); wh.available = !!v.available; wh.test = false;
+        setBalance(v.balance); wh.available = !!v.available; wh.test = !!(v.admin && wh.preset); wh.preset = false;
         if (v.admin) {                                           // solo admin: modalità prova, il server la accetta solo da lui
-          var tb = document.createElement("button"); tb.type = "button"; tb.className = "gm-pick wh-test"; tb.textContent = "🧪 Modalità prova: OFF";
+          var tb = document.createElement("button"); tb.type = "button"; tb.className = "gm-pick wh-test" + (wh.test ? " on" : ""); tb.textContent = "🧪 Modalità prova: " + (wh.test ? "ON (nessun premio pagato)" : "OFF");
           tb.addEventListener("click", function () {
             if (S.busy) return; wh.test = !wh.test; tb.classList.toggle("on", wh.test);
             tb.textContent = "🧪 Modalità prova: " + (wh.test ? "ON (nessun premio pagato)" : "OFF"); A.haptic("light"); rerender();
           });
           stage.appendChild(tb);
         }
-        msg(wh.available ? "Carica la ruota: il premio di oggi ti aspetta!" : "Hai già riscosso il premio di oggi. Torna domani!", "");
+        msg(wh.test ? "🧪 Prova: carica la ruota, nessun premio verrà pagato." : wh.available ? "Carica la ruota: il premio di oggi ti aspetta!" : "Hai già riscosso il premio di oggi. Torna domani!", "");
         rerender();
       }).catch(function (e) { msg(errText(e), "lose"); });
     },
@@ -670,5 +670,5 @@
   window.ArcadeGames.slot = { open: function () { open(slot); } };
   window.ArcadeGames.roulette = { open: function () { open(roul); } };
   window.ArcadeGames.scratch = { open: function () { open(scr); } };
-  window.ArcadeGames.wheel = { open: function () { open(wh); } };
+  window.ArcadeGames.wheel = { open: function (o) { wh.preset = !!(o && o.test); open(wh); } };
 })();
