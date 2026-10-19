@@ -591,7 +591,7 @@ button,input,select{font-family:inherit}
 .bdg{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:1px 7px 1px 4px;border-radius:999px;vertical-align:middle;font-family:"Bungee",sans-serif;font-size:10px;letter-spacing:.5px;color:#2a1604;background:linear-gradient(180deg,#fff0a8,#ffb92e 55%,#d9791c);box-shadow:0 0 8px rgba(255,185,46,.7),inset 0 1px 0 rgba(255,255,255,.7)}
 .bdg svg{width:12px;height:12px;fill:#2a1604}
 /* blackjack: sfondo rosso morbido */
-#g4[data-gm="bj"] .gm-stage{background:radial-gradient(120% 80% at 50% 0%,#5a1626 0%,#2e0b18 55%,#14060c 100%)}
+#g4[data-gm="bj"] .g4-stage{background:radial-gradient(120% 80% at 50% 0%,#5a1626 0%,#2e0b18 55%,#14060c 100%)}
 /* multiplayer */
 .mp-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:55vh;border-radius:18px;margin:8px 4px;
   background:radial-gradient(120% 90% at 50% 0%,#3a1560 0%,#14072a 60%,#07040d 100%);border:1px solid rgba(255,61,176,.25)}
@@ -610,3 +610,6 @@ button,input,select{font-family:inherit}
 .mp-seat{display:inline-block;width:46%;margin:2%;padding:10px 4px;text-align:center;border-radius:12px;border:1px dashed rgba(255,255,255,.25);font-size:14px;color:#e9dcff;box-sizing:border-box}
 .mp-seat.me{border:1px solid #ff3db0;background:rgba(255,61,176,.12)}
 .prof-btns .set-ok,.prof-btns .prof-inv{margin:0}
+/* Mastermind: numeri meno abbaglianti */
+.mm-num{font-family:"Rajdhani","Bungee",sans-serif;font-weight:700;text-shadow:0 0 3px rgba(0,0,0,.6);filter:saturate(.75) brightness(.92);opacity:.95}
+.mm-slot .mm-num{font-size:40px}.mm-key .mm-num{font-size:24px}.mm-line b .mm-num{font-size:22px}.mm-inl .mm-num{font-size:22px}

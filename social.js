@@ -91,7 +91,7 @@
       j.top.forEach(function (r) {
         var row = el("div", "row" + (r.rank <= 3 ? " r" + r.rank : "") + (r.me ? " me" : ""));
         row.appendChild(el("div", "rk", String(r.rank)));
-        var nm = el("div", "nm", r.name + (r.me ? " (tu)" : "")); if (r.badge && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
+        var nm = el("div", "nm", r.name + (r.me ? " (tu)" : "")); if ((r.badge || (r.me && A.isAdmin && A.isAdmin())) && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
         row.appendChild(nm);
         row.appendChild(el("div", "vl", A.fmt(r.value) + " " + j.unit));
         box.appendChild(row);
@@ -218,7 +218,7 @@
     A.api("/api/social/wallet").then(function (w) {
       grid.innerHTML = "";
       var net = (w.net_profit >= 0 ? "+" : "−") + A.fmt(Math.abs(w.net_profit));
-      [[net, "profitto netto"], [A.fmt(w.stars), "stelle Heist"], [A.fmt(w.quizzes_won), "quiz vinti"],
+      [[net, "profitto netto"], [A.fmt(w.quizzes_won), "quiz vinti"],
        [A.fmt(w.casino_wins), "vittorie casinò"], [A.fmt(w.duels_wins), "duelli vinti"], [w.wr_single + "%", "win rate single player"],
        [w.wr_duels + "%", "win rate duelli"]].forEach(function (x) {
         var d = el("div"); d.appendChild(el("b", "", x[0])); d.appendChild(document.createTextNode(x[1])); grid.appendChild(d);
