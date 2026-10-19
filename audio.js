@@ -192,7 +192,7 @@
     if (!init()) return;
     if (ctx.state === "suspended") ctx.resume();
     if (!timer) timer = setInterval(tick, 150);
-    started = true; applyVol();
+    started = true; applyVol(); if (!cardLoading) loadCard();      // carica subito i suoni veri
   }
   function setMode(m) { if (mode === m) return; mode = m; applyVol(); }
 
@@ -237,7 +237,7 @@
   }
   function loadCard() {                                    // suoni veri (assets/); finché non sono pronti valgono quelli sintetici
     if (cardLoading || !ctx) return; cardLoading = true;
-    loadOne("slide", "assets/card.wav?v=23"); loadOne("slide2", "assets/card_slide.wav?v=23"); loadOne("pick", "assets/card_pick.wav?v=23"); loadOne("ball", "assets/roulette_ball.mp3?v=23");
+    loadOne("slide", "assets/card.wav?v=24"); loadOne("slide2", "assets/card_slide.wav?v=24"); loadOne("pick", "assets/card_pick.wav?v=24"); loadOne("ball", "assets/roulette_ball.mp3?v=24");
   }
   function playBuf(buf, t, rate, vol, maxDur) {
     var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf; src.playbackRate.value = rate; g.gain.setValueAtTime(vol, t);
