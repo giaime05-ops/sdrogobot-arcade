@@ -582,17 +582,25 @@
     onOpen: function () {
       msg("", "");
       A.api("/api/wheel/state").then(function (v) {
-        setBalance(v.balance); wh.available = !!v.available;
+        setBalance(v.balance); wh.available = !!v.available; wh.test = false;
+        if (v.admin) {                                           // solo admin: modalità prova, il server la accetta solo da lui
+          var tb = document.createElement("button"); tb.type = "button"; tb.className = "gm-pick wh-test"; tb.textContent = "🧪 Modalità prova: OFF";
+          tb.addEventListener("click", function () {
+            if (S.busy) return; wh.test = !wh.test; tb.classList.toggle("on", wh.test);
+            tb.textContent = "🧪 Modalità prova: " + (wh.test ? "ON (nessun premio pagato)" : "OFF"); A.haptic("light"); rerender();
+          });
+          stage.appendChild(tb);
+        }
         msg(wh.available ? "Carica la ruota: il premio di oggi ti aspetta!" : "Hai già riscosso il premio di oggi. Torna domani!", "");
         rerender();
       }).catch(function (e) { msg(errText(e), "lose"); });
     },
-    goLabel: function () { return wh.available ? { text: "TIENI PREMUTO PER CARICARE", busyText: "LA RUOTA GIRA…" } : { text: "GIÀ RISCOSSA OGGI", disabled: true }; },
+    goLabel: function () { return (wh.available || wh.test) ? { text: "TIENI PREMUTO PER CARICARE", busyText: "LA RUOTA GIRA…" } : { text: "GIÀ RISCOSSA OGGI", disabled: true }; },
     pow: function (p) { var i = $("whPowI"); if (i) i.style.width = Math.round(p * 100) + "%"; },
     press: function (down) {
       var F = wh.wheel; if (!F) return;
       if (down) {
-        if (!wh.available || S.busy || wh.charging) return;
+        if (!(wh.available || wh.test) || S.busy || wh.charging) return;
         wh.charging = true; wh.t0 = performance.now(); F.mode = "charge"; F.base = F.rot; F.power = 0; F.win = -1; F.flash = 0;
         wh.pw = 0; var n = 0;
         wh.iv = setInterval(function () {
@@ -612,14 +620,14 @@
       setBusy(true); msg("", ""); clearBanner(); A.haptic("ok"); snd("whoosh");
       F.mode = "free"; F.vel = 9 + power * 15;
       var t0 = performance.now();
-      A.api("/api/wheel/spin", "POST", {}).then(function (v) {
+      A.api("/api/wheel/spin", "POST", wh.test ? { test: true } : {}).then(function (v) {
         var idxs = []; PRIZES.forEach(function (p, i) { if (p === v.prize) idxs.push(i); });
         var idx = idxs.length ? idxs[Math.floor(Math.random() * idxs.length)] : Math.floor(Math.random() * PRIZES.length);
         F.land(idx, power, function () {
-          setBalance(v.balance); wh.available = false;
+          setBalance(v.balance); if (!v.test) wh.available = false;
           var big = v.prize >= 500;
-          msg((big ? "💥 SUPER JACKPOT! " : "🎉 ") + "+" + A.fmt(v.prize) + " $SDG", "win");
-          banner(big ? "SUPER JACKPOT!" : "HAI VINTO", "+" + A.fmt(v.prize) + " $SDG", "win");
+          msg((v.test ? "🧪 PROVA: " : "") + (big ? "💥 SUPER JACKPOT! " : "🎉 ") + "+" + A.fmt(v.prize) + " $SDG" + (v.test ? " (non pagati)" : ""), "win");
+          banner(big ? "SUPER JACKPOT!" : "HAI VINTO", "+" + A.fmt(v.prize) + " $SDG" + (v.test ? " · prova" : ""), "win");
           snd(big ? "bigwin" : "win"); A.haptic("ok");
           setBusy(false); A.refreshMe();
         });

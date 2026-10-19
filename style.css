@@ -426,3 +426,4 @@ body.has3d #hub3d{visibility:visible}
 .whpow i{display:block;height:100%;width:0;background:linear-gradient(90deg,#35e6ff,#ff3db0,#ffe14a);box-shadow:0 0 12px rgba(255,61,176,.7)}
 .avi-go.hold{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .wheelbox{margin-top:2px}
+.wh-test{margin-top:4px;font-size:13px;padding:6px 12px}
