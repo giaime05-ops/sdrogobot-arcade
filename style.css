@@ -645,7 +645,7 @@ button,input,select{font-family:inherit}
 .hs-stage{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 14px 18px;position:relative}
 .hs-stage.intro{padding:0;gap:0}
 .hs-cover{position:relative;flex:0 0 40%;width:100%;overflow:hidden;background:#000}
-.hs-cover img{width:100%;height:100%;object-fit:cover;animation:hszoom 14s ease-in-out infinite alternate;transform-origin:50% 50%}
+.hs-cover img{width:100%;height:100%;object-fit:cover;object-position:50% 26%;animation:hszoom 14s ease-in-out infinite alternate;transform-origin:50% 50%}
 @keyframes hszoom{from{transform:scale(1.02) translateY(0)}to{transform:scale(1.18) translateY(-2%)}}
 .hs-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,4,13,0) 55%,#07040d 100%),radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.55))}
 .hs-sweep{position:absolute;top:0;bottom:0;width:30%;left:-40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.14),transparent);animation:hssweep 5s ease-in-out infinite;z-index:2}
@@ -696,3 +696,27 @@ button,input,select{font-family:inherit}
 .hs-veh{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:360px}
 .hs-vb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px 6px;border-radius:16px;border:1px solid rgba(255,61,176,.5);background:linear-gradient(180deg,#2a1342,#160a26);color:#fff;font:700 16px "Rajdhani",sans-serif}.hs-vb .ic{font-size:30px}.hs-vb:active{filter:brightness(1.4)}
 .hs-rules{width:100%;max-width:360px;font-size:12.5px;color:#bfb2dc}.hs-rules summary{cursor:pointer;color:#ffb0e6;font-weight:700}.hs-rules div{padding:3px 0}
+
+/* barra account di prova: piccola pillola in alto al centro, non copre più saldo e titoli */
+#sbxBar{left:50%;right:auto;transform:translateX(-50%);top:1px;padding:1px 3px 1px 9px;border-radius:999px;gap:6px;font-size:10px;letter-spacing:.6px;box-shadow:0 1px 8px rgba(255,46,77,.5);opacity:.92}
+#sbxBar button{font-size:10px;padding:1px 7px}
+/* colori avatar */
+.av-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0 2px}
+.av-sw{position:relative;width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.25);padding:0}
+.av-sw.on{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,.6)}
+.av-sw.lock:after{content:"🔒";position:absolute;inset:0;display:grid;place-items:center;font-size:14px;background:rgba(0,0,0,.45);border-radius:50%}
+.av-sw.rb{background:conic-gradient(#ff3b4e,#ffd23b,#2fd36f,#35e6ff,#a855f7,#ff3b4e)!important;animation:avspin 4s linear infinite}
+@keyframes avspin{to{filter:hue-rotate(360deg)}}
+.av-hint{font-size:12px;color:#bfb2dc;text-align:center;min-height:16px}
+/* roulette: testo regole accanto alla ruota piccola + transizione */
+.rt-top{display:flex;align-items:center;justify-content:center;gap:12px;width:100%}
+.rt-info{font:600 11.5px/1.35 Rajdhani,sans-serif;color:#d3c3f0;max-width:130px}.rt-info b{color:#ffe27a}
+.gm-stage .rt-in{animation:rtin .38s ease both}
+@keyframes rtin{0%{opacity:0;transform:scale(.86) translateY(14px)}100%{opacity:1;transform:none}}
+.gm-stage .rt-out{animation:rtout .22s ease both}
+@keyframes rtout{to{opacity:0;transform:scale(1.06)}}
+.rt-two{display:flex;gap:10px;width:100%}.rt-two .avi-go{flex:1}
+/* heist: bagliore neon sul cavo */
+.hs-cover:before{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(60% 60% at 50% 45%,rgba(168,85,247,.28),transparent 70%);mix-blend-mode:screen;animation:hsglow 3.2s ease-in-out infinite alternate;pointer-events:none}
+@keyframes hsglow{from{opacity:.25}to{opacity:1}}
+#gm.rt-mode .gm-msg:empty{display:none}.rt-two .avi-go.alt{background:linear-gradient(180deg,#2a1342,#160a26);border:1px solid rgba(255,61,176,.5)}.rt-grid{gap:3px}

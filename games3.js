@@ -36,8 +36,8 @@
   function renderBets() {
     var g = S.game;
     elBets.innerHTML = "";
-    elBets.hidden = !(g && g.bets);
-    if (!g || !g.bets) return;
+    elBets.hidden = !(g && g.bets) || !!(g.hideBets && g.hideBets());
+    if (!g || !g.bets || elBets.hidden) return;
     S.bets.forEach(function (v) {
       var b = document.createElement("button");
       b.type = "button"; b.className = "avi-bet" + (v === S.bet ? " on" : ""); b.textContent = v; b.disabled = S.busy;
@@ -53,7 +53,7 @@
   function renderGo() {
     var g = S.game; if (!g) return;
     var l = g.goLabel ? g.goLabel() : { text: "—", disabled: true };
-    elGo.className = "avi-go" + (g.hold ? " hold" : ""); elGo.textContent = l.text; elGo.disabled = !!(l.disabled || S.busy);
+    elGo.hidden = !!l.hidden; elGo.className = "avi-go" + (g.hold ? " hold" : ""); elGo.textContent = l.text; elGo.disabled = !!(l.disabled || S.busy);
     if (S.busy && l.busyText) elGo.textContent = l.busyText;
   }
   function renderExtra() {
@@ -341,48 +341,68 @@
       if (p && p.a) { if (!o) { o = document.createElement("i"); c.appendChild(o); } o.textContent = p.a; } else if (o) o.remove();
     });
   }
-  // due schermate: "bet" = ruota piccola + tavolo; "spin" = ruota grande e pallina (anche per il risultato)
-  function rtView(mode) {
-    rt.phase = mode; clearTimeout(rt.back);
-    var sh = stage.clientHeight || Math.max(300, window.innerHeight - 330);
+  // due schermate: "bet" = ruota piccola + tavolo; "spin" = ruota grande e pallina (anche per il risultato). Il cambio è una transizione morbida.
+  function rtLoadLast() {
+    rtClear();
+    var l = []; try { l = JSON.parse(localStorage.getItem("arc_rt_last") || "[]"); } catch (e) {}
+    var tot = 0; l.forEach(function (p) { tot += p.a; });
+    if (!l.length || tot > S.balance) return;
+    rt.last = l; l.forEach(function (p) { var k = rtKey(p.t, p.v); rt.placed[k] = { t: p.t, v: p.v, a: p.a }; rt.order.push(k); });
+  }
+  function rtBuildView(mode) {
+    rt.phase = mode;
     if (mode === "bet") {
-      var ws = Math.max(96, Math.min(150, sh * 0.26)), rh = Math.max(15, Math.min(23, Math.floor((sh - ws - 40 - 26) / 14)));
-      stage.style.setProperty("--rt-h", rh + "px"); stage.classList.add("rt-bet");
-      roul.wheel = makeRoulette(Math.round(ws), ORDER_US);
-      stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div><div id="rtBox"></div>';
+      stage.classList.add("rt-bet"); root.classList.add("rt-mode");
+      roul.wheel = makeRoulette(110, ORDER_US);
+      stage.innerHTML = '<div class="rt-top"><div class="rt-info"><b>Pieno ×36</b><br>0 e 00 in verde</div><div class="wheelbox rl-wrap" id="rlBox"></div><div class="rt-info"><b>Dozzine e colonne ×3</b><br>Chance semplici ×2</div></div><div id="rtBox"></div>';
       $("rlBox").appendChild(roul.wheel.cv); rtBuild($("rtBox"));
     } else {
       stage.classList.remove("rt-bet");
-      roul.wheel = makeRoulette(wheelSize(), ORDER_US);
+      roul.wheel = makeRoulette(Math.max(250, Math.min(440, window.innerWidth - 6, window.innerHeight - 300)), ORDER_US);
       stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div>';
       $("rlBox").appendChild(roul.wheel.cv);
     }
-    renderGo(); renderExtra();
+    Array.prototype.forEach.call(stage.children, function (c) { c.classList.add("rt-in"); });
+    renderBets(); renderGo(); renderExtra();
     if (mode === "bet") { rtFit(); requestAnimationFrame(rtFit); setTimeout(rtFit, 250); }
+  }
+  function rtView(mode, instant) {
+    clearTimeout(rt.back);
+    if (instant || !stage.children.length) { rtBuildView(mode); return Promise.resolve(); }
+    Array.prototype.forEach.call(stage.children, function (c) { c.classList.remove("rt-in"); c.classList.add("rt-out"); });
+    return new Promise(function (res) { rt.back = setTimeout(function () { if (S.game === roul) rtBuildView(mode); res(); }, 230); });
   }
   function rtFit() {
     if (rt.phase !== "bet" || !roul.wheel) return;
-    var sh = stage.clientHeight; if (!sh) return;
-    var ws = Math.max(90, Math.min(150, sh * 0.24)), rh = Math.max(13, Math.min(23, Math.floor((sh - ws - 16 - 26) / 14)));
-    stage.style.setProperty("--rt-h", rh + "px"); roul.wheel.cv.style.width = roul.wheel.cv.style.height = Math.round(ws) + "px";
+    var box = $("rtBox"); if (!box) return;
+    var avail = stage.getBoundingClientRect().bottom - box.getBoundingClientRect().top - 8;
+    var rh = Math.max(14, Math.min(30, Math.floor((avail - 13 * 3) / 14)));
+    stage.style.setProperty("--rt-h", rh + "px");
   }
   function rtClear() { rt.placed = {}; rt.order = []; rtPaint(); }
 
   var roul = {
-    title: "🎡 ROULETTE", bets: true, choice: "red", wheel: null,
+    title: "🎡 ROULETTE", bets: true, choice: "red", wheel: null, hideBets: function () { return rt.on && rt.phase === "spin"; },
     build: function () {
-      rt.on = !!(A.isSandbox && A.isSandbox()); rtClear();
-      if (rt.on) { rtView("bet"); return; }
+      rt.on = !!(A.isSandbox && A.isSandbox()); rtClear(); root.classList.toggle("rt-mode", rt.on);
+      if (rt.on) { rtLoadLast(); rtView("bet", true); return; }
       roul.wheel = makeRoulette(wheelSize());
       stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div>' +
         '<div class="gm-hint">Rosso / Nero / Pari / Dispari ×2 · Verde (0) ×36<br>Lo zero fa perdere tutto tranne chi punta sul Verde.</div>';
       $("rlBox").appendChild(roul.wheel.cv);
     },
-    onOpen: function () { msg(rt.on ? "Tocca il tavolo: pieno ×36 · dozzine/colonne ×3 · chance ×2" : "Scegli la puntata e su cosa punti.", ""); },
+    onOpen: function () { msg(rt.on ? "" : "Scegli la puntata e su cosa punti.", ""); },
     extra: function (box) {
       box.innerHTML = "";
       if (rt.on) {
-        if (rt.phase === "spin") return;
+        if (rt.phase === "spin") {
+          if (S.busy) return;
+          var two = document.createElement("div"); two.className = "rt-two";
+          [["RIGIOCA", function () { roul.replay(); }], ["NUOVA PUNTATA", function () { rtLoadLast(); clearBanner(); msg("", ""); rtView("bet"); }]].forEach(function (x, i) {
+            var b = document.createElement("button"); b.type = "button"; b.className = "avi-go" + (i ? " alt" : ""); b.textContent = x[0]; b.addEventListener("click", x[1]); two.appendChild(b);
+          });
+          box.appendChild(two); return;
+        }
         [["↩ ANNULLA", function () { var k = rt.order.pop(); if (k && rt.placed[k]) { rt.placed[k].a -= S.bet; if (rt.placed[k].a <= 0) delete rt.placed[k]; } }],
          ["🗑 SVUOTA", rtClear],
          ["🔁 RIPETI", function () { if (rt.last.length) { rtClear(); rt.last.forEach(function (p) { var k = rtKey(p.t, p.v); rt.placed[k] = { t: p.t, v: p.v, a: p.a }; rt.order.push(k); }); } }]
@@ -402,7 +422,7 @@
     },
     goLabel: function () {
       if (rt.on) {
-        if (rt.phase === "spin") return S.busy ? { text: "LA RUOTA GIRA…", disabled: true } : { text: "NUOVA PUNTATA" };
+        if (rt.phase === "spin") return { text: "LA RUOTA GIRA…", disabled: true, hidden: !S.busy };
         var tt = rtTotal();
         if (!tt) return { text: "PUNTA SUL TAVOLO", disabled: true };
         if (S.balance < tt) return { text: "SALDO INSUFFICIENTE", disabled: true };
@@ -412,30 +432,33 @@
       var nm = CH.filter(function (c) { return c[0] === roul.choice; })[0][1];
       return { text: "GIRA  " + S.bet + " su " + nm.replace(/^[^\wÀ-ÿ]+/, ""), busyText: "LA RUOTA GIRA…" };
     },
-    goTable: function () {
+    replay: function () {                                           // stessa puntata dell'ultimo giro
+      rtLoadLast(); if (!rt.order.length) { A.toast("Saldo insufficiente per rigiocare"); rtView("bet"); return; }
+      roul.goTable(true);
+    },
+    goTable: function (again) {
       var list = Object.keys(rt.placed).map(function (k) { var p = rt.placed[k]; return { t: p.t, v: p.v, a: p.a }; }), total = rtTotal();
       if (!list.length) return;
       rt.last = list.map(function (p) { return { t: p.t, v: p.v, a: p.a }; });
-      setBusy(true); msg("", ""); notes([]); rtView("spin");
+      try { localStorage.setItem("arc_rt_last", JSON.stringify(rt.last)); } catch (e) {}
+      setBusy(true); msg("", ""); notes([]); clearBanner();
+      var trans = rtView("spin", false);
       showBal(S.balance - total); A.haptic("med"); snd("ball");
-      var t0 = performance.now();
-      A.api("/api/roulette/table", "POST", { bets: list }).then(function (j) {
-        var res = j.result, idx = ORDER_US.indexOf(res.number);
-        later(function () {
-          roul.wheel.spinTo(idx, 6400, function () {
-            setBalance(res.balance);
-            var cn = CNAME[res.color] || "", head = (res.number === 37 ? "00" : res.number) + (cn ? " " + cn : "");
-            if (res.paid > res.bet) { msg("🎉 Vinto! +" + A.fmt(res.net) + " $SDG", "win"); banner(head, "HAI VINTO +" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
-            else if (res.paid > 0) { msg("Recuperi " + A.fmt(res.paid) + " $SDG (" + (res.net >= 0 ? "+" : "") + A.fmt(res.net) + ")", ""); banner(head, "RECUPERI " + A.fmt(res.paid) + " $SDG", ""); }
-            else { msg("💸 Perso: -" + A.fmt(res.bet) + " $SDG", "lose"); banner(head, "HAI PERSO -" + A.fmt(res.bet) + " $SDG", "lose"); A.haptic("bad"); }
-            notes(res.notes); rtClear(); setBusy(false); A.refreshMe();
-            rt.back = setTimeout(function () { if (S.game === roul && rt.phase === "spin" && !S.busy) { clearBanner(); msg("", ""); rtView("bet"); } }, 4500);
-          });
-        }, Math.max(0, 250 - (performance.now() - t0)));
+      var call = A.api("/api/roulette/table", "POST", { bets: list });
+      Promise.all([call, trans]).then(function (arr) {
+        var res = arr[0].result, idx = ORDER_US.indexOf(res.number);
+        roul.wheel.spinTo(idx, 6400, function () {
+          setBalance(res.balance);
+          var cn = CNAME[res.color] || "", head = (res.number === 37 ? "00" : res.number) + (cn ? " " + cn : "");
+          if (res.paid > res.bet) { msg("🎉 Vinto! +" + A.fmt(res.net) + " $SDG", "win"); banner(head, "HAI VINTO +" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
+          else if (res.paid > 0) { msg("Recuperi " + A.fmt(res.paid) + " $SDG (" + (res.net >= 0 ? "+" : "") + A.fmt(res.net) + ")", ""); banner(head, "RECUPERI " + A.fmt(res.paid) + " $SDG", ""); }
+          else { msg("💸 Perso: -" + A.fmt(res.bet) + " $SDG", "lose"); banner(head, "HAI PERSO -" + A.fmt(res.bet) + " $SDG", "lose"); A.haptic("bad"); }
+          notes(res.notes); setBusy(false); A.refreshMe();
+        });
       }).catch(function (e) { showBal(S.balance); msg(errText(e), "lose"); setBusy(false); rtView("bet"); });
     },
     go: function () {
-      if (rt.on) { if (rt.phase === "spin") { clearBanner(); msg("", ""); rtView("bet"); } else roul.goTable(); return; }
+      if (rt.on) { if (rt.phase !== "spin") roul.goTable(); return; }
       var bet = S.bet, choice = roul.choice;
       setBusy(true); msg("", ""); notes([]); clearBanner();
       showBal(S.balance - bet); A.haptic("med"); snd("ball");
@@ -799,7 +822,7 @@
   function close() {
     if (S.busy) { A.toast("Aspetta la fine del giro"); return; }
     if (wh.charging) { wh.charging = false; clearInterval(wh.iv); }
-    clearTimers(); clearTimeout(rt.back); stage.classList.remove("rt-bet"); S.game = null; root.hidden = true; stage.innerHTML = "";
+    clearTimers(); clearTimeout(rt.back); stage.classList.remove("rt-bet"); root.classList.remove("rt-mode"); S.game = null; root.hidden = true; stage.innerHTML = "";
     A.refreshMe();
   }
   elBack.addEventListener("click", close);

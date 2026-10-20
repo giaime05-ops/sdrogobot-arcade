@@ -210,6 +210,23 @@
     wh.appendChild(nb);
     var bl = el("span", "", ""); bl.appendChild(el("i", "ci")); bl.appendChild(document.createTextNode(" " + (other ? (other.balance != null ? A.fmt(other.balance) : "—") : ($("pcoins") ? $("pcoins").textContent : "—")) + " $SDG"));
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
+    if (!other && A.isSandbox && A.isSandbox()) {                                  // colore dell'avatar (prova: solo account admin)
+      var hd = el("div", "set-lab", "COLORE AVATAR"); hd.style.cssText = "text-align:center;font:700 12px Rajdhani,sans-serif;letter-spacing:2px;color:#bfb2dc;margin-top:6px";
+      var row = el("div", "av-row"), hint = el("div", "av-hint", "");
+      var cur = A.avPick();
+      A.avatars.forEach(function (c) {
+        var b = el("button", "av-sw" + (c.lock ? " lock" : "") + (c.rb ? " rb" : "") + (c.id === cur.id ? " on" : "")); b.type = "button"; if (!c.rb) b.style.background = A.avStyle(c); b.setAttribute("aria-label", c.id);
+        b.addEventListener("click", function () {
+          try { localStorage.setItem("arc_avcol", c.id); } catch (e) {}
+          A.applyAvatar(); head.firstChild.style.background = A.avStyle(c); head.firstChild.style.color = c.id === "oro" ? "#3a2600" : "#fff";
+          Array.prototype.forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); }); A.haptic("light");
+          hint.textContent = c.lock ? "Da sbloccare: " + c.lock + " (per prova lo vedi già)" : "";
+        });
+        row.appendChild(b);
+      });
+      card.appendChild(hd); card.appendChild(row); card.appendChild(hint);
+      head.firstChild.style.background = A.avStyle(cur);
+    }
     var grid = el("div", "pg-sum"); card.appendChild(grid);
     var tail = el("div"); card.appendChild(tail);
     var btns = el("div", "prof-btns");

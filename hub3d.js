@@ -267,8 +267,9 @@ const heistG = new THREE.Group(); heistG.visible = false; tilt.add(heistG);
 const btnG = new THREE.Group(); btnG.position.set(0, 1.012, 0); heistG.add(btnG);
 C(0.3, 0.33, 0.07, MS(0xd9a94a, 0.95, 0.25), 0, 0.035, 0, btnG, 40);
 C(0.25, 0.27, 0.05, MS(0x2a1014, 0.5, 0.4), 0, 0.09, 0, btnG, 40);
-const heistCap = C(0.2, 0.23, 0.12, MS(0xe01030, 0.25, 0.2, { emissive: 0xb00a22, emissiveIntensity: 0.9 }), 0, 0.175, 0, btnG, 40);
-C(0.13, 0.2, 0.025, MS(0xff4a63, 0.2, 0.2, { emissive: 0xff2040, emissiveIntensity: 1.1 }), 0, 0.245, 0, btnG, 40);
+const heistCap = C(0.2, 0.23, 0.12, new THREE.MeshStandardMaterial({ color: 0xe01030, metalness: 0.25, roughness: 0.2, emissive: 0xb00a22, emissiveIntensity: 0.9 }), 0, 0.175, 0, btnG, 40);
+const heistTop = C(0.13, 0.2, 0.025, new THREE.MeshStandardMaterial({ color: 0xff4a63, metalness: 0.2, roughness: 0.2, emissive: 0xff2040, emissiveIntensity: 1.1 }), 0, 0.245, 0, btnG, 40);
+const NEON_CYC = [0xff2fd0, 0x2ff0ff, 0xff2a4a, 0xffe82a, 0x2aff7a, 0xa855ff].map((h) => new THREE.Color(h)); const cycCol = new THREE.Color();
 const heistHalo = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.012, 6, 48), NEONM(0xff3b5e)); heistHalo.rotation.x = Math.PI / 2; heistHalo.position.y = 0.075; btnG.add(heistHalo);
 
 // ---------- slot machine futuristica (angolo in fondo a destra) ----------
@@ -571,7 +572,12 @@ function frame(now) {
     lever.rotation.z = (time % 8) < 0.4 ? -0.5 : 0;
   }
   stepGlow(dt);
-  if (heistOn) { const pl = 0.5 + 0.5 * Math.sin(time * 3); heistHalo.material.color.setRGB(1, 0.15 + 0.2 * pl, 0.25 + 0.2 * pl); heistCap.position.y = 0.175 - 0.01 * pl; }
+  if (heistOn) {                                                       // il tasto cambia colore neon, piano (3,2 s per colore)
+    const pl = 0.5 + 0.5 * Math.sin(time * 3), ph = (time / 3.2) % NEON_CYC.length, i0 = Math.floor(ph), k = ph - i0, ks = k * k * (3 - 2 * k);
+    cycCol.copy(NEON_CYC[i0]).lerp(NEON_CYC[(i0 + 1) % NEON_CYC.length], ks);
+    for (const m of [heistCap.material, heistTop.material]) { m.color.copy(cycCol).multiplyScalar(0.55); m.emissive.copy(cycCol); m.emissiveIntensity = 0.85 + 0.35 * pl; }
+    heistHalo.material.color.copy(cycCol); heistCap.position.y = 0.175 - 0.01 * pl;
+  }
   if (aviT > 0) { aviT -= dt; const k = Math.sin(Math.max(0, 1 - aviT / 0.5) * Math.PI); haloAv.material.opacity = k * 0.9; pp.scale.setScalar(1 + k * 0.1); } else { haloAv.material.opacity = 0; pp.scale.setScalar(1); }
   placeCamera(); renderer.render(scene, camera);
   if (!ready) { ready = true; cv.style.visibility = "visible"; const sc = document.getElementById("scene"); if (sc) sc.classList.remove("show"); document.body.classList.add("has3d"); }

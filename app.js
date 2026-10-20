@@ -110,6 +110,16 @@
     return e;
   }
 
+  // colore dell'avatar (per ora solo account admin di prova): scelto nel profilo, salvato sul telefono
+  var AV = [
+    { id: "viola", g: ["#ff6fc8", "#7a5cff"] }, { id: "azzurro", g: ["#35e6ff", "#2a6bff"] }, { id: "verde", g: ["#52ff9a", "#14a05a"] }, { id: "arancio", g: ["#ffb347", "#ff5a36"] },
+    { id: "rosso", g: ["#ff5a6e", "#a8102a"], lock: "Vinci 25 partite al casinò" }, { id: "oro", g: ["#ffe27a", "#d9a94a"], lock: "Completa lo Sdrogo Heist" },
+    { id: "notte", g: ["#2b2b3a", "#00ffd5"], lock: "Gioca 500 partite nei giochi del casinò" }, { id: "arcobaleno", rb: true, lock: "Raggiungi 5 stelle Heist" }
+  ];
+  function avStyle(c) { return c.rb ? "conic-gradient(#ff3b4e,#ffd23b,#2fd36f,#35e6ff,#a855f7,#ff3b4e)" : "linear-gradient(135deg," + c.g[0] + "," + c.g[1] + ")"; }
+  function avPick() { var id = ""; try { id = localStorage.getItem("arc_avcol") || ""; } catch (e) {} return AV.filter(function (c) { return c.id === id; })[0] || AV[0]; }
+  function applyAvatar() { var av = $("avatar"); if (!av) return; var c = SBX ? avPick() : AV[0]; av.style.background = avStyle(c); av.style.color = c.id === "oro" ? "#3a2600" : "#fff"; }
+
   function render(me, opts) {
     opts = opts || {};
     ME.admin = !!me.admin;
@@ -119,7 +129,7 @@
     if (me.badge) pn.appendChild(badgeEl(me.badge));
     ME.stars = me.stars; ME.badge = me.badge;
     if (me.stars > 0) pn.appendChild(starEl(me.stars));
-    $("avatar").textContent = (name.trim()[0] || "?").toUpperCase();
+    $("avatar").textContent = (name.trim()[0] || "?").toUpperCase(); applyAvatar();
     $("pcoins").textContent = me.coins === null || me.coins === undefined ? "—" : fmt(me.coins);
     if (me.banco !== null && me.banco !== undefined) { $("bancoVal").textContent = fmt(me.banco); $("bancoChip").hidden = false; }
     $("folliaChip").hidden = !me.follia;
@@ -212,7 +222,7 @@
     return refreshMe();
   }
 
-  window.Arcade = { badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  window.Arcade = { avatars: AV, avStyle: avStyle, avPick: avPick, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 
