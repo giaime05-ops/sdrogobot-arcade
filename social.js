@@ -215,7 +215,7 @@
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
     var pst = other ? (other.style || {}) : (A.me().style || {});
     A.styleAvatar(head.firstChild, pst);
-    if (!other && A.isAdmin && A.isAdmin()) {                                      // personalizzazione: per ora solo admin
+    if (!other && A.isAdmin && A.isAdmin() && A.isSandbox && A.isSandbox()) {   // personalizzazione: solo account admin di prova
       var eb = el("button", "set-ok prof-edit", "✨ MODIFICA PROFILO"); eb.type = "button";
       eb.addEventListener("click", function () { A.haptic("light"); editProfile(function () { openProfile(); }); });
       card.appendChild(eb);
