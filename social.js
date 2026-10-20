@@ -12,7 +12,7 @@
   var pos = 2, offTimer = null, badgeBusy = false;
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function gameOpen() { return ["avi", "gm", "g4"].some(function (id) { var n = $(id); return n && !n.hidden; }); }
+  function gameOpen() { return ["avi", "gm", "g4", "heist"].some(function (id) { var n = $(id); return n && !n.hidden; }); }
   function syncCoins() {
     var v = $("pcoins") ? $("pcoins").textContent : "—";
     Array.prototype.forEach.call(document.querySelectorAll(".pgcoins"), function (n) { n.textContent = v; });
@@ -316,7 +316,7 @@
   // ---------- tasto Indietro di Telegram (anche il tasto/gesto "indietro" del telefono) ----------
   (function () {
     var tg = A.tg; if (!tg || !tg.BackButton) return;
-    var GB = { avi: "aviBack", gm: "gmBack", g4: "g4Back" };
+    var GB = { avi: "aviBack", gm: "gmBack", g4: "g4Back", heist: "hsBack" };
     function openGame() { var r = null; Object.keys(GB).forEach(function (id) { var n = $(id); if (n && !n.hidden) r = id; }); return r; }
     function settingsOpen() { return !!(window.ArcadeSettingsUI && window.ArcadeSettingsUI.isOpen()); }
     function onBack() {

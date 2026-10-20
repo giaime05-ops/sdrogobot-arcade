@@ -20,7 +20,8 @@
     wordle:     { name: "Wordle",          ready: true },
     mastermind: { name: "Mastermind",      ready: true },
     blackjack:  { name: "Blackjack",       ready: true },
-    poker:      { name: "Poker",           ready: true }
+    poker:      { name: "Poker",           ready: true },
+    heist:      { name: "Sdrogo Heist",    ready: true }
   };
 
   // ---------- Utilità ----------
@@ -207,6 +208,7 @@
     document.body.classList.toggle("sbx", SBX);
     var b = $("sbxBar"); if (b) b.hidden = !SBX;
     if (window.ArcadeTabs && window.ArcadeTabs.reset) window.ArcadeTabs.reset();
+    try { if (window.Arcade3D && window.Arcade3D.setHeist) window.Arcade3D.setHeist(SBX); } catch (e) {}
     return refreshMe();
   }
 
@@ -219,13 +221,14 @@
     var g = GAMES[key]; if (!g) return;
     if (el) { el.classList.add("press"); setTimeout(function () { el.classList.remove("press"); }, 140); }
     haptic("light");
+    if (key === "heist" && !SBX) return;                      // per ora solo nell'account admin di prova
     if (!g.ready) {
       if (g.note) sheet(g.name, g.note); else toast(g.name + ": in arrivo");
     } else if (window.ArcadeGames && window.ArcadeGames[key]) {
       window.ArcadeGames[key].open();
     } else {
       // il gioco è pronto ma il suo file non è stato caricato (o è vecchio): lo si dice chiaramente
-      var file = key === "aviator" ? "aviator.js" : (["slot", "roulette", "scratch"].indexOf(key) >= 0 ? "games3.js" : "games4.js");
+      var file = key === "aviator" ? "aviator.js" : (["slot", "roulette", "scratch"].indexOf(key) >= 0 ? "games3.js" : (key === "heist" ? "heist.js" : "games4.js"));
       sheet(g.name, "Il gioco è pronto, ma manca il file " + file + " nel repo della mini app (o la pagina è ancora quella vecchia: chiudi e riapri l'app).");
     }
   }

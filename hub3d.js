@@ -202,7 +202,8 @@ function card(rank, suit, red, x, y, z, rot, parent) {
   m.rotation.set(-Math.PI / 2, 0, rot || 0); m.position.set(x, y, z); (parent || scene).add(m); return m;
 }
 function chips(x, y, z, colors) {
-  colors.forEach((c, i) => { C(0.1, 0.1, 0.035, M(c), x, y + i * 0.037, z, tilt, 20); C(0.103, 0.103, 0.012, M(0xf5f0e0), x, y + i * 0.037, z, tilt, 20); });
+  const par = x < 0 ? gL : gR;
+  colors.forEach((c, i) => { C(0.1, 0.1, 0.035, M(c), x, y + i * 0.037, z, par, 20); C(0.103, 0.103, 0.012, M(0xf5f0e0), x, y + i * 0.037, z, par, 20); });
 }
 
 // ---------- tavolo centrale ovale: blackjack (verde, sinistra) e poker (rosso, destra) ----------
@@ -210,8 +211,9 @@ const TY = 0.98;
 const table = new THREE.Group(); table.position.set(0, 0, -0.3); scene.add(table);
 const tilt = new THREE.Group(); tilt.rotation.x = 0.13; table.add(tilt);
 const ell = new THREE.Group(); ell.scale.set(2.3, 1, 1.0); tilt.add(ell);
-C(0.95, 0.95, 0.2, new THREE.MeshStandardMaterial({ map: woodTex(512, 128, '#4a1a1e', 3), roughness: 0.3, metalness: 0.1, envMapIntensity: 1.0 }), 0, 0.9, 0, ell, 48);
-{ const ring = new THREE.Mesh(new THREE.TorusGeometry(0.952, 0.012, 6, 64), NEONM(0xff6fb0)); ring.rotation.x = Math.PI / 2; ring.position.y = 1.0; ell.add(ring); }
+const woodMat = new THREE.MeshStandardMaterial({ map: woodTex(512, 128, '#4a1a1e', 3), roughness: 0.3, metalness: 0.1, envMapIntensity: 1.0 });
+const ellBody = C(0.95, 0.95, 0.2, woodMat, 0, 0.9, 0, ell, 48);
+const ringFull = new THREE.Mesh(new THREE.TorusGeometry(0.952, 0.012, 6, 64), NEONM(0xff6fb0)); ringFull.rotation.x = Math.PI / 2; ringFull.position.y = 1.0; ell.add(ringFull);
 const tableTex = tex(1536, 666, (g, W, H) => {
   g.clearRect(0, 0, W, H);
   const cx = W / 2, cy = H / 2, rx = W / 2 - 3, ry = H / 2 - 3;
@@ -238,16 +240,36 @@ const tableTex = tex(1536, 666, (g, W, H) => {
 });
 const halfMat = (offs) => { const t = tableTex.clone(); t.repeat.set(0.5, 1); t.offset.set(offs, 0); t.needsUpdate = true; texAll.push(t); return new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.5 }); };
 const halfBJ = new THREE.Mesh(new THREE.PlaneGeometry(2.19, 1.9), halfMat(0)); const halfPK = new THREE.Mesh(new THREE.PlaneGeometry(2.19, 1.9), halfMat(0.5));
+const gL = new THREE.Group(), gR = new THREE.Group(); tilt.add(gL); tilt.add(gR);            // sinistra (poker) e destra (blackjack): si allargano per far posto al tasto Heist
 halfBJ.position.set(-1.095, 1.012, 0); halfPK.position.set(1.095, 1.012, 0);
-for (const h of [halfBJ, halfPK]) { h.rotation.x = -Math.PI / 2; tilt.add(h); }
+for (const [h, gr] of [[halfBJ, gL], [halfPK, gR]]) { h.rotation.x = -Math.PI / 2; gr.add(h); }
 C(0.22, 0.3, 0.8, MS(0x2a1014, 0.3, 0.3), 0, 0.4, 0, table, 32); C(0.7, 0.72, 0.06, MS(0xd9a94a, 0.95, 0.25), 0, 0.03, 0, table, 36);
-const tc = (r, su, rd, x, z, rot) => card(r, su, rd, x, TY + 0.06, z, rot, tilt);
+const tc = (r, su, rd, x, z, rot) => card(r, su, rd, x, TY + 0.06, z, rot, x < 0 ? gL : gR);
 // poker (verde, sinistra): 5 carte comuni a ventaglio in fondo, fiche dietro
 [["A", "♥", 1], ["K", "♠", 0], ["Q", "♦", 1], ["J", "♣", 0], ["10", "♥", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], -1.6 + i * 0.22, -0.34 + Math.abs(i - 2) * 0.03, (i - 2) * 0.14));
 chips(-0.75, 1.03, -0.42, [0xc8182b, 0xc8182b, 0x14141a, 0x2b6fd6]); chips(-0.55, 1.03, -0.34, [0x14141a, 0xffd34d, 0xffd34d]);
 // blackjack (rosso, destra): solo asso e re
 [["A", "♠", 0], ["K", "♥", 1]].forEach((c, i) => tc(c[0], c[1], !!c[2], 1.0 + i * 0.2, -0.3, 0.12 - i * 0.24));
 chips(1.75, 1.03, -0.37, [0xffd34d, 0xffd34d, 0x25e1d3, 0x14141a]); chips(1.95, 1.03, -0.3, [0xc8182b, 0x25e1d3, 0x25e1d3]);
+
+// ---------- tasto Heist: solo nell'account admin di prova il tavolo si allarga al centro e compare il pulsante rosso ----------
+const HS = 0.42;
+const heistG = new THREE.Group(); heistG.visible = false; tilt.add(heistG);
+{
+  const ellL = new THREE.Group(), ellR = new THREE.Group(); ellL.scale.set(2.3, 1, 1); ellR.scale.set(2.3, 1, 1); ellL.position.x = -HS; ellR.position.x = HS; heistG.add(ellL); heistG.add(ellR);
+  C(0.95, 0.95, 0.2, woodMat, 0, 0.9, 0, ellL, 48); C(0.95, 0.95, 0.2, woodMat, 0, 0.9, 0, ellR, 48);
+  B(2 * HS + 0.02, 0.2, 1.9, woodMat, 0, 0.9, 0, heistG);
+  for (const [g2, rz] of [[ellL, Math.PI / 2], [ellR, -Math.PI / 2]]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.952, 0.012, 6, 40, Math.PI), NEONM(0xff6fb0)); r.rotation.set(Math.PI / 2, 0, rz); r.position.y = 1.0; g2.add(r); }
+  for (const sz of [-1, 1]) B(2 * HS + 0.02, 0.024, 0.024, NEONM(0xff6fb0), 0, 1.0, sz * 0.95, heistG);
+  const felt = new THREE.Mesh(new THREE.PlaneGeometry(2 * HS + 0.02, 1.9), new THREE.MeshLambertMaterial({ color: 0x1b0d14 })); felt.rotation.x = -Math.PI / 2; felt.position.y = 1.011; heistG.add(felt);
+  for (const sx of [-1, 1]) B(0.012, 0.012, 1.8, MS(0xe8c36a, 0.9, 0.3), sx * (HS - 0.03), 1.014, 0, heistG);
+}
+const btnG = new THREE.Group(); btnG.position.set(0, 1.012, 0); heistG.add(btnG);
+C(0.3, 0.33, 0.07, MS(0xd9a94a, 0.95, 0.25), 0, 0.035, 0, btnG, 40);
+C(0.25, 0.27, 0.05, MS(0x2a1014, 0.5, 0.4), 0, 0.09, 0, btnG, 40);
+const heistCap = C(0.2, 0.23, 0.12, MS(0xe01030, 0.25, 0.2, { emissive: 0xb00a22, emissiveIntensity: 0.9 }), 0, 0.175, 0, btnG, 40);
+C(0.13, 0.2, 0.025, MS(0xff4a63, 0.2, 0.2, { emissive: 0xff2040, emissiveIntensity: 1.1 }), 0, 0.245, 0, btnG, 40);
+const heistHalo = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.012, 6, 48), NEONM(0xff3b5e)); heistHalo.rotation.x = Math.PI / 2; heistHalo.position.y = 0.075; btnG.add(heistHalo);
 
 // ---------- slot machine futuristica (angolo in fondo a destra) ----------
 const slot = new THREE.Group(); slot.position.set(3.0, 0, -3.3); slot.scale.setScalar(1.1); scene.add(slot);
@@ -420,19 +442,27 @@ plate('WORDLE', 0.95, 0.16, '#6dff8a', '#e8ffe8', 0, 0.72, 0.58, wtab);
 
 // ---------- zone toccabili (invisibili) ----------
 const hits = [];
-function hit(game, label, w, h, d, x, y, z) {
+function hit(game, label, w, h, d, x, y, z, off) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
-  m.position.set(x, y, z); m.userData.game = game; m.userData.label = label; scene.add(m); hits.push(m);
+  m.position.set(x, y, z); m.userData.game = game; m.userData.label = label; scene.add(m); if (!off) hits.push(m); return m;
 }
-hit("poker", "Poker", 2.1, 0.5, 1.8, -1.1, 1.05, -0.3);
-hit("blackjack", "Blackjack", 2.1, 0.5, 1.8, 1.1, 1.05, -0.3);
+const hitPK = hit("poker", "Poker", 2.1, 0.5, 1.8, -1.1, 1.05, -0.3);
+const hitBJ = hit("blackjack", "Blackjack", 2.1, 0.5, 1.8, 1.1, 1.05, -0.3);
+const hitH = hit("heist", "Sdrogo Heist", 0.8, 0.5, 1.4, 0, 1.15, -0.3, true);
 hit("slot", "Slot 777", 1.3, 2.8, 1.1, 3.0, 1.3, -3.3);
 hit("mastermind", "Mastermind", 1.3, 1.9, 1.0, -3.05, 0.95, -3.5);
 hit("roulette", "Roulette", 1.5, 0.6, 1.5, -1.2, 0.95, 2.0);
 hit("scratch", "Gratta e Vinci", 1.2, 2.8, 0.8, 0, 1.4, -4.1);
 hit("aviator", "Aviator", 1.5, 1.1, 0.5, -2.95, 2.4, -4.3);
 hit("wordle", "Wordle", 1.6, 0.5, 1.3, 1.3, 0.95, 2.0);
-const TARGETS = { poker: halfBJ, blackjack: halfPK, slot, mastermind: safe, roulette: roul, scratch: kiosk, aviator: ptab, wordle: wtab };
+const TARGETS = { heist: btnG, poker: halfBJ, blackjack: halfPK, slot, mastermind: safe, roulette: roul, scratch: kiosk, aviator: ptab, wordle: wtab };
+let heistOn = false;
+function setHeist(on) {
+  heistOn = !!on; const k = heistOn ? HS : 0;
+  gL.position.x = -k; gR.position.x = k; ell.visible = !heistOn; heistG.visible = heistOn;
+  hitPK.position.x = -1.1 - k; hitBJ.position.x = 1.1 + k;
+  const i = hits.indexOf(hitH); if (heistOn && i < 0) hits.push(hitH); if (!heistOn && i >= 0) hits.splice(i, 1);
+}
 let glow = null;
 function endGlow() { if (!glow) return; glow.list.forEach((e) => { e.o.material = e.orig; e.mat.dispose(); }); glow = null; }
 let aviT = 0;
@@ -493,7 +523,7 @@ cv.addEventListener("pointerup", (e) => {
 });
 
 // ---------- visibilità: il 3D si disegna solo quando si vede l'hub ----------
-const SECTIONS = ["avi", "gm", "g4"];
+const SECTIONS = ["avi", "gm", "g4", "heist"];
 let hubVisible = true;
 function checkVisible() {
   const open = SECTIONS.some((id) => { const n = document.getElementById(id); return n && !n.hidden; });
@@ -523,7 +553,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   if (!hubVisible) { accT = 0; accF = 0; return; }
-  if (!animOn && !glow && aviT <= 0) { skipN = (skipN + 1) % 6; if (skipN) return; }
+  if (!animOn && !glow && aviT <= 0 && !heistOn) { skipN = (skipN + 1) % 6; if (skipN) return; }
   time += dt;
   accT += dt; accF++;
   if (accT >= 1.5) {                                   // ogni 1,5 s: se il telefono fatica, abbassa la qualità
@@ -541,6 +571,7 @@ function frame(now) {
     lever.rotation.z = (time % 8) < 0.4 ? -0.5 : 0;
   }
   stepGlow(dt);
+  if (heistOn) { const pl = 0.5 + 0.5 * Math.sin(time * 3); heistHalo.material.color.setRGB(1, 0.15 + 0.2 * pl, 0.25 + 0.2 * pl); heistCap.position.y = 0.175 - 0.01 * pl; }
   if (aviT > 0) { aviT -= dt; const k = Math.sin(Math.max(0, 1 - aviT / 0.5) * Math.PI); haloAv.material.opacity = k * 0.9; pp.scale.setScalar(1 + k * 0.1); } else { haloAv.material.opacity = 0; pp.scale.setScalar(1); }
   placeCamera(); renderer.render(scene, camera);
   if (!ready) { ready = true; cv.style.visibility = "visible"; const sc = document.getElementById("scene"); if (sc) sc.classList.remove("show"); document.body.classList.add("has3d"); }
@@ -551,7 +582,9 @@ function frame(now) {
 })();
 window.Arcade3D = Object.assign(window.Arcade3D || {}, {
   setQuality(v) { if (v === "auto") { autoQ = true; } else { autoQ = false; qi = Math.max(0, Math.min(2, +v)); } resize(); },
-  setAnim(b) { animOn = !!b; }
+  setAnim(b) { animOn = !!b; },
+  setHeist
 });
+try { if (window.Arcade && window.Arcade.isSandbox && window.Arcade.isSandbox()) setHeist(true); } catch (e) {}
 requestAnimationFrame(frame);
 

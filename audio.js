@@ -327,7 +327,7 @@
       }).observe(am, { childList: true, characterData: true, subtree: true, attributes: true });
     }
     // musica: sala o gioco
-    var secs = ["avi", "gm", "g4"].map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    var secs = ["avi", "gm", "g4", "heist"].map(function (id) { return document.getElementById(id); }).filter(Boolean);
     function upd() { setMode(secs.some(function (s) { return !s.hidden; }) ? "game" : "hub"); }
     secs.forEach(function (s) { new MutationObserver(upd).observe(s, { attributes: true, attributeFilter: ["hidden"] }); });
     upd();
