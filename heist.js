@@ -1,5 +1,5 @@
 /* Sdrogo Arcade – SDROGO HEIST in 2D (per ora solo account admin di prova).
-   Cinque livelli a giochini: Centralino (memoria), Guardie (riflessi), Hacking (logica), Caveau (codice), Fuga (rapporti).
+   Sei livelli a giochini: Centralino (memoria), Corridoio laser (tempismo), Hacking (logica), Serratura (tempismo), Caveau (codice), Fuga (rapporti).
    Il server decide tutto: qui si disegna e si inviano le mosse. */
 (function () {
   "use strict";
@@ -14,8 +14,7 @@
   var root, bal, stage, hud, tEl, aEl, lEl, back;
   var S = { info: null, view: null, busy: false, t0: 0, left: 0, tick: 0, timers: [], active: false };
   var COLORS = ["#ff3b4e", "#3b82ff", "#ffd23b", "#2fd36f", "#a855f7", "#ff8a2b"];
-  var NAMES = ["Centralino", "Guardie", "Hacking", "Caveau", "Fuga"];
-
+  
   function build() {
     if (root) return;
     root = el("section", ""); root.id = "heist"; root.hidden = true; root.setAttribute("aria-label", "Sdrogo Heist");
@@ -50,7 +49,7 @@
   }
   function drawHud(v) {
     hud.hidden = false;
-    lEl.textContent = "LIV " + v.level + "/5 · " + NAMES[v.level - 1];
+    lEl.textContent = "LIV " + v.level + "/" + (v.total || 6) + " · " + v.name;
     aEl.innerHTML = "";
     for (var i = 0; i < v.max_alarms; i++) aEl.appendChild(el("i", i < v.alarms ? "on" : ""));
     startClock(v.left);
@@ -139,7 +138,7 @@
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
     if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); stage.appendChild(up); later(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
-    if (v.level === 1) lv1(v); else if (v.level === 2) lv2(v); else if (v.level === 3) lv3(v); else if (v.level === 4) lv4(v); else lv5(v);
+    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5 })[v.kind](v);
   }
   function brief(title, text, label, fn) {
     var c = el("div", "hs-card"); c.appendChild(el("h2", "", title)); c.appendChild(el("p", "hs-lead", text));
@@ -176,57 +175,76 @@
     later(function () { msg.textContent = "Ripeti la sequenza!"; pads.forEach(function (p) { p.disabled = false; }); drawProg(0, v.seq.length); }, t + v.seq.length * per + 250);
   }
 
-  // ----- 2. Guardie: premi solo quando dormono tutte -----
-  function guardSvg(awake) {
-    var eye = awake ? '<circle cx="16" cy="22" r="4" fill="#fff"/><circle cx="32" cy="22" r="4" fill="#fff"/><circle cx="16" cy="22" r="1.8" fill="#c00"/><circle cx="32" cy="22" r="1.8" fill="#c00"/>'
-      : '<path d="M11 22q5 4 10 0M27 22q5 4 10 0" stroke="#9fd4ff" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
-    return '<svg viewBox="0 0 48 56" width="100%" height="100%"><path d="M4 56q0-18 20-18t20 18z" fill="' + (awake ? "#7a1224" : "#1b3a66") + '"/><circle cx="24" cy="22" r="15" fill="' + (awake ? "#e8b08c" : "#c6a58c") + '"/><path d="M8 14q16-16 32 0l-2 5H10z" fill="' + (awake ? "#ff3b4e" : "#3b5ea8") + '"/>' + eye +
-      (awake ? '<path d="M18 33h12" stroke="#5a1010" stroke-width="2.4" stroke-linecap="round"/>' : '<text x="36" y="10" font-size="11" fill="#9fd4ff" font-family="Rajdhani,sans-serif" font-weight="700">z</text>') + '</svg>';
-  }
-  function lv2(v) {
+  // ----- 2. Corridoio laser: tieni premuto per avanzare, fermati quando il raggio è acceso -----
+  function lvLaser(v) {
     if (v.phase === "brief") {
-      brief("GUARDIE", "Sul monitor vedi lo stato di ogni guardia: dorme o è sveglia. Premi PASSA nel momento in cui TUTTE dormono. Troppo presto, troppo tardi o con una guardia sveglia = allarme. 3 telecamere, sempre più guardie e più veloci.", "ACCENDI IL MONITOR", function () { act("rd"); });
+      brief("CORRIDOIO LASER", "Tieni premuto per avanzare lungo il corridoio, rilascia per fermarti. I raggi si accendono e si spengono a ritmi diversi: attraversali solo quando sono spenti. Se tocchi un raggio acceso scatta l'allarme.", "ENTRA NEL CORRIDOIO", function () { act("rd"); });
       return;
     }
-    stage.appendChild(el("div", "hs-sub", "Telecamera " + (v.r + 1) + "/" + v.rounds));
-    var mon = el("div", "hs-monitor"); stage.appendChild(mon);
-    var row = el("div", "hs-guards"); mon.appendChild(row);
-    var gs = []; for (var i = 0; i < v.n; i++) { var g = el("div", "hs-guard"); g.innerHTML = guardSvg(true); row.appendChild(g); gs.push(g); }
-    var bar = el("div", "hs-fbar"); var fill = el("i"); bar.appendChild(fill); mon.appendChild(bar);
-    var cap = el("div", "hs-sub", "Attendi…"); stage.appendChild(cap);
-    var btn = el("button", "avi-go hs-go hs-pass", "🏃 PASSA ORA!"); btn.type = "button"; btn.disabled = true; stage.appendChild(btn);
-    var total = v.frames.length, iv = v.iv * 1000, start = performance.now() + (v.delay || 0) * 1000, last = -2, done = false;
-    function draw(f) {
-      v.frames[f].forEach(function (aw, k) { gs[k].innerHTML = guardSvg(aw); gs[k].classList.toggle("awake", aw); });
-      var all = v.frames[f].every(function (x) { return !x; }); mon.classList.toggle("clear", all);
-    }
-    var raf = 0;
+    stage.appendChild(el("div", "hs-sub big", "Non toccare i raggi accesi!"));
+    var W = 330, H = 360, cv = el("canvas", "hs-lz"); cv.width = W * 2; cv.height = H * 2; cv.style.width = W + "px"; cv.style.height = H + "px"; stage.appendChild(cv);
+    var c = cv.getContext("2d"); c.scale(2, 2);
+    var pad = el("button", "avi-go hs-go hs-hold", "TIENI PREMUTO PER AVANZARE"); pad.type = "button"; stage.appendChild(pad);
+    var t0 = performance.now() + (v.delay || 0) * 1000, ev = [], down = -1, closed = 0, done = false, hitSent = false;
+    function X(tms) { return v.speed * (closed + (down >= 0 ? (tms - down) / 1000 : 0)); }
+    function on(l, t) { return ((t + l.ph) % l.p) < l.p * l.duty; }
+    function press(e) { e.preventDefault(); if (done || down >= 0) return; var tm = performance.now() - t0; if (tm < 0) return; down = tm; pad.classList.add("on"); A.haptic("light"); }
+    function release() { if (done || down < 0) return; var tm = performance.now() - t0; ev.push([Math.round(down), Math.round(tm)]); closed += (tm - down) / 1000; down = -1; pad.classList.remove("on"); }
+    pad.addEventListener("pointerdown", function (e) { try { pad.setPointerCapture(e.pointerId); } catch (x) {} press(e); });
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (n) { pad.addEventListener(n, release); });
+    function yOf(x) { return H - 28 - (x / 100) * (H - 70); }
     (function loop(now) {
       if (done || root.hidden || S.view !== v) { done = true; return; }
-      var el_ = now - start;
-      if (el_ >= 0) {
-        var f = Math.floor(el_ / iv);
-        if (f >= total) { done = true; btn.disabled = true; cap.textContent = "Troppo lento…"; act("gm"); return; }
-        if (f !== last) { last = f; draw(f); btn.disabled = false; cap.textContent = "Fotogramma " + (f + 1) + "/" + total; }
-        fill.style.width = ((el_ / (iv * total)) * 100) + "%";
-      }
-      raf = requestAnimationFrame(loop);
+      var t = (now - t0) / 1000, x = Math.min(100, X(now - t0));
+      c.clearRect(0, 0, W, H);
+      // corridoio
+      var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0b1424"); g.addColorStop(1, "#060a14"); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      c.strokeStyle = "rgba(53,230,255,.35)"; c.lineWidth = 2; c.strokeRect(46, 6, W - 92, H - 12);
+      c.fillStyle = "rgba(53,230,255,.06)"; for (var k = 0; k < 14; k++) c.fillRect(46, 10 + k * 25 + ((now / 40) % 25), W - 92, 1);
+      // traguardo
+      c.fillStyle = "#2fd36f"; c.font = "700 12px Rajdhani,sans-serif"; c.textAlign = "center"; c.fillText("USCITA ▲", W / 2, 20);
+      v.lasers.forEach(function (l) {
+        var y = yOf(l.x), isOn = t >= 0 && on(l, t), warn = t >= 0 && !isOn && ((t + l.ph) % l.p) > l.p - 0.22;
+        c.fillStyle = "#555e78"; c.fillRect(36, y - 7, 12, 14); c.fillRect(W - 48, y - 7, 12, 14);
+        if (isOn) { c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 16; c.strokeStyle = "#ff4d68"; c.lineWidth = 4; c.beginPath(); c.moveTo(48, y); c.lineTo(W - 48, y); c.stroke(); c.restore(); }
+        else if (warn && Math.floor(now / 50) % 2) { c.strokeStyle = "#ffb347"; c.lineWidth = 2; c.beginPath(); c.moveTo(48, y); c.lineTo(W - 48, y); c.stroke(); }
+        else { c.strokeStyle = "rgba(255,80,110,.25)"; c.lineWidth = 1; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(48, y); c.lineTo(W - 48, y); c.stroke(); c.setLineDash([]); }
+        if (isOn && Math.abs(x - l.x) < v.zone && !hitSent) { hitSent = true; release(); done = true; A.haptic("bad"); act("lz", { hit: true }); }
+      });
+      // ladro
+      var py = yOf(x); c.save(); c.shadowColor = "#35e6ff"; c.shadowBlur = 14; c.fillStyle = "#8ff3ff"; c.beginPath(); c.arc(W / 2, py, 8, 0, 7); c.fill(); c.restore();
+      c.fillStyle = "#0b1424"; c.beginPath(); c.arc(W / 2, py, 3, 0, 7); c.fill();
+      if (x >= 100 && !done) { var fin = Math.round(now - t0); release(); done = true; act("lz", { ev: ev, fin: fin }); return; }
+      requestAnimationFrame(loop);
     })(performance.now());
-    function press() {
-      if (done || btn.disabled) return; done = true; cancelAnimationFrame(raf); btn.disabled = true; A.haptic("med"); snd("click");
-      act("gp");
-    }
-    btn.addEventListener("pointerdown", function (e) { e.preventDefault(); press(); });
+  }
+
+  // ----- 4. Serratura: tieni premuto e rilascia quando l'indicatore è nel verde (zona sempre più stretta) -----
+  function tri(u) { var f = u - Math.floor(u); return 1 - Math.abs(2 * f - 1); }
+  function lvLock(v) {
+    stage.appendChild(el("div", "hs-sub", "Perno " + (v.r + 1) + "/" + v.rounds));
+    stage.appendChild(dots(v.rounds, v.r));
+    stage.appendChild(el("div", "hs-sub big", "Rilascia nel verde!"));
+    var bar = el("div", "hs-lock"), zone = el("i", "z"), ind = el("i", "p"); bar.appendChild(zone); bar.appendChild(ind); stage.appendChild(bar);
+    zone.style.left = ((v.c - v.w / 2) * 100) + "%"; zone.style.width = (v.w * 100) + "%";
+    function setPos(p) { ind.style.left = (p * 100) + "%"; }
+    setPos(tri(v.phase0));
+    var btn = el("button", "avi-go hs-go hs-hold", "TIENI PREMUTO"); btn.type = "button"; stage.appendChild(btn);
+    var down = -1, raf = 0, sent = false;
+    function loop(now) { if (down < 0 || S.view !== v) return; setPos(tri(v.phase0 + v.speed * (now - down) / 1000)); raf = requestAnimationFrame(loop); }
+    btn.addEventListener("pointerdown", function (e) { e.preventDefault(); try { btn.setPointerCapture(e.pointerId); } catch (x) {} if (sent) return; down = performance.now(); btn.classList.add("on"); A.haptic("light"); snd("scratch"); raf = requestAnimationFrame(loop); });
+    function up() { if (down < 0 || sent) return; sent = true; var d = Math.round(performance.now() - down); down = -1; cancelAnimationFrame(raf); btn.classList.remove("on"); A.haptic("med"); act("lk", { d: d }); }
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (n) { btn.addEventListener(n, up); });
   }
 
   // ----- 3. Hacking: numeri e mosse contate -----
   var SYM = { "+": "+", "-": "−", "*": "×", "/": "÷" };
   function lv3(v) {
-    stage.appendChild(el("div", "hs-sub", "Terminale " + (v.r + 1) + "/" + v.rounds));
+    stage.appendChild(el("div", "hs-sub", "Terminale"));
     var term = el("div", "hs-term");
     term.appendChild(el("div", "hs-tl", "OBIETTIVO")); term.appendChild(el("div", "hs-target", String(v.target)));
     term.appendChild(el("div", "hs-tl", "VALORE ATTUALE")); term.appendChild(el("div", "hs-val", String(v.val)));
-    term.appendChild(el("div", "hs-tl", "Parti da " + v.start + " · mosse rimaste"));
+    term.appendChild(el("div", "hs-tl", "Parti da " + v.start + " · si può fare in " + v.min_moves + " mosse (ne hai 5) · mosse rimaste"));
     term.appendChild(dots(5, v.left_moves)); stage.appendChild(term);
     var ops = el("div", "hs-ops"); stage.appendChild(ops);
     v.ops.forEach(function (o, i) {
