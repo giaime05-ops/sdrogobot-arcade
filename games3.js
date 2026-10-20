@@ -341,17 +341,38 @@
       if (p && p.a) { if (!o) { o = document.createElement("i"); c.appendChild(o); } o.textContent = p.a; } else if (o) o.remove();
     });
   }
+  // due schermate: "bet" = ruota piccola + tavolo; "spin" = ruota grande e pallina (anche per il risultato)
+  function rtView(mode) {
+    rt.phase = mode; clearTimeout(rt.back);
+    var sh = stage.clientHeight || Math.max(300, window.innerHeight - 330);
+    if (mode === "bet") {
+      var ws = Math.max(96, Math.min(150, sh * 0.26)), rh = Math.max(15, Math.min(23, Math.floor((sh - ws - 40 - 26) / 14)));
+      stage.style.setProperty("--rt-h", rh + "px"); stage.classList.add("rt-bet");
+      roul.wheel = makeRoulette(Math.round(ws), ORDER_US);
+      stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div><div id="rtBox"></div>';
+      $("rlBox").appendChild(roul.wheel.cv); rtBuild($("rtBox"));
+    } else {
+      stage.classList.remove("rt-bet");
+      roul.wheel = makeRoulette(wheelSize(), ORDER_US);
+      stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div>';
+      $("rlBox").appendChild(roul.wheel.cv);
+    }
+    renderGo(); renderExtra();
+    if (mode === "bet") { rtFit(); requestAnimationFrame(rtFit); setTimeout(rtFit, 250); }
+  }
+  function rtFit() {
+    if (rt.phase !== "bet" || !roul.wheel) return;
+    var sh = stage.clientHeight; if (!sh) return;
+    var ws = Math.max(90, Math.min(150, sh * 0.24)), rh = Math.max(13, Math.min(23, Math.floor((sh - ws - 16 - 26) / 14)));
+    stage.style.setProperty("--rt-h", rh + "px"); roul.wheel.cv.style.width = roul.wheel.cv.style.height = Math.round(ws) + "px";
+  }
   function rtClear() { rt.placed = {}; rt.order = []; rtPaint(); }
 
   var roul = {
     title: "🎡 ROULETTE", bets: true, choice: "red", wheel: null,
     build: function () {
       rt.on = !!(A.isSandbox && A.isSandbox()); rtClear();
-      if (rt.on) {
-        roul.wheel = makeRoulette(Math.max(120, Math.min(170, window.innerHeight - 650)), ORDER_US);
-        stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div><div id="rtBox"></div>';
-        $("rlBox").appendChild(roul.wheel.cv); rtBuild($("rtBox")); return;
-      }
+      if (rt.on) { rtView("bet"); return; }
       roul.wheel = makeRoulette(wheelSize());
       stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div>' +
         '<div class="gm-hint">Rosso / Nero / Pari / Dispari ×2 · Verde (0) ×36<br>Lo zero fa perdere tutto tranne chi punta sul Verde.</div>';
@@ -361,6 +382,7 @@
     extra: function (box) {
       box.innerHTML = "";
       if (rt.on) {
+        if (rt.phase === "spin") return;
         [["↩ ANNULLA", function () { var k = rt.order.pop(); if (k && rt.placed[k]) { rt.placed[k].a -= S.bet; if (rt.placed[k].a <= 0) delete rt.placed[k]; } }],
          ["🗑 SVUOTA", rtClear],
          ["🔁 RIPETI", function () { if (rt.last.length) { rtClear(); rt.last.forEach(function (p) { var k = rtKey(p.t, p.v); rt.placed[k] = { t: p.t, v: p.v, a: p.a }; rt.order.push(k); }); } }]
@@ -380,6 +402,7 @@
     },
     goLabel: function () {
       if (rt.on) {
+        if (rt.phase === "spin") return S.busy ? { text: "LA RUOTA GIRA…", disabled: true } : { text: "NUOVA PUNTATA" };
         var tt = rtTotal();
         if (!tt) return { text: "PUNTA SUL TAVOLO", disabled: true };
         if (S.balance < tt) return { text: "SALDO INSUFFICIENTE", disabled: true };
@@ -393,7 +416,7 @@
       var list = Object.keys(rt.placed).map(function (k) { var p = rt.placed[k]; return { t: p.t, v: p.v, a: p.a }; }), total = rtTotal();
       if (!list.length) return;
       rt.last = list.map(function (p) { return { t: p.t, v: p.v, a: p.a }; });
-      setBusy(true); msg("", ""); notes([]); clearBanner();
+      setBusy(true); msg("", ""); notes([]); rtView("spin");
       showBal(S.balance - total); A.haptic("med"); snd("ball");
       var t0 = performance.now();
       A.api("/api/roulette/table", "POST", { bets: list }).then(function (j) {
@@ -406,12 +429,13 @@
             else if (res.paid > 0) { msg("Recuperi " + A.fmt(res.paid) + " $SDG (" + (res.net >= 0 ? "+" : "") + A.fmt(res.net) + ")", ""); banner(head, "RECUPERI " + A.fmt(res.paid) + " $SDG", ""); }
             else { msg("💸 Perso: -" + A.fmt(res.bet) + " $SDG", "lose"); banner(head, "HAI PERSO -" + A.fmt(res.bet) + " $SDG", "lose"); A.haptic("bad"); }
             notes(res.notes); rtClear(); setBusy(false); A.refreshMe();
+            rt.back = setTimeout(function () { if (S.game === roul && rt.phase === "spin" && !S.busy) { clearBanner(); msg("", ""); rtView("bet"); } }, 4500);
           });
         }, Math.max(0, 250 - (performance.now() - t0)));
-      }).catch(function (e) { showBal(S.balance); msg(errText(e), "lose"); setBusy(false); });
+      }).catch(function (e) { showBal(S.balance); msg(errText(e), "lose"); setBusy(false); rtView("bet"); });
     },
     go: function () {
-      if (rt.on) { roul.goTable(); return; }
+      if (rt.on) { if (rt.phase === "spin") { clearBanner(); msg("", ""); rtView("bet"); } else roul.goTable(); return; }
       var bet = S.bet, choice = roul.choice;
       setBusy(true); msg("", ""); notes([]); clearBanner();
       showBal(S.balance - bet); A.haptic("med"); snd("ball");
@@ -775,7 +799,7 @@
   function close() {
     if (S.busy) { A.toast("Aspetta la fine del giro"); return; }
     if (wh.charging) { wh.charging = false; clearInterval(wh.iv); }
-    clearTimers(); S.game = null; root.hidden = true; stage.innerHTML = "";
+    clearTimers(); clearTimeout(rt.back); stage.classList.remove("rt-bet"); S.game = null; root.hidden = true; stage.innerHTML = "";
     A.refreshMe();
   }
   elBack.addEventListener("click", close);
