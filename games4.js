@@ -65,6 +65,16 @@
     c.appendChild(el("span", "r", label)); c.appendChild(el("span", "s", suit)); c.appendChild(el("span", "r2", label));
     return c;
   }
+  var SIG = {};                                                         // carte già mostrate per contenitore: solo la nuova si anima
+  function keepStill(box) {
+    if (!box || !box.id) return;
+    var prev = SIG[box.id] || [], now = [];
+    Array.prototype.forEach.call(box.children, function (c, i) {
+      var sg = c.className + "|" + c.textContent; now.push(sg);
+      if (prev[i] === sg) c.classList.add("still");
+    });
+    SIG[box.id] = now;
+  }
   function backEl() { return el("div", "pcard back"); }
   function emptyEl() { return el("div", "pcard empty"); }
   function pkRank(r) { return { 11: "J", 12: "Q", 13: "K", 14: "A" }[r] || String(r); }
@@ -86,7 +96,7 @@
       stage.innerHTML = '<div class="who2">BANCO <span class="tot" id="bjDT">–</span></div><div class="hand" id="bjD"></div>' +
         '<div class="gm-hint" id="bjHint">Charlie: 5 carte senza sballare = vittoria · Blackjack paga 3:2</div>' +
         '<div class="who2">TU <span class="tot" id="bjPT">–</span></div><div class="hand" id="bjP"></div>';
-      bj.P = []; bj.D = []; bj.res = null;
+      bj.P = []; bj.D = []; bj.res = null; SIG = {};
     },
     draw: function () {
       var dh = $("bjD"), ph = $("bjP"); if (!dh) return;
@@ -98,6 +108,7 @@
       bj.D.slice(0, bj.dShown != null ? bj.dShown : bj.D.length).forEach(function (c) { dh.appendChild(cardEl(c.lab, c.suit, c.red)); });
       if (!bj.res && st.active) dh.appendChild(backEl());
       bj.P.forEach(function (c) { ph.appendChild(cardEl(c.lab, c.suit, c.red)); });
+      keepStill(dh); keepStill(ph);
       $("bjPT").textContent = bj.res ? bj.res.player_total : (st.total != null ? st.total : "–");
       var dt = "–";
       if (bj.res && bj.dFinal) dt = bj.res.dealer_total;
@@ -414,7 +425,7 @@
       stage.innerHTML = '<div class="who2">BOT</div><div class="hrow"><div class="hand" id="pkB"></div><div class="htag" id="pkBT" hidden></div></div>' +
         '<div class="pot" id="pkPot">—</div><div class="hand" id="pkT"></div>' +
         '<div class="who2" id="pkStreet">TU</div><div class="hrow"><div class="hand" id="pkP"></div><div class="htag" id="pkPT" hidden></div></div>';
-      pk.res = null;
+      pk.res = null; SIG = {};
     },
     cardOf: function (c) { var red = c.s === 1 || c.s === 2; return cardEl(pkRank(c.r), SUITS_PK[c.s], red); },
     draw: function () {
@@ -426,6 +437,7 @@
       else if (st.active || r) { B.appendChild(backEl()); B.appendChild(backEl()); }
       for (var i = 0; i < 5; i++) T.appendChild(board[i] ? pk.cardOf(board[i]) : emptyEl());
       hole.forEach(function (c) { P.appendChild(pk.cardOf(c)); });
+      keepStill(B); keepStill(T); keepStill(P);
       $("pkPot").textContent = r ? (r.outcome === "win" ? "Hai vinto " + A.fmt(r.paid) + " $SDG" : (r.outcome === "push" ? "Pareggio" : "Mano persa")) :
         (st.active ? "Piatto: " + A.fmt((st.pot_p || 0) + (st.pot_b || 0)) + " $SDG" : "Scegli la puntata e gioca");
       $("pkStreet").textContent = (!r && st.active) ? "TU · " + (st.street_name || "") : "TU";

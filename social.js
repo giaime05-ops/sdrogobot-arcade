@@ -94,6 +94,7 @@
         var nm = el("div", "nm", r.name + (r.me ? " (tu)" : "")); if (r.badge && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
         row.appendChild(nm);
         row.appendChild(el("div", "vl", A.fmt(r.value) + " " + j.unit));
+        row.classList.add("tappable"); row.addEventListener("click", function () { openOther(r); });
         box.appendChild(row);
       });
       if (j.me && j.me.rank && j.me.rank > j.top.length) box.appendChild(el("div", "pg-me", "Sei al " + j.me.rank + "° posto con " + A.fmt(j.me.value) + " " + j.unit));
@@ -197,16 +198,17 @@
     return ov;
   }
   profOv();
-  function openProfile() {
+  function openProfile(other) {
     var ov = profOv();
     ov.innerHTML = ""; var card = el("div", "set-card prof-card");
     card.appendChild(el("h2", "", "PORTAFOGLIO E PROFILO"));
     var head = el("div", "prof-head"); head.appendChild(el("div", "avatar", ($("avatar") && $("avatar").textContent) || "?"));
     var wh = el("div", "prof-who"); var nb = el("b", "", ""), pnEl = $("pname");
-    nb.appendChild(document.createTextNode(pnEl && pnEl.firstChild ? pnEl.firstChild.textContent : ""));
-    var mm = A.me ? A.me() : {}; if (mm.badge && A.badgeEl) nb.appendChild(A.badgeEl(mm.badge)); if (mm.stars > 0 && A.starEl) nb.appendChild(A.starEl(mm.stars));
+    if (other) { card.querySelector("h2").textContent = "PROFILO GIOCATORE"; head.firstChild.textContent = (other.name || "?").charAt(0).toUpperCase(); }
+    nb.appendChild(document.createTextNode(other ? other.name : (pnEl && pnEl.firstChild ? pnEl.firstChild.textContent : "")));
+    var mm = other ? { badge: other.badge, stars: other.stars } : (A.me ? A.me() : {}); if (mm.badge && A.badgeEl) nb.appendChild(A.badgeEl(mm.badge)); if (mm.stars > 0 && A.starEl) nb.appendChild(A.starEl(mm.stars));
     wh.appendChild(nb);
-    var bl = el("span", "", ""); bl.appendChild(el("i", "ci")); bl.appendChild(document.createTextNode(" " + ($("pcoins") ? $("pcoins").textContent : "—") + " $SDG"));
+    var bl = el("span", "", ""); bl.appendChild(el("i", "ci")); bl.appendChild(document.createTextNode(" " + (other ? (other.balance != null ? A.fmt(other.balance) : "—") : ($("pcoins") ? $("pcoins").textContent : "—")) + " $SDG"));
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
     var grid = el("div", "pg-sum"); card.appendChild(grid);
     var tail = el("div"); card.appendChild(tail);
@@ -214,11 +216,12 @@
     var inv = el("button", "set-ok prof-inv", "INVENTARIO"); inv.type = "button";
     inv.addEventListener("click", function () { closeProfile(); if (window.ArcadeShop) window.ArcadeShop.openInventory(); });
     var ok = el("button", "set-ok prof-close", "CHIUDI"); ok.type = "button"; ok.addEventListener("click", closeProfile);
-    btns.appendChild(inv); btns.appendChild(ok); card.appendChild(btns);
-    card.appendChild(speedBox());
+    if (!other) btns.appendChild(inv); btns.appendChild(ok); card.appendChild(btns);
+    if (!other) card.appendChild(speedBox());
     ov.appendChild(card); ov.hidden = false;
     grid.appendChild(el("div", "pg-empty", "Carico…"));
-    A.api("/api/social/wallet").then(function (w) {
+    var req = other ? Promise.resolve(other) : A.api("/api/social/wallet");
+    req.then(function (w) {
       grid.innerHTML = "";
       var net = (w.net_profit >= 0 ? "+" : "−") + A.fmt(Math.abs(w.net_profit));
       [[net, "profitto netto"], [A.fmt(w.quizzes_won), "quiz vinti"],
@@ -226,11 +229,19 @@
        [w.wr_duels + "%", "win rate duelli"]].forEach(function (x) {
         var d = el("div"); d.appendChild(el("b", "", x[0])); d.appendChild(document.createTextNode(x[1])); grid.appendChild(d);
       });
-      var wd = el("div", "prof-wheel");
-      wd.appendChild(el("b", "", "Ruota Daily"));
-      wd.appendChild(document.createTextNode(" " + (w.wheel_available ? "disponibile oggi!" : "già girata oggi: torna domani")));
-      grid.parentNode.insertBefore(wd, btns);
+      if (!other) {
+        var wd = el("div", "prof-wheel");
+        wd.appendChild(el("b", "", "Ruota Daily"));
+        wd.appendChild(document.createTextNode(" " + (w.wheel_available ? "disponibile oggi!" : "già girata oggi: torna domani")));
+        grid.parentNode.insertBefore(wd, btns);
+      }
     }).catch(function (e) { grid.innerHTML = ""; grid.appendChild(el("div", "pg-empty", errMsg(e))); });
+  }
+  function openOther(r) {
+    A.haptic("light");
+    if (r.me) { openProfile(); return; }
+    A.api("/api/social/profile?pid=" + encodeURIComponent(r.pid || "")).then(function (j) { openProfile(j); })
+      .catch(function (e) { A.toast(errMsg(e)); });
   }
   function closeProfile() { var ov = $("profile"); if (ov) ov.hidden = true; }
   (function () { var p = $("player"); if (p) { p.classList.add("tappable"); p.addEventListener("click", function () { A.haptic("light"); openProfile(); }); } })();
