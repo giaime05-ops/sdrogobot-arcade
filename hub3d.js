@@ -554,7 +554,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   if (!hubVisible) { accT = 0; accF = 0; return; }
-  if (!animOn && !glow && aviT <= 0 && !heistOn) { skipN = (skipN + 1) % 6; if (skipN) return; }
+  if (!animOn && !glow && aviT <= 0) { skipN = (skipN + 1) % 6; if (skipN) return; }
   time += dt;
   accT += dt; accF++;
   if (accT >= 1.5) {                                   // ogni 1,5 s: se il telefono fatica, abbassa la qualità
@@ -572,11 +572,18 @@ function frame(now) {
     lever.rotation.z = (time % 8) < 0.4 ? -0.5 : 0;
   }
   stepGlow(dt);
-  if (heistOn) {                                                       // il tasto cambia colore neon, piano (3,2 s per colore)
-    const pl = 0.5 + 0.5 * Math.sin(time * 3), ph = (time / 3.2) % NEON_CYC.length, i0 = Math.floor(ph), k = ph - i0, ks = k * k * (3 - 2 * k);
-    cycCol.copy(NEON_CYC[i0]).lerp(NEON_CYC[(i0 + 1) % NEON_CYC.length], ks);
-    for (const m of [heistCap.material, heistTop.material]) { m.color.copy(cycCol).multiplyScalar(0.55); m.emissive.copy(cycCol); m.emissiveIntensity = 0.85 + 0.35 * pl; }
-    heistHalo.material.color.copy(cycCol); heistCap.position.y = 0.175 - 0.01 * pl;
+  if (heistOn) {                                                       // il tasto cambia colore neon (morbido); con le animazioni spente resta rosso fisso
+    if (animOn) {
+      const pl = 0.5 + 0.5 * Math.sin(time * 3), ph = (time / 3.2) % NEON_CYC.length, i0 = Math.floor(ph), k = ph - i0, ks = k * k * (3 - 2 * k);
+      cycCol.copy(NEON_CYC[i0]).lerp(NEON_CYC[(i0 + 1) % NEON_CYC.length], ks);
+      for (const m of [heistCap.material, heistTop.material]) { m.color.copy(cycCol).multiplyScalar(0.4); m.emissive.copy(cycCol).multiplyScalar(0.6); m.emissiveIntensity = 0.5 + 0.2 * pl; }
+      heistHalo.material.color.copy(cycCol).multiplyScalar(0.8); heistCap.position.y = 0.175 - 0.01 * pl;
+    } else {
+      cycCol.setHex(0xe01030);
+      heistCap.material.color.copy(cycCol).multiplyScalar(0.55); heistCap.material.emissive.setHex(0x8a0a1c); heistCap.material.emissiveIntensity = 0.55;
+      heistTop.material.color.setHex(0xc8344a); heistTop.material.emissive.setHex(0xb0182c); heistTop.material.emissiveIntensity = 0.6;
+      heistHalo.material.color.setHex(0xc82840); heistCap.position.y = 0.175;
+    }
   }
   if (aviT > 0) { aviT -= dt; const k = Math.sin(Math.max(0, 1 - aviT / 0.5) * Math.PI); haloAv.material.opacity = k * 0.9; pp.scale.setScalar(1 + k * 0.1); } else { haloAv.material.opacity = 0; pp.scale.setScalar(1); }
   placeCamera(); renderer.render(scene, camera);

@@ -84,7 +84,9 @@
       daily:  !!pick(pick(j, ["daily"], {}), ["available"], false),
       admin:  !!(j && j.admin),
       badge:  (j && j.badge) || "",
-      stars:  +(j && j.stars) || 0
+      stars:  +(j && j.stars) || 0,
+      style:  (j && j.style) || {},
+      maint:  (j && j.maintenance) || "off"
     };
   }
 
@@ -117,14 +119,31 @@
     { id: "notte", g: ["#2b2b3a", "#00ffd5"], lock: "Gioca 500 partite nei giochi del casinò" }, { id: "arcobaleno", rb: true, lock: "Raggiungi 5 stelle Heist" }
   ];
   function avStyle(c) { return c.rb ? "conic-gradient(#ff3b4e,#ffd23b,#2fd36f,#35e6ff,#a855f7,#ff3b4e)" : "linear-gradient(135deg," + c.g[0] + "," + c.g[1] + ")"; }
-  function avPick() { var id = ""; try { id = localStorage.getItem("arc_avcol") || ""; } catch (e) {} return AV.filter(function (c) { return c.id === id; })[0] || AV[0]; }
-  function applyAvatar() { var av = $("avatar"); if (!av) return; var c = SBX ? avPick() : AV[0]; av.style.background = avStyle(c); av.style.color = c.id === "oro" ? "#3a2600" : "#fff"; }
+  // ---- personalizzazione profilo: salvata sul server, visibile a tutti (classifica, profili) ----
+  var NAMEC = { oro: "#ffd24a", ciano: "#35e6ff", viola: "#c28bff", rosa: "#ff6fc8", verde: "#52ff9a", rosso: "#ff5a6e", arancio: "#ffb347" };
+  function avById(id) { return AV.filter(function (c) { return c.id === id; })[0] || null; }
+  function nameEl(text, st) {
+    var n = document.createElement("span"); n.textContent = text; st = st || {};
+    if (st.name === "arcobaleno") n.className = "nm-rb nm-c"; else if (NAMEC[st.name]) { n.style.color = NAMEC[st.name]; n.className = "nm-c"; }
+    return n;
+  }
+  function styleAvatar(av, st, letter) {
+    if (!av) return; st = st || {};
+    if (letter) av.textContent = letter;
+    av.className = av.className.replace(/\bfr-\w+/g, "").replace(/\s+/g, " ").trim();
+    if (st.frame) av.classList.add("fr-" + st.frame);
+    var c = avById(st.av);
+    av.style.background = c ? avStyle(c) : ""; av.style.color = c && c.id === "oro" ? "#3a2600" : "";
+  }
+  function styleRow(row, st) { if (st && st.bar) row.classList.add("bar-" + st.bar); }
+  function applyAvatar() { styleAvatar($("avatar"), ME.style); }
 
   function render(me, opts) {
     opts = opts || {};
     ME.admin = !!me.admin;
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
-    var pn = $("pname"); pn.textContent = name;
+    ME.style = me.style || {}; maintBanner(me.maint);
+    var pn = $("pname"); pn.textContent = ""; pn.appendChild(nameEl(name, ME.style));
     if (SBX) { me = Object.assign({}, me, { badge: "v1", stars: Math.max(3, me.stars || 0) }); }     // account admin: badge e stelle sempre visibili, per provarli
     if (me.badge) pn.appendChild(badgeEl(me.badge));
     ME.stars = me.stars; ME.badge = me.badge;
@@ -201,10 +220,29 @@
     return fetch(url, init).then(function (r) {
       clearTimeout(timer);
       return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok && j && j.maintenance) showMaint(j.maintenance);
         if (!r.ok) { var e = new Error((j && j.error) || ("Errore " + r.status)); e.status = r.status; e.body = j; throw e; }
         return j;
       });
     }, function (e) { clearTimeout(timer); e.network = true; throw e; });
+  }
+
+  // manutenzione: graduale (avviso, si finisce la partita in corso) oppure totale (schermata bloccante, si chiude la mini app)
+  function showMaint(mode, forced) {
+    var ov = $("maint");
+    if (!ov) { ov = document.createElement("div"); ov.id = "maint"; ov.className = "maint"; document.body.appendChild(ov); }
+    var hard = mode === "hard" || forced;
+    ov.innerHTML = '<div class="maint-card"><div class="maint-ic">🛠️</div><h2>SERVER IN MANUTENZIONE</h2><p>' +
+      (hard ? "Il server è in manutenzione: riprova tra qualche minuto." : "Puoi finire la partita già iniziata, ma non cominciarne di nuove finché la manutenzione non è terminata.") +
+      '</p><button type="button" class="set-ok">' + (hard ? "CHIUDI" : "OK") + '</button></div>';
+    ov.hidden = false;
+    ov.querySelector("button").onclick = function () { if (hard) { try { tg.close(); } catch (e) {} } else ov.hidden = true; };
+  }
+  function maintBanner(mode) {
+    var b = $("maintBar");
+    if (mode !== "soft") { if (b) b.hidden = true; return; }
+    if (!b) { b = document.createElement("div"); b.id = "maintBar"; b.className = "maint-bar"; b.textContent = "🛠️ Manutenzione al termine di questa partita"; document.body.appendChild(b); }
+    b.hidden = false;
   }
 
   // aggiorna in silenzio saldo, Banco e Follia dopo una partita
@@ -222,7 +260,7 @@
     return refreshMe();
   }
 
-  window.Arcade = { avatars: AV, avStyle: avStyle, avPick: avPick, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  window.Arcade = { avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 

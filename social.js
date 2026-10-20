@@ -90,8 +90,11 @@
       if (!j.top.length) { empty(box, "Nessuno in questa classifica, per ora."); return; }
       j.top.forEach(function (r) {
         var row = el("div", "row" + (r.rank <= 3 ? " r" + r.rank : "") + (r.me ? " me" : ""));
+        var rst = r.me && !r.style ? (A.me().style || {}) : (r.style || {});
         row.appendChild(el("div", "rk", String(r.rank)));
-        var nm = el("div", "nm", r.name + (r.me ? " (tu)" : "")); if (r.badge && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
+        var rav = el("div", "avatar rav"); A.styleAvatar(rav, rst, (r.name || "?").charAt(0).toUpperCase()); row.appendChild(rav);
+        A.styleRow(row, rst);
+        var nm = el("div", "nm"); nm.appendChild(A.nameEl(r.name + (r.me ? " (tu)" : ""), rst)); if (r.badge && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
         row.appendChild(nm);
         row.appendChild(el("div", "vl", A.fmt(r.value) + " " + j.unit));
         row.classList.add("tappable"); row.addEventListener("click", function () { openOther(r); });
@@ -205,27 +208,17 @@
     var head = el("div", "prof-head"); head.appendChild(el("div", "avatar", ($("avatar") && $("avatar").textContent) || "?"));
     var wh = el("div", "prof-who"); var nb = el("b", "", ""), pnEl = $("pname");
     if (other) { card.querySelector("h2").textContent = "PROFILO GIOCATORE"; head.firstChild.textContent = (other.name || "?").charAt(0).toUpperCase(); }
-    nb.appendChild(document.createTextNode(other ? other.name : (pnEl && pnEl.firstChild ? pnEl.firstChild.textContent : "")));
+    nb.appendChild(A.nameEl(other ? other.name : (pnEl && pnEl.firstChild ? pnEl.firstChild.textContent : ""), other ? other.style : A.me().style));
     var mm = other ? { badge: other.badge, stars: other.stars } : (A.me ? A.me() : {}); if (mm.badge && A.badgeEl) nb.appendChild(A.badgeEl(mm.badge)); if (mm.stars > 0 && A.starEl) nb.appendChild(A.starEl(mm.stars));
     wh.appendChild(nb);
     var bl = el("span", "", ""); bl.appendChild(el("i", "ci")); bl.appendChild(document.createTextNode(" " + (other ? (other.balance != null ? A.fmt(other.balance) : "—") : ($("pcoins") ? $("pcoins").textContent : "—")) + " $SDG"));
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
-    if (!other && A.isSandbox && A.isSandbox()) {                                  // colore dell'avatar (prova: solo account admin)
-      var hd = el("div", "set-lab", "COLORE AVATAR"); hd.style.cssText = "text-align:center;font:700 12px Rajdhani,sans-serif;letter-spacing:2px;color:#bfb2dc;margin-top:6px";
-      var row = el("div", "av-row"), hint = el("div", "av-hint", "");
-      var cur = A.avPick();
-      A.avatars.forEach(function (c) {
-        var b = el("button", "av-sw" + (c.lock ? " lock" : "") + (c.rb ? " rb" : "") + (c.id === cur.id ? " on" : "")); b.type = "button"; if (!c.rb) b.style.background = A.avStyle(c); b.setAttribute("aria-label", c.id);
-        b.addEventListener("click", function () {
-          try { localStorage.setItem("arc_avcol", c.id); } catch (e) {}
-          A.applyAvatar(); head.firstChild.style.background = A.avStyle(c); head.firstChild.style.color = c.id === "oro" ? "#3a2600" : "#fff";
-          Array.prototype.forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); }); A.haptic("light");
-          hint.textContent = c.lock ? "Da sbloccare: " + c.lock + " (per prova lo vedi già)" : "";
-        });
-        row.appendChild(b);
-      });
-      card.appendChild(hd); card.appendChild(row); card.appendChild(hint);
-      head.firstChild.style.background = A.avStyle(cur);
+    var pst = other ? (other.style || {}) : (A.me().style || {});
+    A.styleAvatar(head.firstChild, pst);
+    if (!other && A.isAdmin && A.isAdmin()) {                                      // personalizzazione: per ora solo admin
+      var eb = el("button", "set-ok prof-edit", "✨ MODIFICA PROFILO"); eb.type = "button";
+      eb.addEventListener("click", function () { A.haptic("light"); editProfile(function () { openProfile(); }); });
+      card.appendChild(eb);
     }
     var grid = el("div", "pg-sum"); card.appendChild(grid);
     var tail = el("div"); card.appendChild(tail);
@@ -241,8 +234,8 @@
     req.then(function (w) {
       grid.innerHTML = "";
       var net = (w.net_profit >= 0 ? "+" : "−") + A.fmt(Math.abs(w.net_profit));
-      [[net, "profitto netto"], [A.fmt(w.quizzes_won), "quiz vinti"],
-       [A.fmt(w.casino_wins), "vittorie casinò"], [A.fmt(w.duels_wins), "duelli vinti"], [w.wr_single + "%", "win rate single player"],
+      [[net, "profitto netto"], [A.fmt(w.casino_wins), "vittorie casinò"],
+       [A.fmt(w.quizzes_won), "quiz vinti"], [A.fmt(w.duels_wins), "duelli vinti"], [w.wr_single + "%", "win rate single player"],
        [w.wr_duels + "%", "win rate duelli"]].forEach(function (x) {
         var d = el("div"); d.appendChild(el("b", "", x[0])); d.appendChild(document.createTextNode(x[1])); grid.appendChild(d);
       });
@@ -253,6 +246,68 @@
         grid.parentNode.insertBefore(wd, btns);
       }
     }).catch(function (e) { grid.innerHTML = ""; grid.appendChild(el("div", "pg-empty", errMsg(e))); });
+  }
+  // ---------- Modifica profilo (colori nome/avatar, cornice, barra classifica) ----------
+  var KIT = {
+    name: { title: "COLORE NOME", items: [["", "Bianco"], ["viola", "Viola"], ["ciano", "Ciano"], ["verde", "Verde", "quizzes_won", 10, "Vinci 10 quiz"], ["rosa", "Rosa", "duels_wins", 5, "Vinci 5 duelli"],
+      ["arancio", "Arancio", "casino_wins", 25, "Vinci 25 partite al casinò"], ["rosso", "Rosso", "net_profit", 5000, "Raggiungi +5.000 di profitto netto"], ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"],
+      ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
+    av: { title: "COLORE LETTERA AVATAR", items: [["", "Base"], ["viola", "Viola"], ["azzurro", "Azzurro"], ["verde", "Verde"], ["arancio", "Arancio"], ["rosso", "Rosso", "casino_wins", 25, "Vinci 25 partite al casinò"],
+      ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"], ["notte", "Notte", "casino_wins", 100, "Vinci 100 partite al casinò"], ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
+    frame: { title: "CORNICE", items: [["", "Nessuna"], ["neon", "Neon"], ["ghiaccio", "Ghiaccio", "quizzes_won", 10, "Vinci 10 quiz"], ["fuoco", "Fuoco", "casino_wins", 50, "Vinci 50 partite al casinò"],
+      ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"], ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
+    bar: { title: "BARRA IN CLASSIFICA", items: [["", "Classica"], ["viola", "Viola"], ["ciano", "Ciano", "quizzes_won", 5, "Vinci 5 quiz"], ["verde", "Verde", "duels_wins", 5, "Vinci 5 duelli"],
+      ["rossonero", "Rosso e nero", "casino_wins", 50, "Vinci 50 partite al casinò"], ["fuoco", "Fuoco", "net_profit", 10000, "Raggiungi +10.000 di profitto netto"],
+      ["royal", "Royal", "stars", 3, "Raggiungi 3 stelle Heist"]] }
+  };
+  function editProfile(done) {
+    var ov = profOv(); ov.innerHTML = ""; var card = el("div", "set-card prof-card pe-card");
+    card.appendChild(el("h2", "", "MODIFICA PROFILO"));
+    var cur = Object.assign({}, A.me().style || {});
+    var prev = el("div", "row pe-prev"), pav = el("div", "avatar rav"), pnm = el("div", "nm"), pvl = el("div", "vl", "1.234 $SDG");
+    prev.appendChild(el("div", "rk", "4")); prev.appendChild(pav); prev.appendChild(pnm); prev.appendChild(pvl); card.appendChild(prev);
+    var nameTxt = ($("pname") && $("pname").firstChild ? $("pname").firstChild.textContent : "Tu");
+    function paint() {
+      pav.className = "avatar rav"; A.styleAvatar(pav, cur, (nameTxt || "?").charAt(0).toUpperCase());
+      prev.className = "row pe-prev"; A.styleRow(prev, cur); pnm.innerHTML = ""; pnm.appendChild(A.nameEl(nameTxt, cur));
+    }
+    var hint = el("div", "av-hint", "Per prova (solo admin) hai già tutto sbloccato.");
+    A.api("/api/social/wallet").then(function (w) { w.stars = (A.me() || {}).stars || 0; KIT._w = w; build(); }).catch(function () { KIT._w = {}; build(); });
+    var box = el("div"); card.appendChild(box);
+    function build() {
+      box.innerHTML = "";
+      Object.keys(KIT).forEach(function (k) {
+        if (k === "_w") return;
+        var sec = KIT[k]; box.appendChild(el("div", "pe-lab", sec.title));
+        var row = el("div", "pe-row");
+        sec.items.forEach(function (it) {
+          var locked = it[2] && !(A.isAdmin && A.isAdmin()) && ((KIT._w || {})[it[2]] || 0) < it[3];
+          var b = el("button", "pe-sw pe-" + k + (cur[k] === it[0] || (!cur[k] && !it[0]) ? " on" : "") + (locked ? " lock" : "")); b.type = "button"; b.title = it[1];
+          b.appendChild(el("span", "pe-dot pe-d-" + k + "-" + (it[0] || "base")));
+          b.appendChild(el("i", "", it[1]));
+          b.addEventListener("click", function () {
+            if (locked) { hint.textContent = "🔒 " + it[1] + ": " + it[4]; A.haptic("light"); return; }
+            hint.textContent = it[2] ? "Sbloccato: " + it[4] + (A.isAdmin() ? " (tu lo hai già per prova)" : "") : "";
+            if (it[0]) cur[k] = it[0]; else delete cur[k];
+            Array.prototype.forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); }); paint(); A.haptic("light");
+          });
+          row.appendChild(b);
+        });
+        box.appendChild(row);
+      });
+      paint();
+    }
+    card.appendChild(hint);
+    var btns = el("div", "prof-btns"), sv = el("button", "set-ok prof-inv", "SALVA"), no = el("button", "set-ok prof-close", "ANNULLA");
+    sv.type = no.type = "button";
+    sv.addEventListener("click", function () {
+      sv.disabled = true;
+      A.api("/api/social/style", "POST", cur).then(function (j) { var m = A.me(); m.style = j.style || {}; A.applyAvatar(); A.refreshMe(); A.toast("Profilo aggiornato"); done(); })
+        .catch(function (e) { sv.disabled = false; A.toast(errMsg(e)); });
+    });
+    no.addEventListener("click", function () { done(); });
+    btns.appendChild(sv); btns.appendChild(no); card.appendChild(btns);
+    ov.appendChild(card); ov.hidden = false;
   }
   function openOther(r) {
     A.haptic("light");

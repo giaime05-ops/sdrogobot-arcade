@@ -384,7 +384,7 @@
   var roul = {
     title: "🎡 ROULETTE", bets: true, choice: "red", wheel: null, hideBets: function () { return rt.on && rt.phase === "spin"; },
     build: function () {
-      rt.on = !!(A.isSandbox && A.isSandbox()); rtClear(); root.classList.toggle("rt-mode", rt.on);
+      rt.on = true; rtClear(); root.classList.toggle("rt-mode", rt.on);
       if (rt.on) { rtLoadLast(); rtView("bet", true); return; }
       roul.wheel = makeRoulette(wheelSize());
       stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div>' +

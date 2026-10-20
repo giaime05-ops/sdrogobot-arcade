@@ -25,7 +25,14 @@
     root.appendChild(top);
     hud = el("div", "hs-hud"); hud.hidden = true;
     lEl = el("div", "hs-lvl"); tEl = el("div", "hs-time", "5:00"); aEl = el("div", "hs-alm");
-    hud.appendChild(lEl); hud.appendChild(tEl); hud.appendChild(aEl); root.appendChild(hud);
+    hud.appendChild(lEl); hud.appendChild(tEl); hud.appendChild(aEl);
+    if (A.isAdmin && A.isAdmin()) {                                               // strumenti admin: riprova il livello / salta al prossimo
+      var tl = el("div", "hs-tools");
+      var rb = el("button", "hs-tool", "↺ Riprova livello"), sb = el("button", "hs-tool", "⏭ Salta livello"); rb.type = sb.type = "button";
+      rb.addEventListener("click", function () { act("retry"); }); sb.addEventListener("click", function () { act("skip"); });
+      tl.appendChild(rb); tl.appendChild(sb); hud.appendChild(tl);
+    }
+    root.appendChild(hud);
     stage = el("div", "hs-stage"); root.appendChild(stage);
     var flash = el("div", "hs-flash"); flash.id = "hsFlash"; root.appendChild(flash);
     app.appendChild(root);
@@ -104,9 +111,15 @@
     card.appendChild(el("p", "hs-prize", "Premio: " + (I.share || 20) + "% del Banco (" + (I.share_follia || 50) + "% con la Follia), minimo " + (I.prize_fixed || 200) + " $SDG · +1 Stella ⭐"));
     var go = el("button", "avi-go hs-go", "ENTRA NELLA RAPINA · " + (I.cost || 150) + " $SDG"); go.type = "button";
     if (I.balance != null && I.balance < (I.cost || 150)) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
+    var sel = null;
+    if (A.isAdmin && A.isAdmin()) {                                                // admin: si può cominciare da un livello qualsiasi
+      sel = el("select", "hs-sel"); (I.names || []).forEach(function (n, i) { var o = el("option", "", "Parti dal livello " + (i + 1) + (n ? " · " + n : "")); o.value = String(i + 1); sel.appendChild(o); });
+      if (S.startLvl) sel.value = String(S.startLvl); card.appendChild(sel);
+    }
     go.addEventListener("click", function () {
       A.haptic("med"); snd("creak");
-      post("/api/heist/start").then(function (j) { if (j) handle(j); }).catch(function () {});
+      S.startLvl = sel ? +sel.value : 1;
+      post("/api/heist/start", sel ? { lvl: S.startLvl } : {}).then(function (j) { if (j) handle(j); }).catch(function () {});
     });
     card.appendChild(go); stage.appendChild(card);
   }
@@ -127,6 +140,11 @@
       c.appendChild(el("h2", "", "RAPINA FALLITA"));
       c.appendChild(el("p", "hs-lead", e.msg || ""));
       c.appendChild(el("p", "hs-prize", "Hai perso il pass da " + ((S.info && S.info.cost) || 150) + " $SDG."));
+    }
+    if (e.result !== "win" && e.level && A.isAdmin && A.isAdmin()) {                // admin: ritenta proprio il livello in cui sei caduto
+      var rt = el("button", "avi-go hs-go", "RIPROVA IL LIVELLO " + e.level); rt.type = "button";
+      rt.addEventListener("click", function () { post("/api/heist/start", { lvl: e.level }).then(function (j) { if (j) handle(j); }).catch(function () {}); });
+      c.appendChild(rt);
     }
     var again = el("button", "avi-go hs-go", "TORNA ALLA RAPINA"); again.type = "button";
     again.addEventListener("click", function () { open(); });
