@@ -625,3 +625,11 @@ button,input,select{font-family:inherit}
 .row.tappable{cursor:pointer}.row.tappable:active{filter:brightness(1.25)}
 .pcard.still{animation:none!important}
 .prof-btns .prof-close:only-child{width:100%}
+.xtimer{font-family:"Rajdhani",sans-serif;font-weight:700;font-size:22px;color:#8ff3ff;letter-spacing:.5px;margin:6px 0}.xtimer.on{color:#7dffb0}
+/* roulette: tavolo completo (solo admin di prova) */
+.rt-grid{display:grid;grid-template-columns:38px repeat(3,1fr) 56px;grid-template-rows:repeat(14,21px);gap:2px;width:100%;max-width:372px;margin:6px auto 0}
+.rt-c{position:relative;border:1px solid rgba(232,195,106,.55);border-radius:5px;background:#14101c;color:#fff;font:700 13px Rajdhani,sans-serif;padding:0;min-height:20px;display:flex;align-items:center;justify-content:center}
+.rt-c.r{background:#c9162c}.rt-c.g{background:#0f9b52}.rt-c.o{background:rgba(255,255,255,.07);font-size:11px;color:#e8d9ff}.rt-c.o.r{background:#c9162c}.rt-c.o.b{background:#14101c}
+.rt-c.o span{writing-mode:horizontal-tb}.rt-c:active{filter:brightness(1.4)}
+.rt-c i{position:absolute;right:-3px;top:-5px;min-width:18px;padding:0 3px;border-radius:9px;background:#ffd24a;color:#3a2600;font:700 10px/16px Rajdhani,sans-serif;font-style:normal;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.6);z-index:2}
+.rt-c[data-k=d1] span,.rt-c[data-k=d2] span,.rt-c[data-k=d3] span{writing-mode:vertical-rl;transform:rotate(180deg)}#rtBox{width:100%;padding:0 6px;box-sizing:border-box}

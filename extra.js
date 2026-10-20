@@ -15,15 +15,28 @@
       .catch(function (e) { box.innerHTML = ""; box.appendChild(el("div", "pg-empty", errMsg(e))); });
   }
 
+  function clock(s) { s = Math.max(0, Math.floor(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = function (n) { return (n < 10 ? "0" : "") + n; }; return p(h) + ":" + p(m) + ":" + p(x); }
+
   function render(w) {
     box.innerHTML = "";
+    var t0 = Date.now(), live = [];
+    // ---- RUOTA DAILY ----
+    var wc = el("div", "qcard xcard"); wc.appendChild(el("h3", "", "RUOTA DAILY"));
+    var wt = el("div", "xtimer"); wc.appendChild(wt);
+    wc.appendChild(el("div", "qmeta", "Si rinnova ogni giorno a mezzanotte (ora italiana)."));
+    box.appendChild(wc);
+    live.push(function (el_s) {
+      if (w.wheel_available) { wt.textContent = "Disponibile ora! Gira dalla home"; wt.className = "xtimer on"; }
+      else { wt.textContent = "Si rinnova tra " + clock(w.wheel_in - el_s); wt.className = "xtimer"; if (w.wheel_in - el_s <= 0) return true; }
+    });
     // ---- LAVORA ----
     var c = el("div", "qcard xcard"); c.appendChild(el("h3", "", "LAVORA"));
     c.appendChild(el("div", "qtxt", "Risolvi un enigma entro " + w.time + " secondi e guadagni " + w.reward + " $SDG. Riservato a chi ha meno di " + w.max_balance + " $SDG."));
     var b = el("button", "xbtn", "INIZIA"); b.type = "button";
     if (!w.v2) { b.disabled = true; b.textContent = "SOLO V2"; }
     else if (w.too_rich) { b.disabled = true; b.textContent = "HAI GIÀ TROPPI $SDG"; }
-    else if (w.cooldown > 0) { b.disabled = true; b.textContent = "DI NUOVO TRA " + fmtWait(w.cooldown).toUpperCase(); }
+    else if (w.cooldown > 0) { b.disabled = true; b.textContent = "DI NUOVO TRA " + clock(w.cooldown);
+      live.push(function (el_s) { var r = w.cooldown - el_s; b.textContent = "DI NUOVO TRA " + clock(r); if (r <= 0) return true; }); }
     b.addEventListener("click", function () { startWork(c, b); });
     if (w.too_rich && w.balance >= w.max_balance) c.appendChild(el("div", "qmeta", "Il tuo saldo è sopra la soglia: vai a giocare!"));
     c.appendChild(b); box.appendChild(c);
@@ -32,6 +45,14 @@
     d.appendChild(el("div", "qtxt", "Regala da 1 a 50 $SDG a un giocatore del gruppo (una donazione al giorno per persona)."));
     var db = el("button", "xbtn alt", "SCEGLI CHI"); db.type = "button"; db.addEventListener("click", function () { openDonate(); });
     d.appendChild(db); box.appendChild(d);
+    var mine = box;
+    timer = setInterval(function () {
+      if (box !== mine || !mine.isConnected) { clearInterval(timer); return; }
+      var es = (Date.now() - t0) / 1000, again = false;
+      live.forEach(function (f) { if (f(es)) again = true; });
+      if (again) { clearInterval(timer); load(mine); }
+    }, 1000);
+    live.forEach(function (f) { f(0); });
   }
 
   function startWork(card, btn) {

@@ -102,8 +102,9 @@
   function iconOf(sym) { return EMO[sym] ? ICON[EMO[sym]] : '<span class="emo">' + sym + '</span>'; }
 
   // ---------- roulette: ruota ferma con numeri grandi, la pallina gira lungo la pista e cade nella casella ----------
-  function makeRoulette(size) {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2), n = ORDER.length, sl = Math.PI * 2 / n;
+  function makeRoulette(size, order) {
+    order = order || ORDER;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), n = order.length, sl = Math.PI * 2 / n;
     var cv = document.createElement("canvas"); cv.style.width = size + "px"; cv.style.height = size + "px";
     cv.width = Math.round(size * dpr); cv.height = Math.round(size * dpr);
     var c = cv.getContext("2d"), cx = size / 2, cy = size / 2, k = size / 300;
@@ -122,13 +123,13 @@
       c.strokeStyle = "rgba(53,230,255,.35)"; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, r1, 0, 7); c.stroke();
       // caselle
       for (var i = 0; i < n; i++) {
-        var num = ORDER[i], a0 = ang(i) - sl / 2, a1 = a0 + sl;
+        var num = order[i], a0 = ang(i) - sl / 2, a1 = a0 + sl;
         c.beginPath(); c.arc(cx, cy, r2, a0, a1); c.arc(cx, cy, rpIn, a1, a0, true); c.closePath();
-        c.fillStyle = num === 0 ? "#0f9b52" : (RED.indexOf(num) >= 0 ? "#c9162c" : "#14101c"); c.fill();
+        c.fillStyle = (num === 0 || num === 37) ? "#0f9b52" : (RED.indexOf(num) >= 0 ? "#c9162c" : "#14101c"); c.fill();
         if (W.win === i) { c.fillStyle = "rgba(255,255,255,.35)"; c.fill(); }
         c.strokeStyle = "rgba(232,195,106,.8)"; c.lineWidth = 1; c.stroke();
         c.save(); c.translate(cx, cy); c.rotate(ang(i)); c.translate(rPk, 0); c.rotate(Math.PI / 2);
-        c.fillStyle = "#fff"; c.font = "700 " + Math.round(14 * k) + "px Rajdhani, Oswald, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(String(num), 0, 0); c.restore();
+        c.fillStyle = "#fff"; c.font = "700 " + Math.round((n > 37 ? 13 : 14) * k) + "px Rajdhani, Oswald, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(num === 37 ? "00" : String(num), 0, 0); c.restore();
       }
       c.strokeStyle = "#e8c36a"; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, rpIn, 0, 7); c.stroke();
       // cono centrale con croce dorata che gira piano
@@ -298,17 +299,78 @@
   var ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
   var CH = [["red", "🔴 Rosso"], ["black", "⚫ Nero"], ["even", "Pari"], ["odd", "Dispari"], ["green", "🟢 Verde ×36"]];
   var CNAME = { red: "ROSSO", black: "NERO", green: "VERDE" };
+  // ---- tavolo completo (solo account admin di prova): 0 e 00, più puntate insieme ----
+  var ORDER_US = [0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1, 37, 27, 10, 25, 29, 12, 8, 19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2];
+  var rt = { on: false, placed: {}, order: [], last: [] };
+  function rtKey(t, v) { return t + (v || ""); }
+  function rtTotal() { var s = 0; Object.keys(rt.placed).forEach(function (k) { s += rt.placed[k].a; }); return s; }
+  function rtCell(label, cls, t, v) {
+    var d = document.createElement("button"); d.type = "button"; d.className = "rt-c " + cls; d.setAttribute("data-k", rtKey(t, v));
+    var sp = document.createElement("span"); sp.textContent = label; d.appendChild(sp);
+    d.addEventListener("click", function () {
+      if (S.busy) return;
+      var k = rtKey(t, v), p = rt.placed[k] || (rt.placed[k] = { t: t, v: v || 0, a: 0 });
+      if (rtTotal() + S.bet > 3000) { A.toast("Massimo 3000 $SDG per giro"); return; }
+      if (rtTotal() + S.bet > S.balance) { A.toast("Saldo insufficiente"); return; }
+      p.a += S.bet; rt.order.push(k); A.haptic("light"); snd("pick"); rtPaint(); renderGo();
+    });
+    return d;
+  }
+  function rtBuild(box) {
+    box.innerHTML = ""; var g = document.createElement("div"); g.className = "rt-grid";
+    var z = rtCell("0", "g zero", "s", 0); z.style.gridArea = "1 / 1 / 2 / 3"; g.appendChild(z);
+    var z2 = rtCell("00", "g zero", "s", 37); z2.style.gridArea = "1 / 3 / 2 / 5"; g.appendChild(z2);
+    // 12 file da 3: la fila in alto è 1 2 3, in basso 34 35 36 (colonne 1,2,3 verticali)
+    for (var n = 1; n <= 36; n++) {
+      var c = rtCell(String(n), RED.indexOf(n) >= 0 ? "r" : "b", "s", n);
+      var row = Math.floor((n - 1) / 3), col = (n - 1) % 3;
+      c.style.gridArea = (row + 2) + " / " + (col + 2) + " / auto / auto"; g.appendChild(c);
+    }
+    [["1°12", "d", 1], ["2°12", "d", 2], ["3°12", "d", 3]].forEach(function (x, i) {
+      var c = rtCell(x[0], "o", x[1], x[2]); c.style.gridArea = (i * 4 + 2) + " / 1 / " + (i * 4 + 6) + " / 2"; g.appendChild(c);
+    });
+    [["1-18", "low"], ["PARI", "even"], ["ROSSO", "red"], ["NERO", "black"], ["DISP.", "odd"], ["19-36", "high"]].forEach(function (x, i) {
+      var c = rtCell(x[0], "o" + (x[1] === "red" ? " r" : (x[1] === "black" ? " b" : "")), x[1], 0); c.style.gridArea = (i * 2 + 2) + " / 5 / " + (i * 2 + 4) + " / 6"; g.appendChild(c);
+    });
+    [1, 2, 3].forEach(function (v) { var c = rtCell("2:1", "o", "c", v); c.style.gridArea = "14 / " + (v + 1) + " / auto / auto"; g.appendChild(c); });
+    box.appendChild(g); rtPaint();
+  }
+  function rtPaint() {
+    Array.prototype.forEach.call(document.querySelectorAll(".rt-c"), function (c) {
+      var p = rt.placed[c.getAttribute("data-k")], o = c.querySelector("i");
+      if (p && p.a) { if (!o) { o = document.createElement("i"); c.appendChild(o); } o.textContent = p.a; } else if (o) o.remove();
+    });
+  }
+  function rtClear() { rt.placed = {}; rt.order = []; rtPaint(); }
+
   var roul = {
     title: "🎡 ROULETTE", bets: true, choice: "red", wheel: null,
     build: function () {
+      rt.on = !!(A.isSandbox && A.isSandbox()); rtClear();
+      if (rt.on) {
+        roul.wheel = makeRoulette(Math.max(120, Math.min(170, window.innerHeight - 650)), ORDER_US);
+        stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div><div id="rtBox"></div>';
+        $("rlBox").appendChild(roul.wheel.cv); rtBuild($("rtBox")); return;
+      }
       roul.wheel = makeRoulette(wheelSize());
       stage.innerHTML = '<div class="wheelbox rl-wrap" id="rlBox"></div>' +
         '<div class="gm-hint">Rosso / Nero / Pari / Dispari ×2 · Verde (0) ×36<br>Lo zero fa perdere tutto tranne chi punta sul Verde.</div>';
       $("rlBox").appendChild(roul.wheel.cv);
     },
-    onOpen: function () { msg("Scegli la puntata e su cosa punti.", ""); },
+    onOpen: function () { msg(rt.on ? "Tocca il tavolo: pieno ×36 · dozzine/colonne ×3 · chance ×2" : "Scegli la puntata e su cosa punti.", ""); },
     extra: function (box) {
       box.innerHTML = "";
+      if (rt.on) {
+        [["↩ ANNULLA", function () { var k = rt.order.pop(); if (k && rt.placed[k]) { rt.placed[k].a -= S.bet; if (rt.placed[k].a <= 0) delete rt.placed[k]; } }],
+         ["🗑 SVUOTA", rtClear],
+         ["🔁 RIPETI", function () { if (rt.last.length) { rtClear(); rt.last.forEach(function (p) { var k = rtKey(p.t, p.v); rt.placed[k] = { t: p.t, v: p.v, a: p.a }; rt.order.push(k); }); } }]
+        ].forEach(function (x) {
+          var b = document.createElement("button"); b.type = "button"; b.className = "gm-pick"; b.textContent = x[0]; b.disabled = S.busy;
+          b.addEventListener("click", function () { x[1](); A.haptic("light"); rtPaint(); renderGo(); });
+          box.appendChild(b);
+        });
+        return;
+      }
       CH.forEach(function (c) {
         var b = document.createElement("button"); b.type = "button"; b.className = "gm-pick" + (roul.choice === c[0] ? " on" : "");
         b.textContent = c[1]; b.disabled = S.busy;
@@ -317,11 +379,39 @@
       });
     },
     goLabel: function () {
+      if (rt.on) {
+        var tt = rtTotal();
+        if (!tt) return { text: "PUNTA SUL TAVOLO", disabled: true };
+        if (S.balance < tt) return { text: "SALDO INSUFFICIENTE", disabled: true };
+        return { text: "GIRA · " + A.fmt(tt) + " $SDG", busyText: "LA RUOTA GIRA…" };
+      }
       if (S.balance < S.bet) return { text: "SALDO INSUFFICIENTE", disabled: true };
       var nm = CH.filter(function (c) { return c[0] === roul.choice; })[0][1];
       return { text: "GIRA  " + S.bet + " su " + nm.replace(/^[^\wÀ-ÿ]+/, ""), busyText: "LA RUOTA GIRA…" };
     },
+    goTable: function () {
+      var list = Object.keys(rt.placed).map(function (k) { var p = rt.placed[k]; return { t: p.t, v: p.v, a: p.a }; }), total = rtTotal();
+      if (!list.length) return;
+      rt.last = list.map(function (p) { return { t: p.t, v: p.v, a: p.a }; });
+      setBusy(true); msg("", ""); notes([]); clearBanner();
+      showBal(S.balance - total); A.haptic("med"); snd("ball");
+      var t0 = performance.now();
+      A.api("/api/roulette/table", "POST", { bets: list }).then(function (j) {
+        var res = j.result, idx = ORDER_US.indexOf(res.number);
+        later(function () {
+          roul.wheel.spinTo(idx, 6400, function () {
+            setBalance(res.balance);
+            var cn = CNAME[res.color] || "", head = (res.number === 37 ? "00" : res.number) + (cn ? " " + cn : "");
+            if (res.paid > res.bet) { msg("🎉 Vinto! +" + A.fmt(res.net) + " $SDG", "win"); banner(head, "HAI VINTO +" + A.fmt(res.net) + " $SDG", "win"); A.haptic("ok"); }
+            else if (res.paid > 0) { msg("Recuperi " + A.fmt(res.paid) + " $SDG (" + (res.net >= 0 ? "+" : "") + A.fmt(res.net) + ")", ""); banner(head, "RECUPERI " + A.fmt(res.paid) + " $SDG", ""); }
+            else { msg("💸 Perso: -" + A.fmt(res.bet) + " $SDG", "lose"); banner(head, "HAI PERSO -" + A.fmt(res.bet) + " $SDG", "lose"); A.haptic("bad"); }
+            notes(res.notes); rtClear(); setBusy(false); A.refreshMe();
+          });
+        }, Math.max(0, 250 - (performance.now() - t0)));
+      }).catch(function (e) { showBal(S.balance); msg(errText(e), "lose"); setBusy(false); });
+    },
     go: function () {
+      if (rt.on) { roul.goTable(); return; }
       var bet = S.bet, choice = roul.choice;
       setBusy(true); msg("", ""); notes([]); clearBanner();
       showBal(S.balance - bet); A.haptic("med"); snd("ball");
