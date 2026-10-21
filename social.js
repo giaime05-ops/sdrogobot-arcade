@@ -252,7 +252,7 @@
     name: { title: "COLORE NOME", items: [["", "Bianco"], ["viola", "Viola"], ["ciano", "Ciano"], ["verde", "Verde", "quizzes_won", 10, "Vinci 10 quiz"], ["rosa", "Rosa", "duels_wins", 5, "Vinci 5 duelli"],
       ["arancio", "Arancio", "casino_wins", 25, "Vinci 25 partite al casinò"], ["rosso", "Rosso", "net_profit", 5000, "Raggiungi +5.000 di profitto netto"], ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"],
       ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
-    av: { title: "COLORE LETTERA AVATAR", items: [["", "Base"], ["viola", "Viola"], ["azzurro", "Azzurro"], ["verde", "Verde"], ["arancio", "Arancio"], ["rosso", "Rosso", "casino_wins", 25, "Vinci 25 partite al casinò"],
+    av: { title: "COLORE LETTERA AVATAR", items: [["", "Base"], ["viola", "Viola"], ["azzurro", "Azzurro"], ["verde", "Verde", "quizzes_won", 3, "Vinci 3 quiz"], ["arancio", "Arancio", "duels_wins", 3, "Vinci 3 duelli"], ["rosso", "Rosso", "casino_wins", 25, "Vinci 25 partite al casinò"],
       ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"], ["notte", "Notte", "casino_wins", 100, "Vinci 100 partite al casinò"], ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
     frame: { title: "CORNICE", items: [["", "Nessuna"], ["neon", "Neon"], ["ghiaccio", "Ghiaccio", "quizzes_won", 10, "Vinci 10 quiz"], ["fuoco", "Fuoco", "casino_wins", 50, "Vinci 50 partite al casinò"],
       ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"], ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
