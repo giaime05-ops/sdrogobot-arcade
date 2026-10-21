@@ -855,3 +855,16 @@ button,input,select{font-family:inherit}
 .mp-pl .pt{color:#8ff3ff}.mp-res.win{color:#58ffa8;font-weight:700}.mp-res.lose{color:#ff6b8a}.mp-res.push{color:#cdbfe6}
 .mp-comm{display:flex;justify-content:center;margin:8px 0}
 .mp-hand button.txt{width:auto;min-width:96px;height:56px;padding:0 14px;font:700 17px Rajdhani,sans-serif;color:#fff}
+
+/* livello 6: croce di tasti e scossa */
+.hs-dpad{display:grid;grid-template-columns:repeat(4,64px);grid-template-rows:repeat(3,56px);gap:6px;justify-content:center;margin:10px auto 0}
+.hs-dp{border-radius:14px;border:1px solid rgba(168,85,247,.6);background:linear-gradient(180deg,rgba(168,85,247,.32),rgba(80,20,140,.35));color:#fff;font-size:22px;touch-action:manipulation}
+.hs-dp:active{filter:brightness(1.5);transform:scale(.96)}
+.hs-lz.shake{animation:hsShake .16s linear}
+@keyframes hsShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+/* cifra vinta: sale, trema e piovono monete */
+.hs-big.pop{animation:hsPop .5s ease-out}
+@keyframes hsPop{0%{filter:brightness(2.2)}100%{filter:none}}
+.hs-rain{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hs-coin{position:absolute;top:-24px;font-style:normal;font-size:22px;animation:hsFall linear forwards}
+@keyframes hsFall{to{transform:translateY(105vh) rotate(360deg)}}
