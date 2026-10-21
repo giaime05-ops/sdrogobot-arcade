@@ -797,9 +797,9 @@ button,input,select{font-family:inherit}
 .hs-selwrap img{display:block;width:100%;height:auto}
 .hs-selwrap.zoom{transform:scale(3.4);opacity:0}
 .hs-spot{position:absolute;background:transparent;border:2px solid rgba(143,243,255,.0);animation:hsspot 2.2s ease-in-out infinite}
-.hs-spot.big{left:29%;top:5%;width:66%;height:90%;border-radius:50%}
-.hs-spot.small{left:4%;top:38%;width:27%;height:44%;border-radius:16px}
-@keyframes hsspot{50%{border-color:rgba(143,243,255,.75);box-shadow:0 0 18px rgba(143,243,255,.45) inset,0 0 14px rgba(143,243,255,.35)}}
+.hs-spot.big{left:36.8%;top:4%;width:61.6%;height:84%;border-radius:50%}
+.hs-spot.small{left:4.2%;top:39%;width:26%;height:40.5%;border-radius:18px}
+@keyframes hsspot{50%{border-color:rgba(214,150,255,.9);box-shadow:0 0 14px rgba(190,110,255,.55) inset}}
 .hs-selhint{margin-top:12px;text-align:center;font-size:15px}
 .hs-fadein{animation:hsfade .5s ease both}
 @keyframes hsfade{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:none}}
