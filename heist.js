@@ -156,7 +156,7 @@
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
     if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); stage.appendChild(up); later(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
-    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5 })[v.kind](v);
+    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase })[v.kind](v);
   }
   function brief(title, text, label, fn) {
     var c = el("div", "hs-card"); c.appendChild(el("h2", "", title)); c.appendChild(el("p", "hs-lead", text));
@@ -233,6 +233,125 @@
       var py = yOf(x); c.save(); c.shadowColor = "#35e6ff"; c.shadowBlur = 14; c.fillStyle = "#8ff3ff"; c.beginPath(); c.arc(W / 2, py, 8, 0, 7); c.fill(); c.restore();
       c.fillStyle = "#0b1424"; c.beginPath(); c.arc(W / 2, py, 3, 0, 7); c.fill();
       if (x >= 100 && !done) { var fin = Math.round(now - t0); release(); done = true; act("lz", { ev: ev, fin: fin }); return; }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  }
+
+
+  // ----- 6. Bypass circuiti: tieni il dito sulla sonda e guidala nel tracciato, evitando pareti e scariche -----
+  function distPoly(pts, x, y) {
+    var best = 1e9;
+    for (var i = 0; i < pts.length - 1; i++) {
+      var ax = pts[i][0], ay = pts[i][1], dx = pts[i + 1][0] - ax, dy = pts[i + 1][1] - ay, L2 = dx * dx + dy * dy;
+      var u = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2)) : 0;
+      best = Math.min(best, Math.hypot(x - (ax + u * dx), y - (ay + u * dy)));
+    }
+    return best;
+  }
+  function hzPos(h, t) { var k = h.a * Math.sin(2 * Math.PI * t / h.p + h.ph); return [h.x + h.nx * k, h.y + h.ny * k]; }
+  function lvCircuit(v) {
+    if (v.phase === "brief") {
+      brief("BYPASS CIRCUITI", "Appoggia il dito sulla sonda (cerchio all'inizio) e trascinala lungo il circuito fino alla fine. Non toccare le pareti rosse e non farti colpire dalle scariche che scorrono avanti e indietro. Se alzi il dito la sonda torna al via. 2 settori, il secondo è più stretto.", "ENTRA NEL CIRCUITO", function () { act("rd"); });
+      return;
+    }
+    stage.appendChild(el("div", "hs-sub", "Settore " + (v.r + 1) + "/" + v.rounds));
+    var msgEl = el("div", "hs-sub big", "Trascina la sonda fino alla fine"); stage.appendChild(msgEl);
+    var Wd = Math.min(340, Math.max(260, (stage.clientWidth || 340) - 16)), sc = Wd / 100;
+    var cv = el("canvas", "hs-lz"); cv.width = Wd * 2; cv.height = Wd * 2; cv.style.width = Wd + "px"; cv.style.height = Wd + "px"; cv.style.touchAction = "none"; stage.appendChild(cv);
+    var c = cv.getContext("2d"); c.scale(2, 2);
+    var t0 = performance.now() + (v.delay || 0) * 1000, pts = v.pts, drag = false, px = pts[0][0], py = pts[0][1], smp = [], lastS = 0, done = false, sent = false;
+    function pos(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100]; }
+    cv.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); if (done || performance.now() < t0) return; var q = pos(e);
+      if (Math.hypot(q[0] - pts[0][0], q[1] - pts[0][1]) > 11) return;
+      try { cv.setPointerCapture(e.pointerId); } catch (x) {} drag = true; smp = []; px = q[0]; py = q[1]; lastS = -99; A.haptic("light");
+    });
+    cv.addEventListener("pointermove", function (e) { if (drag) { var q = pos(e); px = q[0]; py = q[1]; } });
+    function lift() { if (!drag || done) return; drag = false; px = pts[0][0]; py = pts[0][1]; smp = []; msgEl.textContent = "Sonda persa: riparti dal via"; }
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (n) { cv.addEventListener(n, lift); });
+    function X(u) { return u * sc; }
+    (function loop(now) {
+      if (done || root.hidden || S.view !== v) { done = true; return; }
+      var t = (now - t0) / 1000, tt = Math.max(0, t);
+      c.clearRect(0, 0, Wd, Wd); var g = c.createLinearGradient(0, 0, Wd, Wd); g.addColorStop(0, "#0a1020"); g.addColorStop(1, "#150a24"); c.fillStyle = g; c.fillRect(0, 0, Wd, Wd);
+      c.strokeStyle = "rgba(53,230,255,.07)"; c.lineWidth = 1; for (var k = 1; k < 10; k++) { c.beginPath(); c.moveTo(X(k * 10), 0); c.lineTo(X(k * 10), Wd); c.moveTo(0, X(k * 10)); c.lineTo(Wd, X(k * 10)); c.stroke(); }
+      c.lineJoin = "round"; c.lineCap = "round";
+      c.beginPath(); pts.forEach(function (p, i) { i ? c.lineTo(X(p[0]), X(p[1])) : c.moveTo(X(p[0]), X(p[1])); });
+      c.strokeStyle = "#ff3b5e"; c.lineWidth = 2 * v.w * sc + 5; c.stroke();
+      c.strokeStyle = "#0b1b2e"; c.lineWidth = 2 * v.w * sc; c.stroke();
+      c.strokeStyle = "rgba(53,230,255,.25)"; c.lineWidth = 2; c.setLineDash([6, 8]); c.stroke(); c.setLineDash([]);
+      c.fillStyle = "#35e6ff"; c.beginPath(); c.arc(X(pts[0][0]), X(pts[0][1]), 9, 0, 7); c.fill();
+      c.fillStyle = "#2fd36f"; c.font = "700 11px Rajdhani,sans-serif"; c.textAlign = "center"; var e = pts[pts.length - 1]; c.beginPath(); c.arc(X(e[0]), X(e[1]), 10, 0, 7); c.fill(); c.fillStyle = "#04200f"; c.fillText("FINE", X(e[0]), X(e[1]) + 4);
+      var hit = false;
+      v.hz.forEach(function (h) {
+        var hp = hzPos(h, tt); c.save(); c.shadowColor = "#ffe82a"; c.shadowBlur = 14; c.fillStyle = "#ffd23b"; c.beginPath(); c.arc(X(hp[0]), X(hp[1]), h.r * sc, 0, 7); c.fill(); c.restore();
+        c.fillStyle = "#3a2a00"; c.font = "700 14px sans-serif"; c.fillText("⚡", X(hp[0]), X(hp[1]) + 5);
+        if (drag && Math.hypot(px - hp[0], py - hp[1]) < h.r + 1.2) hit = true;
+      });
+      if (drag && distPoly(pts, px, py) > v.w + 0.3) hit = true;
+      if (drag && !hit && now - lastS >= 35 && t >= 0) { lastS = now; smp.push([Math.round(now - t0), +px.toFixed(2), +py.toFixed(2)]); }
+      c.save(); c.shadowColor = "#8ff3ff"; c.shadowBlur = 16; c.fillStyle = drag ? "#fff" : "#8ff3ff"; c.beginPath(); c.arc(X(px), X(py), 6, 0, 7); c.fill(); c.restore();
+      if (t < 0) { c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, Wd, Wd); c.fillStyle = "#fff"; c.font = "700 30px Bungee,sans-serif"; c.fillText(String(Math.ceil(-t)), Wd / 2, Wd / 2); }
+      if (hit && !done) { done = true; drag = false; A.haptic("bad"); act("ci", { hit: true }); return; }
+      if (drag && Math.hypot(px - e[0], py - e[1]) < 4.5 && !done) { done = true; drag = false; var fin = Math.round(now - t0); smp.push([fin, +e[0].toFixed(2), +e[1].toFixed(2)]); act("ci", { s: smp, fin: fin }); return; }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  }
+
+  // ----- 7. Inseguimento: schiva i posti di blocco e scegli il bivio giusto -----
+  function lvChase(v) {
+    if (v.phase === "brief") {
+      brief("INSEGUIMENTO", "Sei alla guida del furgone della fuga: corre da solo, tu cambi corsia. Tocca a sinistra o a destra (o fai scorrere il dito) per spostarti. Schiva posti di blocco, chiodi e macchie d'olio. Ai bivi leggi il cartello: l'elicottero è sul percorso da NON prendere, scegli l'altro. Resisti 30 secondi.", "VIA!", function () { act("rd"); });
+      return;
+    }
+    stage.appendChild(el("div", "hs-sub big", "Cambia corsia: tocca a sinistra / destra"));
+    var Wd = Math.min(340, Math.max(260, (stage.clientWidth || 340) - 16)), Hd = 380;
+    var cv = el("canvas", "hs-lz"); cv.width = Wd * 2; cv.height = Hd * 2; cv.style.width = Wd + "px"; cv.style.height = Hd + "px"; cv.style.touchAction = "none"; stage.appendChild(cv);
+    var c = cv.getContext("2d"); c.scale(2, 2);
+    var t0 = performance.now() + (v.delay || 0) * 1000, lane = 1, ev = [], vx = Wd / 2, done = false, SP = 150, PY = Hd - 80, lw = (Wd - 40) / 3, sx0 = 0, checked = {};
+    function laneAt(t) { var cur = 1; ev.forEach(function (e) { if (e[0] / 1000 <= t) cur = e[1]; }); return cur; }
+    function go(d) { var tm = performance.now() - t0; if (done || tm < 0) return; var nl = Math.max(0, Math.min(2, lane + d)); if (nl === lane) return; if (ev.length && tm - ev[ev.length - 1][0] < 70) return; lane = nl; ev.push([Math.round(tm), lane]); A.haptic("light"); }
+    cv.addEventListener("pointerdown", function (e) { e.preventDefault(); sx0 = e.clientX; });
+    cv.addEventListener("pointerup", function (e) {
+      var dx = e.clientX - sx0; if (Math.abs(dx) > 26) go(dx > 0 ? 1 : -1);
+      else { var r = cv.getBoundingClientRect(); go(e.clientX - r.left < r.width / 2 ? -1 : 1); }
+    });
+    function LX(l) { return 20 + lw * l + lw / 2; }
+    function hitNow() { if (done) return; done = true; A.haptic("bad"); act("ch", { hit: true }); }
+    (function loop(now) {
+      if (done || root.hidden || S.view !== v) { done = true; return; }
+      var t = (now - t0) / 1000;
+      vx += (LX(lane) - vx) * 0.3;
+      c.clearRect(0, 0, Wd, Hd); c.fillStyle = "#090d18"; c.fillRect(0, 0, Wd, Hd);
+      c.fillStyle = "#151b2b"; c.fillRect(20, 0, Wd - 40, Hd);
+      c.strokeStyle = "#35e6ff"; c.lineWidth = 3; c.beginPath(); c.moveTo(20, 0); c.lineTo(20, Hd); c.moveTo(Wd - 20, 0); c.lineTo(Wd - 20, Hd); c.stroke();
+      c.strokeStyle = "rgba(255,255,255,.35)"; c.lineWidth = 3; c.setLineDash([22, 22]); c.lineDashOffset = -((Math.max(0, t) * SP) % 44);
+      for (var k = 1; k < 3; k++) { c.beginPath(); c.moveTo(20 + lw * k, 0); c.lineTo(20 + lw * k, Hd); c.stroke(); } c.setLineDash([]);
+      function Y(tt) { return PY - (tt - t) * SP; }
+      v.forks.forEach(function (f) {
+        var y = Y(f.t);
+        if (t > f.t - 2.4 && t < f.t + 0.6) {                                           // cartello del bivio (elicottero sul percorso da evitare)
+          var sy = Math.max(30, Math.min(80, Y(f.t - 1.0)));
+          c.fillStyle = "#0d2b17"; c.fillRect(24, sy - 22, Wd - 48, 44); c.strokeStyle = "#2fd36f"; c.lineWidth = 2; c.strokeRect(24, sy - 22, Wd - 48, 44);
+          c.fillStyle = "#fff"; c.font = "700 15px Rajdhani,sans-serif"; c.textAlign = "center";
+          c.fillText(f.heli === "L" ? "◀ 🚁 PONTE" : "◀ TUNNEL", Wd * 0.27, sy + 5); c.fillText(f.heli === "L" ? "TUNNEL ▶" : "PONTE 🚁 ▶", Wd * 0.73, sy + 5);
+        }
+        if (y > -40 && y < Hd + 40 && t > f.t - 1.8) { c.fillStyle = "#6b1b2a"; c.fillRect(20 + lw + 6, y - 16, lw - 12, 32); c.fillStyle = "#ff8aa0"; c.font = "700 11px Rajdhani,sans-serif"; c.fillText("MURO", LX(1), y + 4); }
+        if (!checked["f" + f.t] && t > f.t + 0.1) { checked["f" + f.t] = 1; if (laneAt(f.t) !== (f.heli === "L" ? 2 : 0)) hitNow(); }
+      });
+      v.obs.forEach(function (o) {
+        var y = Y(o[0]); if (y < -30 || y > Hd + 30) { if (!checked["o" + o[0]] && t > o[0] + 0.1) { checked["o" + o[0]] = 1; if (laneAt(o[0] - 0.08) === o[1] && laneAt(o[0]) === o[1] && laneAt(o[0] + 0.08) === o[1]) hitNow(); } return; }
+        var x = LX(o[1]);
+        if (o[2] === "block") { c.fillStyle = "#e0183a"; c.fillRect(x - 28, y - 10, 56, 20); c.fillStyle = "#fff"; for (var j = 0; j < 4; j++) c.fillRect(x - 28 + j * 14 + 3, y - 10, 7, 20); }
+        else if (o[2] === "spike") { c.fillStyle = "#c8d0e0"; for (var j2 = -2; j2 <= 2; j2++) { c.beginPath(); c.moveTo(x + j2 * 9 - 5, y + 9); c.lineTo(x + j2 * 9, y - 9); c.lineTo(x + j2 * 9 + 5, y + 9); c.fill(); } }
+        else { c.fillStyle = "rgba(10,10,14,.9)"; c.beginPath(); c.ellipse(x, y, 30, 14, 0, 0, 7); c.fill(); c.strokeStyle = "#4a3a8a"; c.lineWidth = 2; c.stroke(); }
+        if (!checked["o" + o[0]] && t > o[0] + 0.1) { checked["o" + o[0]] = 1; if (laneAt(o[0] - 0.08) === o[1] && laneAt(o[0]) === o[1] && laneAt(o[0] + 0.08) === o[1]) hitNow(); }
+      });
+      c.save(); c.shadowColor = "#ffd23b"; c.shadowBlur = 12; c.fillStyle = "#ffd23b"; c.fillRect(vx - 14, PY - 24, 28, 48); c.restore();
+      c.fillStyle = "#1a1a24"; c.fillRect(vx - 10, PY - 14, 20, 12); c.fillStyle = "#ff3b5e"; c.fillRect(vx - 12, PY + 20, 6, 4); c.fillRect(vx + 6, PY + 20, 6, 4);
+      c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(20, 6, Wd - 40, 6); c.fillStyle = "#2fd36f"; c.fillRect(20, 6, (Wd - 40) * Math.max(0, Math.min(1, t / v.dur)), 6);
+      if (t < 0) { c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, Wd, Hd); c.fillStyle = "#fff"; c.font = "700 30px Bungee,sans-serif"; c.textAlign = "center"; c.fillText(String(Math.ceil(-t)), Wd / 2, Hd / 2); }
+      if (t >= v.dur && !done) { done = true; act("ch", { ev: ev, fin: Math.round(t * 1000) }); return; }
       requestAnimationFrame(loop);
     })(performance.now());
   }
