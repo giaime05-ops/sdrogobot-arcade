@@ -827,3 +827,31 @@ button,input,select{font-family:inherit}
 .hs-vbar{position:relative;height:54px;border-radius:12px;background:#0b1424;border:1px solid rgba(53,230,255,.4);width:100%;margin:14px 0}
 .hs-vbar .vz{position:absolute;top:4px;bottom:4px;border-radius:8px;background:rgba(47,211,111,.35);border:1px solid #2fd36f;display:grid;place-items:center;font:700 14px Bungee,sans-serif;color:#cfffe3;font-style:normal}
 .hs-vbar .vi{position:absolute;top:0;bottom:0;width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 10px #8ff3ff}
+/* multiplayer: giochi 1v1, carte e tavoli */
+.mp-alt{background:linear-gradient(180deg,#35e6ff,#1a7fd0);color:#04121f}
+.mp-area{min-height:40px}
+.mp-win{color:#58ffa8!important}.mp-lose{color:#ff6b8a!important}
+.mp-clash{display:flex;justify-content:center;gap:34px;font-size:64px;margin:14px 0}
+.mp-clash .shake{animation:mpshake .3s ease-in-out infinite alternate}.mp-clash .shake.r{animation-direction:alternate-reverse}
+@keyframes mpshake{from{transform:translateY(-14px) rotate(-12deg)}to{transform:translateY(14px) rotate(12deg)}}
+.mp-clash .pop{animation:mppop .35s ease both}
+@keyframes mppop{from{transform:scale(.4)}60%{transform:scale(1.25)}to{transform:scale(1)}}
+.mp-dice{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.mp-dice .dr{display:flex;gap:10px;justify-content:center}
+.mp-dice .die{font-size:60px;line-height:1;color:#fff;text-shadow:0 0 12px rgba(143,243,255,.7)}
+.pc{display:inline-block;min-width:34px;padding:6px 4px;margin:0 2px;border-radius:7px;background:#fff;color:#111;font:700 15px Rajdhani,sans-serif;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.pc.red{color:#d0102a}.pc.back{background:repeating-linear-gradient(45deg,#3a1d6e 0 5px,#5a2ca0 5px 10px);color:transparent;min-width:30px;min-height:30px}
+.pc.empty{background:rgba(255,255,255,.08);box-shadow:none;color:transparent;border:1px dashed rgba(255,255,255,.25)}
+.pc.big{font-size:34px;min-width:70px;padding:16px 6px}
+.pc.flip{animation:mpflip .5s ease both}@keyframes mpflip{from{transform:rotateY(90deg)}to{transform:none}}
+.mp-hlb{display:flex;justify-content:center;gap:16px;margin:12px 0}
+.mp-board{display:grid;grid-template-columns:repeat(3,76px);gap:8px;justify-content:center;margin:10px 0}
+.mp-cell{width:76px;height:76px;font-size:34px;border-radius:14px;border:1px solid rgba(53,230,255,.5);background:rgba(53,230,255,.08)}
+.mp-board.lock .mp-cell{opacity:.9}
+.mp-wheel{width:110px;height:110px;margin:12px auto;border-radius:50%;display:grid;place-items:center;font:700 40px Bungee,sans-serif;color:#fff;border:6px solid #e8c36a;box-shadow:0 0 20px rgba(232,195,106,.5);background:#1a7a3a}
+.mp-wheel.r{background:#c8102e}.mp-wheel.n{background:#16161e}.mp-wheel.g{background:#1a7a3a}
+.mp-pl{padding:6px 8px;margin:4px 0;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);font-size:15px;color:#e9dcff}
+.mp-pl.me{border-color:#ff3db0}.mp-pl.turn{box-shadow:0 0 12px rgba(53,230,255,.7);border-color:#35e6ff}.mp-pl.fold{opacity:.45}
+.mp-pl .pt{color:#8ff3ff}.mp-res.win{color:#58ffa8;font-weight:700}.mp-res.lose{color:#ff6b8a}.mp-res.push{color:#cdbfe6}
+.mp-comm{display:flex;justify-content:center;margin:8px 0}
+.mp-hand button.txt{width:auto;min-width:96px;height:56px;padding:0 14px;font:700 17px Rajdhani,sans-serif;color:#fff}
