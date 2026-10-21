@@ -56,7 +56,7 @@
   }
   function drawHud(v) {
     hud.hidden = false;
-    lEl.textContent = "LIV " + v.level + "/" + (v.total || 6) + " · " + v.name;
+    lEl.textContent = "LIV " + v.level + "/" + (v.total || 6) + " · " + v.name + (v.round ? " · R" + v.round + "/" + v.rounds : "");
     aEl.innerHTML = "";
     for (var i = 0; i < v.max_alarms; i++) aEl.appendChild(el("i", i < v.alarms ? "on" : ""));
     startClock(v.left);
@@ -138,7 +138,7 @@
       c.appendChild(el("h2", "", "RAPINA PERFETTA!"));
       var big = el("div", "hs-big", "+0 $SDG"); c.appendChild(big);
       var rest = el("div", "hs-rest"); rest.style.opacity = "0";
-      rest.appendChild(el("p", "hs-lead", "Tempo: " + Math.floor(e.elapsed / 60) + "m " + pad2(e.elapsed % 60) + "s · Allarmi: " + e.alarms + "/" + (e.mini ? 2 : 3)));
+      rest.appendChild(el("p", "hs-lead", "Tempo: " + Math.floor(e.elapsed / 60) + "m " + pad2(e.elapsed % 60) + "s · Allarmi: " + e.alarms + "/" + (e.mini ? ((S.mini && S.mini.max_alarms) || 3) : 3)));
       if (!e.mini) rest.appendChild(el("p", "hs-prize", "1 Titolo, 1 Persecuzione e 1 STELLA ⭐ aggiunti."));
       if (e.msg) rest.appendChild(el("p", "hs-lead", e.msg));
       c.appendChild(rest);
@@ -173,7 +173,7 @@
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
     if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); stage.appendChild(up); later(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
-    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice })[v.kind](v);
+    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice, logic: mgLogic, laser: mgLaser })[v.kind](v);
   }
   function brief(title, text, label, fn) {
     var c = el("div", "hs-card"); c.appendChild(el("h2", "", title)); c.appendChild(el("p", "hs-lead", text));
@@ -211,7 +211,7 @@
   }
 
   // ----- 2. Corridoio laser: tieni premuto per avanzare, fermati quando il raggio è acceso -----
-  function lvLaser(v) {
+  function lvLaser(v, key) {
     if (v.phase === "brief") {
       brief("CORRIDOIO LASER", "Tieni premuto per avanzare lungo il corridoio, rilascia per fermarti. I raggi si accendono e si spengono a ritmi diversi: attraversali solo quando sono spenti. Se tocchi un raggio acceso scatta l'allarme.", "ENTRA NEL CORRIDOIO", function () { act("rd"); });
       return;
@@ -229,7 +229,7 @@
     ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (n) { pad.addEventListener(n, release); });
     function yOf(x) { return H - 28 - (x / 100) * (H - 70); }
     (function loop(now) {
-      if (done || root.hidden || S.view !== v) { done = true; return; }
+      if (done || root.hidden || S.view !== (key || v)) { done = true; return; }
       var t = (now - t0) / 1000, x = Math.min(100, X(now - t0));
       c.clearRect(0, 0, W, H);
       // corridoio
@@ -459,7 +459,7 @@
     var I = S.mini; stage.innerHTML = ""; stage.className = "hs-stage daily hs-fadein";
     var card = el("div", "hs-card");
     card.appendChild(el("h2", "", "DAILY HEIST"));
-    card.appendChild(el("p", "hs-lead", "Due mini rapine al giorno, uguali per tutti: 3 giochini veloci ciascuna, " + I.time + " secondi in tutto e al " + I.max_alarms + "° allarme si fallisce. Costo " + I.cost + " $SDG, premio fisso " + I.prize + " $SDG. Ogni mini rapina si può rifare fino a " + I.plays + " volte al giorno, almeno " + Math.round(I.gap / 3600) + " ore dopo l'ultima partenza. Dalla mezzanotte italiana cambia lo schema."));
+    card.appendChild(el("p", "hs-lead", "Due mini rapine al giorno, uguali per tutti: 3 giochini ciascuna (memoria, matematica, logica, riflessi) con 3 round di difficoltà crescente, " + I.time + " secondi in tutto e al " + I.max_alarms + "° allarme si fallisce. Costo " + I.cost + " $SDG, premio fisso " + I.prize + " $SDG. Ogni mini rapina si può rifare fino a " + I.plays + " volte al giorno, almeno " + Math.round(I.gap / 3600) + " ore dopo l'ultima partenza. Dalla mezzanotte italiana cambia lo schema."));
     stage.appendChild(card);
     var cd = [];
     I.minis.forEach(function (m) {
@@ -495,8 +495,8 @@
   var HAT = ["#e0183a", "#3b82ff", "#ffd23b", "#2fd36f", "#a855f7", "#ff8a2b"], SKIN = ["#f2c9a0", "#d9a07a", "#a8693f", "#6b4429"];
   function mgFace(v) {
     var d = v.data;
-    stage.appendChild(el("div", "hs-sub", "Memorizza le guardie!"));
-    var q = el("div", "hs-sub big", ""); stage.appendChild(q);
+    stage.appendChild(el("div", "hs-sub", "Memorizza le guardie, poi rispondi:"));
+    var q = el("div", "hs-sub big", d.q); stage.appendChild(q);
     var grid = el("div", "hs-guards"); stage.appendChild(grid); var cards = [];
     d.guards.forEach(function (g, i) {
       var b = el("button", "hs-guard"); b.type = "button"; b.disabled = true;
@@ -506,13 +506,15 @@
       b.addEventListener("click", function () { if (b.disabled) return; A.haptic("light"); snd("click"); stopT && stopT(); act("an", { i: i }); });
       grid.appendChild(b); cards.push(b);
     });
-    var stopT = null;
+    var stopT = null, memo = tbar(d.show, function () {});                          // barra della memorizzazione (la domanda si legge subito)
+    var memoBar = stage.querySelector(".hs-tbar:last-of-type");
     later(function () {
+      if (memoBar) memoBar.remove();
       cards.forEach(function (b) { b.classList.add("hid"); b.disabled = false; });
-      q.textContent = d.q; stopT = tbar(d.limit, function () { act("to"); });
+      stage.firstChild.textContent = "Ora scegli la guardia!"; stopT = tbar(d.limit, function () { act("to"); });
     }, d.show * 1000);
   }
-  var CAB = { Rosso: "#e0183a", Blu: "#3b82ff", Giallo: "#ffd23b", Verde: "#2fd36f" };
+  var CAB = { Rosso: "#e0183a", Blu: "#3b82ff", Giallo: "#ffd23b", Verde: "#2fd36f", Viola: "#a855f7", Arancio: "#ff8a2b" };
   function mgCable(v) {
     var d = v.data;
     stage.appendChild(el("div", "hs-sub big", d.q));
@@ -535,12 +537,26 @@
       }
       return cv;
     }
-    var top = el("div", "hs-fptop"); top.appendChild(draw(d.target, 150)); stage.appendChild(top);
+    var top = el("div", "hs-fptop"); top.appendChild(draw(d.target, 140)); stage.appendChild(top);
     var row = el("div", "hs-fprow"); stage.appendChild(row); var stop = tbar(d.limit, function () { act("to"); });
     d.cands.forEach(function (m, i) {
-      var b = el("button", "hs-fpc"); b.type = "button"; b.appendChild(draw(m, 92));
+      var b = el("button", "hs-fpc"); b.type = "button"; b.appendChild(draw(m, d.cands.length > 3 ? 72 : 92));
       b.addEventListener("click", function () { A.haptic("med"); snd("click"); stop(); act("an", { i: i }); }); row.appendChild(b);
     });
+  }
+  function mgLogic(v) {
+    var d = v.data;
+    stage.appendChild(el("div", "hs-sub big", d.q));
+    var row = el("div", "hs-series"); d.seq.forEach(function (x) { row.appendChild(el("b", "", String(x))); }); row.appendChild(el("b", "q", "?")); stage.appendChild(row);
+    var ops = el("div", "hs-ops"); stage.appendChild(ops); var stop = tbar(d.limit, function () { act("to"); });
+    d.options.forEach(function (o, i) {
+      var b = el("button", "hs-op", String(o)); b.type = "button";
+      b.addEventListener("click", function () { A.haptic("med"); snd("click"); stop(); act("an", { i: i }); }); ops.appendChild(b);
+    });
+  }
+  function mgLaser(v) {
+    var d = v.data, vv = { phase: "play", lasers: d.lasers, speed: d.speed, zone: d.zone, delay: d.delay };
+    lvLaser(vv, v);
   }
   function mgFreq(v) {
     var d = v.data;
@@ -565,10 +581,10 @@
   }
   function mgVoice(v) {
     var d = v.data;
-    stage.appendChild(el("div", "hs-sub big", "TAP quando l'indicatore passa sui nodi 1 → 2 → 3, in ordine"));
+    stage.appendChild(el("div", "hs-sub big", "TAP quando l'indicatore passa sui nodi " + d.nodes.map(function (x, k) { return k + 1; }).join(" → ") + ", in ordine"));
     var bar = el("div", "hs-vbar"); stage.appendChild(bar); var ind = el("i", "vi"); bar.appendChild(ind);
     d.nodes.forEach(function (n, k) { var z = el("i", "vz", String(k + 1)); z.style.left = ((n - d.w / 2) * 100) + "%"; z.style.width = (d.w * 100) + "%"; bar.appendChild(z); });
-    var dots = el("div", "hs-dots"); for (var q = 0; q < 3; q++) dots.appendChild(el("i", "")); stage.appendChild(dots);
+    var dots = el("div", "hs-dots"); for (var q = 0; q < d.nodes.length; q++) dots.appendChild(el("i", "")); stage.appendChild(dots);
     var btn = el("button", "avi-go hs-go hs-hold", "TAP!"); btn.type = "button"; stage.appendChild(btn);
     var t0 = performance.now(), taps = [], done = false, stop = tbar(d.limit, function () { done = true; act("to"); });
     (function loop(now) { if (done || root.hidden || S.view !== v) return; ind.style.left = (tri(d.phase0 + d.speed * (now - t0) / 1000) * 100) + "%"; requestAnimationFrame(loop); })(t0);
@@ -576,7 +592,7 @@
       e.preventDefault(); if (done) return; var tm = Math.round(performance.now() - t0); A.haptic("med"); snd("key");
       var k = taps.length, p = tri(d.phase0 + d.speed * tm / 1000), good = Math.abs(p - d.nodes[k]) <= d.w / 2 + 0.01; taps.push(tm);
       dots.children[k].className = good ? "on" : "bad";
-      if (!good || taps.length >= 3) { done = true; stop(); act("vt", { taps: taps }); }
+      if (!good || taps.length >= d.nodes.length) { done = true; stop(); act("vt", { taps: taps }); }
     });
   }
 

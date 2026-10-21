@@ -868,3 +868,10 @@ button,input,select{font-family:inherit}
 .hs-rain{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .hs-coin{position:absolute;top:-24px;font-style:normal;font-size:22px;animation:hsFall linear forwards}
 @keyframes hsFall{to{transform:translateY(105vh) rotate(360deg)}}
+
+/* mini rapine: serie numerica, impronte a più candidati, cavi a 6 */
+.hs-series{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.hs-series b{min-width:46px;padding:10px 8px;border-radius:12px;background:rgba(168,85,247,.16);border:1px solid rgba(168,85,247,.5);font-family:"Bungee",sans-serif;font-size:20px;text-align:center}
+.hs-series b.q{background:rgba(255,210,59,.18);border-color:#ffd23b;color:#ffd23b}
+.hs-fprow{flex-wrap:wrap}
+.hs-cables{flex-wrap:wrap}
