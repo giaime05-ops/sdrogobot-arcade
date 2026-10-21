@@ -875,3 +875,7 @@ button,input,select{font-family:inherit}
 .hs-series b.q{background:rgba(255,210,59,.18);border-color:#ffd23b;color:#ffd23b}
 .hs-fprow{flex-wrap:wrap}
 .hs-cables{flex-wrap:wrap}
+
+/* livello 6: tasti in fila sotto il labirinto (stessa schermata) */
+.hs-dpad{display:flex !important;grid-template-columns:none !important;gap:8px;justify-content:center;margin:6px auto 0 !important}
+.hs-dp{width:74px;height:50px;font-size:22px}

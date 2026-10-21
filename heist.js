@@ -261,13 +261,14 @@
   function hzCell(h, t) { var n = h.cells.length, cyc = 2 * (n - 1), m = Math.floor(Math.max(0, t) / h.T) % cyc; return h.cells[m < n ? m : cyc - m]; }
   function lvCircuit(v) {
     if (v.phase === "brief") {
-      brief("BYPASS CIRCUITI", "Muovi la sonda con la croce di tasti sotto il labirinto. Attiva i perni 1 → 2 → 3 IN ORDINE per riaprire la serratura 🔒, poi raggiungi l'uscita. Le scariche ⚡ pattugliano un corridoio avanti e indietro: passa quando si sono allontanate. Se ti toccano, il settore riparte. 3 settori, sempre più grandi.", "ENTRA NEL CIRCUITO", function () { act("rd"); });
+      brief("BYPASS CIRCUITI", "Muovi la sonda con i tasti sotto il labirinto (o scorrendo il dito sul labirinto; tenendo premuto ti muovi in continuazione). Attiva i perni 1 → 2 → 3 IN ORDINE per riaprire la serratura 🔒, poi raggiungi l'uscita. Le scariche ⚡ pattugliano un tratto avanti e indietro: aggirale o aspetta che si allontanino. Se ti toccano, il settore riparte. 3 settori, sempre più grandi.", "ENTRA NEL CIRCUITO", function () { act("rd"); });
       return;
     }
     var n = v.n, op = v.open, pins = v.pins, ex = v.exit, grace = (v.grace || 0.1) * 1000;
     var head = el("div", "hs-sub", "Settore " + (v.r + 1) + "/" + v.rounds + " · Perni 0/" + pins.length); stage.appendChild(head);
-    var msgEl = el("div", "hs-sub big", "Raggiungi i perni in ordine"); stage.appendChild(msgEl);
-    var Wd = Math.min(340, Math.max(260, (stage.clientWidth || 340) - 16)), cs = Wd / n;
+    var msgEl = el("div", "hs-sub", "Raggiungi i perni in ordine"); stage.appendChild(msgEl);
+    var avail = stage.clientHeight || 520;                                           // il labirinto e i tasti stanno sempre nella stessa schermata
+    var Wd = Math.round(Math.max(210, Math.min(340, (stage.clientWidth || 340) - 16, avail - 150))), cs = Wd / n;
     var cv = el("canvas", "hs-lz"); cv.width = Wd * 2; cv.height = Wd * 2; cv.style.width = Wd + "px"; cv.style.height = Wd + "px"; stage.appendChild(cv);
     var c = cv.getContext("2d"); c.scale(2, 2);
     var t0 = performance.now() + (v.delay || 0) * 1000, pos = [v.start[0], v.start[1]], vis = [pos[0], pos[1]], got = 0, mv = [], lastMv = -999, tEnter = 0, done = false;
@@ -278,9 +279,18 @@
       lastMv = tm; mv.push([Math.round(tm), d]); pos = [pos[0] + DIRV[d][0], pos[1] + DIRV[d][1]]; tEnter = tm; snd("key"); A.haptic("light");
       if (got < pins.length && pos[0] === pins[got][0] && pos[1] === pins[got][1]) { got++; snd("ok"); A.haptic("ok"); head.textContent = "Settore " + (v.r + 1) + "/" + v.rounds + " · Perni " + got + "/" + pins.length; msgEl.textContent = got === pins.length ? "Serratura aperta: corri all'uscita!" : "Perno " + got + " attivato: ora il " + (got + 1); }
     }
-    var pad = el("div", "hs-dpad"), names = ["▲", "▶", "▼", "◀"], at = [[2, 1], [3, 2], [2, 3], [1, 2]];
-    names.forEach(function (nm, d) { var b = el("button", "hs-dp d" + d, nm); b.type = "button"; b.style.gridColumn = at[d][0]; b.style.gridRow = at[d][1]; b.addEventListener("pointerdown", function (e) { e.preventDefault(); step(d); }); pad.appendChild(b); });
+    var pad = el("div", "hs-dpad"), order = [3, 0, 2, 1], names = { 0: "▲", 1: "▶", 2: "▼", 3: "◀" };
+    order.forEach(function (d) {
+      var b = el("button", "hs-dp d" + d, names[d]); b.type = "button"; var rep1 = 0, rep2 = 0;
+      function stopRep() { clearTimeout(rep1); clearInterval(rep2); }
+      b.addEventListener("pointerdown", function (e) { e.preventDefault(); step(d); stopRep(); rep1 = setTimeout(function () { rep2 = setInterval(function () { step(d); }, 110); }, 260); });   // tenendo premuto si ripete
+      ["pointerup", "pointercancel", "pointerleave"].forEach(function (n) { b.addEventListener(n, stopRep); });
+      pad.appendChild(b);
+    });
     stage.appendChild(pad);
+    var sw = null;                                                                    // anche uno scorrimento sul labirinto muove la sonda
+    cv.addEventListener("pointerdown", function (e) { sw = [e.clientX, e.clientY]; });
+    cv.addEventListener("pointerup", function (e) { if (!sw) return; var dx = e.clientX - sw[0], dy = e.clientY - sw[1]; sw = null; if (Math.max(Math.abs(dx), Math.abs(dy)) < 22) return; step(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0)); });
     function key(e) { var m = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 }[e.key]; if (m !== undefined) { e.preventDefault(); step(m); } }
     document.addEventListener("keydown", key);
     function C(i) { return (i + 0.5) * cs; }
@@ -291,7 +301,7 @@
       c.clearRect(0, 0, Wd, Wd); var g = c.createLinearGradient(0, 0, Wd, Wd); g.addColorStop(0, "#0a1020"); g.addColorStop(1, "#150a24"); c.fillStyle = g; c.fillRect(0, 0, Wd, Wd);
       c.strokeStyle = "rgba(53,230,255,.07)"; c.lineWidth = 1;
       for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) c.strokeRect(x * cs + 1, y * cs + 1, cs - 2, cs - 2);
-      c.lineCap = "round"; c.lineWidth = 4; c.strokeStyle = "#ff3b5e"; c.shadowColor = "#ff3b5e"; c.shadowBlur = 6;
+      c.lineCap = "round"; c.lineWidth = Math.max(2, cs * 0.07); c.strokeStyle = "#ff3b5e"; c.shadowColor = "#ff3b5e"; c.shadowBlur = 5;
       c.beginPath(); c.rect(1, 1, Wd - 2, Wd - 2); c.stroke();
       for (y = 0; y < n; y++) for (x = 0; x < n; x++) {
         var o = op[y][x]; c.beginPath();
@@ -325,41 +335,78 @@
     })(performance.now());
   }
 
-  // ----- 7. Fuga: corsa a distanza, parte lenta e accelera. Ostacoli che bocciano, ostacoli che rallentano, bivi -----
+  // ----- 7. Fuga: corsa a distanza, parte lenta e accelera. Ostacoli che bocciano, ostacoli che rallentano, bivi con ambientazioni -----
+  var ENVC = {
+    highway: { bg: "#090d18", road: "#151b2b", edge: "#35e6ff", mark: "rgba(255,255,255,.35)" },
+    tunnel: { bg: "#020203", road: "#0d0e13", edge: "#ffb347", mark: "rgba(255,200,80,.5)" },
+    bridge: { bg: "#0a1436", road: "#1b2238", edge: "#c8d0e0", mark: "rgba(255,255,255,.35)" },
+    dirt: { bg: "#1d2a12", road: "#5b3e23", edge: "#8a6a3a", mark: null },
+    city: { bg: "#0b0b16", road: "#1b1b27", edge: "#ff6fc8", mark: "rgba(255,255,255,.4)" },
+    coast: { bg: "#06263d", road: "#1c2434", edge: "#35e6ff", mark: "rgba(255,255,255,.35)" }
+  };
+  function hsh(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
   function lvChase(v) {
     if (v.phase === "brief") {
-      brief("FUGA", "Sei alla guida del furgone: parte lento e accelera da solo, tu cambi corsia (tocca a sinistra o a destra dello schermo, o scorri il dito). ❌ Posti di blocco, auto contromano, muri e il faro dell'elicottero ti fermano. 🛢️ Olio e buche non ti fermano ma ti fanno rallentare. Ai bivi leggi il cartello: 🚁 = elicottero della polizia, sulla SOPRAELEVATA. Prendi sempre il TUNNEL. Raggiungi il traguardo: poi il bot guida per te.", "VIA!", function () { act("rd"); });
+      brief("FUGA", "Sei alla guida del furgone: parte lento e accelera da solo, tu cambi corsia (tocca a sinistra o a destra dello schermo, o scorri il dito). ❌ Posti di blocco, auto, muri, rocce, relitti e il faro dell'elicottero ti fermano. 🛢️ Olio, buche, fango e coni ti fanno solo rallentare. Ai bivi trovi due strade con i loro cartelli: un simbolo di pericolo (🚁 🚔 🚧 🚨 🚓) segna la strada controllata dalla polizia, l'altra è libera. Cambia ambientazione a seconda della strada che scegli. Raggiungi il traguardo: poi il bot guida per te.", "VIA!", function () { act("rd"); });
       return;
     }
-    stage.appendChild(el("div", "hs-sub big", "Cambia corsia: tocca a sinistra / destra"));
-    var Wd = Math.min(340, Math.max(260, (stage.clientWidth || 340) - 16)), Hd = 400;
+    stage.appendChild(el("div", "hs-sub", "Cambia corsia: tocca a sinistra / destra"));
+    var avail = stage.clientHeight || 520;
+    var Wd = Math.min(340, Math.max(260, (stage.clientWidth || 340) - 16)), Hd = Math.round(Math.max(300, Math.min(430, avail - 50)));
     var cv = el("canvas", "hs-lz"); cv.width = Wd * 2; cv.height = Hd * 2; cv.style.width = Wd + "px"; cv.style.height = Hd + "px"; cv.style.touchAction = "none"; stage.appendChild(cv);
     var c = cv.getContext("2d"); c.scale(2, 2);
-    var obs = v.obs, forks = v.forks, D = v.D, H = 2.0, DT = 0.02, SC = 5.2, PY = Hd - 84, lw = (Wd - 40) / 3;
+    var obs = v.obs, forks = v.forks, segs = v.segs, D = v.D, H = 2.0, DT = 0.02, SC = 5.2, PY = Hd - 84, lw = (Wd - 40) / 3;
     var t0 = performance.now() + (v.delay || 0) * 1000, last = 0, acc = 0, n = 0, p = 0, sv = v.v0, lane = 1, vx = Wd / 2, ev = [], sl = [], slowed = {}, fi = 0, lastEv = -999;
-    var done = false, fin = false, finT = 0, shake = 0, toast = "", toastT = 0, reply = null, finSent = false, sx0 = 0, hitFlag = false;
+    var done = false, fin = false, finT = 0, shake = 0, toast = "", toastT = 0, reply = null, sx0 = 0, hitFlag = false;
+    function envAt(d) { for (var i = 0; i < segs.length; i++) if (d >= segs[i][0] && d < segs[i][1]) return segs[i][2]; return "highway"; }
     function go(d) { if (done || fin || n < 0) return; var nl = Math.max(0, Math.min(2, lane + d)); if (nl === lane) return; if (n * 20 - lastEv < 60) return; lane = nl; lastEv = n * 20; ev.push([n * 20, lane]); A.haptic("light"); }
     cv.addEventListener("pointerdown", function (e) { e.preventDefault(); sx0 = e.clientX; });
     cv.addEventListener("pointerup", function (e) { var dx = e.clientX - sx0; if (Math.abs(dx) > 26) go(dx > 0 ? 1 : -1); else { var r = cv.getBoundingClientRect(); go(e.clientX - r.left < r.width / 2 ? -1 : 1); } });
     function key(e) { if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); go(1); } }
     document.addEventListener("keydown", key);
     function LX(l) { return 20 + lw * l + lw / 2; }
-    function say2(s, k) { toast = s; toastT = 1.1; if (k) { shake = 0.25; A.haptic("bad"); snd("lose"); } }
+    function say2(s, k) { toast = s; toastT = 1.2; if (k) { shake = 0.25; A.haptic("bad"); snd("lose"); } }
+    var SLOWK = { oil: "🛢️ OLIO! Rallenti", pit: "🕳️ BUCA! Rallenti", mud: "🟤 FANGO! Rallenti", cone: "🔶 CONI! Rallenti" };
     function simStep() {
       sv = Math.min(v.vmax, sv + v.acc * DT); p += sv * DT; n++;
       for (var i = 0; i < obs.length; i++) {
         var o = obs[i]; if (o[0] > p + 5) break;
         if (p + H > o[0] && p - H < o[0] + o[3] && ((o[1] >> lane) & 1)) {
-          if (o[2] === "oil" || o[2] === "pit") { if (!slowed[i]) { slowed[i] = 1; sl.push([n * 20, i]); sv = Math.max(v.v0, sv * v.slow); say2(o[2] === "oil" ? "🛢️ OLIO! Rallenti" : "🕳️ BUCA! Rallenti", true); } }
+          if (SLOWK[o[2]]) { if (!slowed[i]) { slowed[i] = 1; sl.push([n * 20, i]); sv = Math.max(v.v0, sv * v.slow); say2(SLOWK[o[2]], true); } }
           else { hitFlag = true; return; }
         }
       }
-      while (fi < forks.length && p >= forks[fi].d) { if (lane !== (forks[fi].heli === "L" ? 2 : 0)) { hitFlag = true; return; } fi++; say2("✓ Bivio superato", false); }
+      while (fi < forks.length && p >= forks[fi].d) { if (lane !== forks[fi].safe) { hitFlag = true; return; } say2("➜ " + (forks[fi].safe === 0 ? forks[fi].L.name : forks[fi].R.name), false); fi++; }
     }
     function crash() { done = true; document.removeEventListener("keydown", key); A.haptic("bad"); act("ch", { hit: true }); }
     function finish() {
       fin = true; finT = performance.now();
       post(S.base + "/act", { a: "ch", ev: ev, sl: sl, fin: n * 20 }).then(function (j) { reply = j || { _none: 1 }; }).catch(function () { reply = { _none: 1 }; });
+    }
+    function Y(d) { return PY - (d - p) * SC; }
+    function drawWorld(now) {
+      var E, y, k, w, yy;
+      for (y = -16; y < Hd + 16; y += 16) {                                           // sfondo a fasce: ogni tratto ha la sua ambientazione
+        var dd = p + (PY - (y + 8)) / SC; E = ENVC[envAt(dd)];
+        c.fillStyle = E.bg; c.fillRect(-10, y, Wd + 20, 17); c.fillStyle = E.road; c.fillRect(20, y, Wd - 40, 17);
+        c.fillStyle = E.edge; c.fillRect(19, y, 3, 17); c.fillRect(Wd - 22, y, 3, 17);
+      }
+      var k0 = Math.floor((p - 20) / 30), k1 = Math.ceil((p + PY / SC + 6) / 30);
+      for (k = k0; k <= k1; k++) {                                                    // decorazioni ancorate alla strada (scorrono con essa)
+        w = k * 30; yy = Y(w); if (yy < -30 || yy > Hd + 30) continue; var en = envAt(w), r1 = hsh(k), r2 = hsh(k + 77);
+        if (en === "tunnel") { c.fillStyle = "rgba(255,190,80,.55)"; c.fillRect(24, yy - 2, Wd - 48, 4); c.fillStyle = "rgba(255,190,80,.15)"; c.fillRect(24, yy - 14, Wd - 48, 28); c.fillStyle = "#1a1b22"; c.fillRect(0, yy - 15, 18, 30); c.fillRect(Wd - 18, yy - 15, 18, 30); }
+        else if (en === "bridge") { c.fillStyle = "#9aa4bd"; c.fillRect(10, yy - 3, 8, 6); c.fillRect(Wd - 18, yy - 3, 8, 6); c.fillStyle = "rgba(255,240,150," + (0.2 + r1 * 0.5) + ")"; c.fillRect(2 + r2 * 4, yy + 10, 3, 3); c.fillRect(Wd - 6 - r1 * 4, yy - 10, 3, 3); }
+        else if (en === "dirt") { c.fillStyle = "#2c5a22"; c.beginPath(); c.arc(8 + r1 * 4, yy, 7 + r2 * 4, 0, 7); c.fill(); c.beginPath(); c.arc(Wd - 8 - r2 * 4, yy + 12, 6 + r1 * 4, 0, 7); c.fill(); c.fillStyle = "rgba(0,0,0,.18)"; for (var q = 0; q < 6; q++) c.fillRect(24 + hsh(k * 9 + q) * (Wd - 56), yy + (hsh(k * 5 + q) - 0.5) * 28, 4, 3); }
+        else if (en === "city") { var bh = 24 + r1 * 24; c.fillStyle = "#14142a"; c.fillRect(0, yy - bh / 2, 18, bh); c.fillRect(Wd - 18, yy - bh / 2 + 4, 18, bh); c.fillStyle = "rgba(255,220,120,.8)"; for (var j = 0; j < 3; j++) { if (hsh(k * 3 + j) > 0.4) c.fillRect(4, yy - bh / 2 + 4 + j * 8, 4, 3); if (hsh(k * 7 + j) > 0.4) c.fillRect(Wd - 12, yy - bh / 2 + 8 + j * 8, 4, 3); } }
+        else if (en === "coast") { c.fillStyle = "rgba(53,230,255,.28)"; c.fillRect(Wd - 16, yy - 2, 14, 2); c.fillRect(Wd - 12, yy + 8, 10, 2); c.fillStyle = "#c9b77a"; c.fillRect(0, yy - 15, 8, 30); }
+      }
+      for (var j2 = Math.floor((p - 10) / 8.5); j2 <= Math.ceil((p + PY / SC + 6) / 8.5); j2++) {   // segnaletica: tratteggio o tracce di ruote nello sterrato
+        w = j2 * 8.5; yy = Y(w); if (yy < -14 || yy > Hd + 14) continue; var e2 = envAt(w), M = ENVC[e2].mark;
+        for (var l = 1; l < 3; l++) {
+          if (M) { c.fillStyle = M; c.fillRect(20 + lw * l - 1.5, yy - 11, 3, 22); }
+          else { c.fillStyle = "rgba(0,0,0,.22)"; c.fillRect(20 + lw * l - 6, yy - 12, 2, 24); c.fillRect(20 + lw * l + 4, yy - 12, 2, 24); }
+        }
+      }
     }
     (function loop(now) {
       if (done || root.hidden || S.view !== v) { done = true; document.removeEventListener("keydown", key); return; }
@@ -367,28 +414,23 @@
       if (now >= t0 && !fin) { acc += dtf; while (acc >= DT && !hitFlag && !fin) { acc -= DT; simStep(); if (p >= D) { finish(); break; } } }
       if (hitFlag && !done) { crash(); return; }
       vx += (LX(lane) - vx) * 0.3; if (shake > 0) shake -= dtf; if (toastT > 0) toastT -= dtf;
-      var ft = fin ? (now - finT) / 1000 : 0;
+      var ft = fin ? (now - finT) / 1000 : 0, curE = envAt(p);
       c.save(); if (shake > 0) c.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
-      c.clearRect(-10, -10, Wd + 20, Hd + 20); c.fillStyle = "#090d18"; c.fillRect(-10, -10, Wd + 20, Hd + 20);
-      c.fillStyle = "#151b2b"; c.fillRect(20, 0, Wd - 40, Hd);
-      c.strokeStyle = "#35e6ff"; c.lineWidth = 3; c.beginPath(); c.moveTo(20, 0); c.lineTo(20, Hd); c.moveTo(Wd - 20, 0); c.lineTo(Wd - 20, Hd); c.stroke();
-      c.strokeStyle = "rgba(255,255,255,.35)"; c.lineWidth = 3; c.setLineDash([22, 22]); c.lineDashOffset = (p * SC) % 44;
-      for (var k = 1; k < 3; k++) { c.beginPath(); c.moveTo(20 + lw * k, 0); c.lineTo(20 + lw * k, Hd); c.stroke(); } c.setLineDash([]);
-      function Y(d) { return PY - (d - p) * SC; }
+      drawWorld(now);
       var spd = Math.min(1, (sv - v.v0) / (v.vmax - v.v0));
       if (spd > 0.4) { c.strokeStyle = "rgba(255,255,255," + (0.05 + spd * 0.1) + ")"; c.lineWidth = 1; for (var q = 0; q < 8; q++) { var yy = ((q * 67 + p * SC * 1.7) % Hd); c.beginPath(); c.moveTo(6 + (q % 2) * 4, yy); c.lineTo(6 + (q % 2) * 4, yy + 30); c.moveTo(Wd - 6 - (q % 2) * 4, yy); c.lineTo(Wd - 6 - (q % 2) * 4, yy + 30); c.stroke(); } }
       c.textAlign = "center";
       forks.forEach(function (f) {
         var y = Y(f.d), dist = f.d - p;
-        if (dist < 150 && dist > -8) {                                                  // cartello del bivio: 🚁 = sopraelevata sorvegliata, TUNNEL = sicuro
-          var sy = Math.max(34, Math.min(120, Y(f.d - 60) )); var L = f.heli === "L";
-          c.fillStyle = L ? "#3a0d16" : "#0d2b17"; c.fillRect(24, sy - 24, (Wd - 48) / 2 - 2, 48); c.fillStyle = L ? "#0d2b17" : "#3a0d16"; c.fillRect(Wd / 2 + 2, sy - 24, (Wd - 48) / 2 - 2, 48);
-          c.strokeStyle = "#2fd36f"; c.lineWidth = 2; c.strokeRect(24, sy - 24, Wd - 48, 48);
-          c.fillStyle = "#fff"; c.font = "700 13px Rajdhani,sans-serif";
-          c.fillText(L ? "◀ SOPRAELEVATA 🚁" : "◀ TUNNEL", Wd * 0.27, sy + 5); c.fillText(L ? "TUNNEL ▶" : "SOPRAELEVATA 🚁 ▶", Wd * 0.73, sy + 5);
-          c.fillStyle = "#ffd23b"; c.font = "700 11px Rajdhani,sans-serif"; c.fillText("evita l'elicottero 🚁: scegli il TUNNEL", Wd / 2, sy + 40);
+        if (dist < 175 && dist > -8) {                                                  // cartelli: due strade, un simbolo di pericolo accanto a quella controllata
+          var sy = Math.max(36, Math.min(130, Y(f.d - 75)));
+          c.fillStyle = "#0b1f33"; c.fillRect(24, sy - 24, (Wd - 48) / 2 - 2, 48); c.fillRect(Wd / 2 + 2, sy - 24, (Wd - 48) / 2 - 2, 48);
+          c.strokeStyle = "#35e6ff"; c.lineWidth = 2; c.strokeRect(24, sy - 24, Wd - 48, 48);
+          c.fillStyle = "#fff"; c.font = "700 12px Rajdhani,sans-serif";
+          c.fillText("◀ " + f.L.name, Wd * 0.27, sy - 4); c.fillText(f.R.name + " ▶", Wd * 0.73, sy - 4);
+          c.font = "20px sans-serif"; if (f.L.emo) c.fillText(f.L.emo, Wd * 0.27, sy + 18); if (f.R.emo) c.fillText(f.R.emo, Wd * 0.73, sy + 18);
         }
-        if (y > -20 && y < Hd + 20) { c.fillStyle = "rgba(47,211,111,.5)"; c.fillRect(20, y - 2, Wd - 40, 4); }
+        if (y > -20 && y < Hd + 20) { c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(20, y - 2, Wd - 40, 4); c.fillStyle = "rgba(255,255,255,.5)"; c.fillRect(Wd / 2 - 1.5, y - 40, 3, 40); }
       });
       obs.forEach(function (o) {
         var y = Y(o[0]), yb = Y(o[0] + o[3]); if (y < -40 || yb > Hd + 40) return;
@@ -396,24 +438,30 @@
           if (!((o[1] >> l) & 1)) continue; var x = LX(l), ln = o[2], hh = Math.max(14, y - yb);
           if (ln === "block") { c.fillStyle = "#e0183a"; c.fillRect(x - 28, y - 12, 56, 20); c.fillStyle = "#fff"; for (var j = 0; j < 4; j++) c.fillRect(x - 28 + j * 14 + 3, y - 12, 7, 20); }
           else if (ln === "car") { c.fillStyle = "#6ea8ff"; c.fillRect(x - 15, y - 22, 30, 44); c.fillStyle = "#0b1b3a"; c.fillRect(x - 11, y - 14, 22, 12); c.fillStyle = "#fff"; c.fillRect(x - 13, y + 16, 7, 5); c.fillRect(x + 6, y + 16, 7, 5); }
+          else if (ln === "wreck") { c.fillStyle = "#3a2d2d"; c.fillRect(x - 16, y - 22, 32, 44); c.fillStyle = "#151010"; c.fillRect(x - 11, y - 12, 22, 12); c.fillStyle = "#ff8a2b"; c.fillRect(x - 6, y + 6, 12, 6); c.fillStyle = "rgba(255,255,255,.18)"; c.beginPath(); c.arc(x + 4, y - 26, 8, 0, 7); c.fill(); }
+          else if (ln === "rock") { c.fillStyle = "#7d7f8c"; c.beginPath(); c.moveTo(x - 24, y + 10); c.lineTo(x - 14, y - 14); c.lineTo(x + 6, y - 20); c.lineTo(x + 24, y - 4); c.lineTo(x + 18, y + 12); c.closePath(); c.fill(); c.strokeStyle = "#444654"; c.lineWidth = 2; c.stroke(); }
           else if (ln === "wall") { c.fillStyle = "#6b1b2a"; c.fillRect(x - lw / 2 + 3, y - 14, lw - 6, 24); c.fillStyle = "#ff8aa0"; c.font = "700 10px Rajdhani,sans-serif"; c.fillText("MURO", x, y + 3); }
           else if (ln === "light") { var gl = 0.25 + 0.12 * Math.sin(now / 120); c.fillStyle = "rgba(255,240,150," + gl + ")"; c.fillRect(x - lw / 2 + 3, yb, lw - 6, hh); c.strokeStyle = "rgba(255,240,150,.9)"; c.lineWidth = 2; c.strokeRect(x - lw / 2 + 3, yb, lw - 6, hh); c.font = "16px sans-serif"; c.fillText("🚁", x, yb + 14); }
           else if (ln === "oil") { c.fillStyle = "rgba(8,8,12,.95)"; c.beginPath(); c.ellipse(x, y - 4, 30, 14, 0, 0, 7); c.fill(); c.strokeStyle = "#7a5af0"; c.lineWidth = 2; c.stroke(); }
+          else if (ln === "mud") { c.fillStyle = "#3a2410"; c.beginPath(); c.ellipse(x, y - 8, 32, 18, 0, 0, 7); c.fill(); c.strokeStyle = "#6b4620"; c.lineWidth = 2; c.stroke(); }
+          else if (ln === "cone") { c.fillStyle = "#ff8a2b"; for (var cq = -1; cq <= 1; cq++) { c.beginPath(); c.moveTo(x + cq * 16 - 7, y + 8); c.lineTo(x + cq * 16, y - 12); c.lineTo(x + cq * 16 + 7, y + 8); c.fill(); } }
           else { c.fillStyle = "#050509"; c.beginPath(); c.ellipse(x, y - 4, 22, 11, 0, 0, 7); c.fill(); c.strokeStyle = "#555"; c.lineWidth = 2; c.stroke(); }
         }
       });
-      var finish_y = Y(D); if (finish_y > -20 && finish_y < Hd) { for (var s = 0; s < 14; s++) { c.fillStyle = s % 2 ? "#fff" : "#111"; c.fillRect(20 + s * ((Wd - 40) / 14), finish_y - 6, (Wd - 40) / 14, 12); } }
+      var finish_y = Y(D); if (finish_y > -20 && finish_y < Hd) { for (var s2 = 0; s2 < 14; s2++) { c.fillStyle = s2 % 2 ? "#fff" : "#111"; c.fillRect(20 + s2 * ((Wd - 40) / 14), finish_y - 6, (Wd - 40) / 14, 12); } }
       var driveY = PY - (fin ? Math.min(60, ft * 40) : 0);                              // all'arrivo il furgone prosegue da solo
-      var copGap = fin ? 70 + ft * 160 : 64 - spd * 22 + (1 - Math.min(1, sv / v.vmax)) * 0;
+      var copGap = fin ? 70 + ft * 160 : 64 - spd * 22;
       for (var cp = 0; cp < 2; cp++) { var cx = vx + (cp ? 26 : -26), cy = driveY + copGap + cp * 22; if (cy < Hd + 30) { c.fillStyle = "#e9ecf5"; c.fillRect(cx - 12, cy - 20, 24, 42); c.fillStyle = Math.floor(now / 120) % 2 ? "#ff3b5e" : "#3b82ff"; c.fillRect(cx - 10, cy - 6, 9, 5); c.fillStyle = Math.floor(now / 120) % 2 ? "#3b82ff" : "#ff3b5e"; c.fillRect(cx + 1, cy - 6, 9, 5); } }
       c.save(); c.shadowColor = "#ffd23b"; c.shadowBlur = 12; c.fillStyle = "#ffd23b"; c.fillRect(vx - 14, driveY - 24, 28, 48); c.restore();
       c.fillStyle = "#1a1a24"; c.fillRect(vx - 10, driveY - 14, 20, 12); c.fillStyle = "#ff3b5e"; c.fillRect(vx - 12, driveY + 20, 6, 4); c.fillRect(vx + 6, driveY + 20, 6, 4);
+      if (curE === "tunnel") { var gr = c.createRadialGradient(vx, driveY, 30, Wd / 2, Hd / 2, Hd * 0.75); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.65)"); c.fillStyle = gr; c.fillRect(0, 0, Wd, Hd); }
+      if (curE === "dirt" && spd > 0.1) { c.fillStyle = "rgba(150,110,60,.18)"; for (var du = 0; du < 5; du++) { c.beginPath(); c.arc(vx + (Math.random() - 0.5) * 30, driveY + 36 + du * 8, 5 + du * 2, 0, 7); c.fill(); } }
       if (fin) {                                                                          // fari dell'elicottero che sorvolano a vuoto
         var bx = Wd / 2 + Math.sin(ft * 2.2) * (Wd * 0.34); c.fillStyle = "rgba(255,245,170," + Math.max(0, 0.32 - ft * 0.06) + ")"; c.beginPath(); c.moveTo(bx - 8, 0); c.lineTo(bx + 8, 0); c.lineTo(bx + 46, Hd * 0.7); c.lineTo(bx - 46, Hd * 0.7); c.fill();
       }
       c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(20, 6, Wd - 40, 6); c.fillStyle = "#2fd36f"; c.fillRect(20, 6, (Wd - 40) * Math.max(0, Math.min(1, p / D)), 6);
       c.fillStyle = "#fff"; c.font = "700 14px Rajdhani,sans-serif"; c.textAlign = "left"; c.fillText(Math.round(sv * 3.6) + " km/h", 24, 28); c.textAlign = "center";
-      if (toastT > 0) { c.fillStyle = "rgba(0,0,0,.55)"; c.fillRect(Wd / 2 - 90, 40, 180, 26); c.fillStyle = "#ffd23b"; c.font = "700 14px Rajdhani,sans-serif"; c.fillText(toast, Wd / 2, 58); }
+      if (toastT > 0) { c.fillStyle = "rgba(0,0,0,.55)"; c.fillRect(Wd / 2 - 90, Hd - 28 - 0, 180, 24); c.fillStyle = "#ffd23b"; c.font = "700 14px Rajdhani,sans-serif"; c.fillText(toast, Wd / 2, Hd - 11); }
       if (fin) {
         var ban = ft > 0.4 ? Math.min(1, (ft - 0.4) / 0.6) : 0; c.globalAlpha = ban; c.fillStyle = "#2fd36f"; c.font = "700 26px Bungee,sans-serif"; c.fillText("SEMINATI!", Wd / 2, Hd * 0.42); c.font = "700 13px Rajdhani,sans-serif"; c.fillStyle = "#fff"; c.fillText(ft < 2.6 ? "La polizia non riesce più a seguirti…" : "Il furgone sparisce nella notte 🌙", Wd / 2, Hd * 0.42 + 24); c.globalAlpha = 1;
       }
@@ -423,7 +471,6 @@
       requestAnimationFrame(loop);
     })(performance.now());
   }
-
 
   // ---------- selezione: due casseforti (grande = Sdrogo Heist, piccola = Daily Heist) ----------
   function showSelect() {
