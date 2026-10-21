@@ -12,7 +12,7 @@
   function clock(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ":" + pad2(s % 60); }
 
   var root, bal, stage, hud, tEl, aEl, lEl, back;
-  var S = { info: null, view: null, busy: false, t0: 0, left: 0, tick: 0, timers: [], active: false };
+  var S = { base: "/api/heist", mini: null, screen: "", info: null, view: null, busy: false, t0: 0, left: 0, tick: 0, timers: [], active: false };
   var COLORS = ["#ff3b4e", "#3b82ff", "#ffd23b", "#2fd36f", "#a855f7", "#ff8a2b"];
   
   function build() {
@@ -52,7 +52,7 @@
   function drawClock() {
     var r = Math.max(0, S.left - (Date.now() - S.t0) / 1000);
     tEl.textContent = clock(Math.ceil(r)); tEl.classList.toggle("low", r <= 30);
-    if (r <= 0 && S.active && !S.busy) { S.active = false; clearInterval(S.tick); A.api("/api/heist/state").then(handle).catch(function () {}); }
+    if (r <= 0 && S.active && !S.busy) { S.active = false; clearInterval(S.tick); A.api(S.base + "/state").then(handle).catch(function () {}); }
   }
   function drawHud(v) {
     hud.hidden = false;
@@ -65,12 +65,18 @@
   // ---------- apertura / chiusura ----------
   function open() {
     if (!A.inTelegram) { A.toast("Apri da Telegram per giocare"); return; }
-    build(); root.hidden = false; clearTimers(); S.busy = false;
+    build(); root.hidden = false; clearTimers(); S.busy = false; S.base = "/api/heist";
     stage.innerHTML = ""; stage.appendChild(el("div", "pg-empty", "Carico…")); hud.hidden = true;
-    A.api("/api/heist/state").then(handle).catch(function (e) { stage.innerHTML = ""; stage.appendChild(el("div", "pg-empty", errText(e))); });
+    Promise.all([A.api("/api/heist/state"), A.api("/api/mini/state").catch(function () { return null; })]).then(function (r) {
+      var m = r[0], d = r[1]; S.info = m.info || S.info; S.mini = d && d.info || S.mini;
+      if (m.active || m.end) { S.base = "/api/heist"; return handle(m); }
+      if (d && (d.active || d.end)) { S.base = "/api/mini"; return handle(d); }
+      showSelect();
+    }).catch(function (e) { stage.innerHTML = ""; stage.appendChild(el("div", "pg-empty", errText(e))); });
   }
   function close() {
     if (S.busy) return;
+    if (!S.active && (S.screen === "intro" || S.screen === "daily")) { showSelect(); return; }
     if (S.active) A.toast("La rapina continua: il timer corre! Rientra da Sdrogo Heist.");
     clearTimers(); clearInterval(S.tick); S.active = false; root.hidden = true; stage.innerHTML = "";
     A.refreshMe();
@@ -85,7 +91,7 @@
     else if (ev.type === "ok" || ev.type === "level") { A.haptic("ok"); snd("win"); }
     if (j.end) { S.active = false; clearInterval(S.tick); clearTimers(); return showEnd(j.end); }
     if (j.view) { S.active = true; S.view = j.view; drawHud(j.view); showLevel(j.view, ev); return; }
-    S.active = false; hud.hidden = true; showIntro();
+    S.active = false; hud.hidden = true; if (S.base === "/api/mini") showDaily(); else showIntro();
   }
   function post(path, body) {
     if (S.busy) return Promise.resolve(null);
@@ -94,12 +100,12 @@
   }
   function act(a, data) {
     var b = data || {}; b.a = a;
-    return post("/api/heist/act", b).then(function (j) { if (j) handle(j); }).catch(function () {});
+    return post(S.base + "/act", b).then(function (j) { if (j) handle(j); }).catch(function () {});
   }
 
   // ---------- schermata iniziale con il cavo ----------
   function showIntro() {
-    clearTimers(); stage.innerHTML = ""; stage.className = "hs-stage intro"; var I = S.info || {};
+    S.screen = "intro"; S.base = "/api/heist"; clearTimers(); stage.innerHTML = ""; stage.className = "hs-stage intro"; var I = S.info || {};
     var cover = el("div", "hs-cover"); var img = el("img"); img.src = "assets/vault.jpg"; img.alt = ""; cover.appendChild(img);
     cover.appendChild(el("div", "hs-sweep")); stage.appendChild(cover);
     var card = el("div", "hs-card");
@@ -132,22 +138,22 @@
       snd("bigwin"); A.haptic("ok");
       c.appendChild(el("h2", "", "RAPINA PERFETTA!"));
       c.appendChild(el("div", "hs-big", "+" + A.fmt(e.prize) + " $SDG"));
-      c.appendChild(el("p", "hs-lead", "Tempo: " + Math.floor(e.elapsed / 60) + "m " + pad2(e.elapsed % 60) + "s · Allarmi: " + e.alarms + "/3"));
-      c.appendChild(el("p", "hs-prize", "1 Titolo, 1 Persecuzione e 1 STELLA ⭐ aggiunti."));
+      c.appendChild(el("p", "hs-lead", "Tempo: " + Math.floor(e.elapsed / 60) + "m " + pad2(e.elapsed % 60) + "s · Allarmi: " + e.alarms + "/" + (e.mini ? 2 : 3)));
+      if (!e.mini) c.appendChild(el("p", "hs-prize", "1 Titolo, 1 Persecuzione e 1 STELLA ⭐ aggiunti."));
       if (e.msg) c.appendChild(el("p", "hs-lead", e.msg));
     } else {
       snd("lose"); A.haptic("bad");
       c.appendChild(el("h2", "", "RAPINA FALLITA"));
       c.appendChild(el("p", "hs-lead", e.msg || ""));
-      c.appendChild(el("p", "hs-prize", "Hai perso il pass da " + ((S.info && S.info.cost) || 150) + " $SDG."));
+      c.appendChild(el("p", "hs-prize", "Hai perso il pass da " + (e.mini ? ((S.mini && S.mini.cost) || 100) : ((S.info && S.info.cost) || 150)) + " $SDG."));
     }
-    if (e.result !== "win" && e.level && A.isAdmin && A.isAdmin()) {                // admin: ritenta proprio il livello in cui sei caduto
+    if (!e.mini && e.result !== "win" && e.level && A.isAdmin && A.isAdmin()) {                // admin: ritenta proprio il livello in cui sei caduto
       var rt = el("button", "avi-go hs-go", "RIPROVA IL LIVELLO " + e.level); rt.type = "button";
       rt.addEventListener("click", function () { post("/api/heist/start", { lvl: e.level }).then(function (j) { if (j) handle(j); }).catch(function () {}); });
       c.appendChild(rt);
     }
     var again = el("button", "avi-go hs-go", "TORNA ALLA RAPINA"); again.type = "button";
-    again.addEventListener("click", function () { open(); });
+    again.addEventListener("click", function () { if (e.mini) { S.base = "/api/mini"; showDaily(); } else open(); });
     c.appendChild(again); stage.appendChild(c); A.refreshMe();
   }
 
@@ -156,7 +162,7 @@
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
     if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); stage.appendChild(up); later(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
-    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase })[v.kind](v);
+    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice })[v.kind](v);
   }
   function brief(title, text, label, fn) {
     var c = el("div", "hs-card"); c.appendChild(el("h2", "", title)); c.appendChild(el("p", "hs-lead", text));
@@ -354,6 +360,162 @@
       if (t >= v.dur && !done) { done = true; act("ch", { ev: ev, fin: Math.round(t * 1000) }); return; }
       requestAnimationFrame(loop);
     })(performance.now());
+  }
+
+
+  // ---------- selezione: due casseforti (grande = Sdrogo Heist, piccola = Daily Heist) ----------
+  function showSelect() {
+    clearTimers(); S.screen = "select"; S.active = false; S.base = "/api/heist"; hud.hidden = true; clearInterval(S.tick);
+    stage.innerHTML = ""; stage.className = "hs-stage sel";
+    stage.appendChild(el("h2", "hs-seltitle", "SCEGLI LA RAPINA"));
+    var wrap = el("div", "hs-selwrap"), img = el("img"); img.src = "assets/vault2.jpg"; img.alt = ""; wrap.appendChild(img);
+    function spot(cls, label, ox, oy, fn) {
+      var b = el("button", "hs-spot " + cls); b.type = "button"; b.setAttribute("aria-label", label);
+      b.addEventListener("click", function () {
+        if (wrap.classList.contains("zoom")) return; A.haptic("med"); snd("creak");
+        wrap.style.transformOrigin = ox + "% " + oy + "%"; wrap.classList.add("zoom");
+        setTimeout(function () { fn(); stage.classList.add("hs-fadein"); }, 560);
+      });
+      wrap.appendChild(b);
+    }
+    spot("big", "Sdrogo Heist", 62, 50, showIntro);
+    spot("small", "Daily Heist", 16, 62, function () { S.base = "/api/mini"; showDaily(); });
+    stage.appendChild(wrap);
+    stage.appendChild(el("p", "hs-lead hs-selhint", "Tocca una cassaforte: la GRANDE è la rapina principale, la PICCOLA è il Daily Heist (mini rapine veloci)."));
+  }
+
+  // ---------- Daily Heist: mini rapine ----------
+  function showDaily() {
+    clearTimers(); S.screen = "daily"; S.active = false; S.base = "/api/mini"; hud.hidden = true; clearInterval(S.tick);
+    stage.innerHTML = ""; stage.className = "hs-stage daily"; stage.appendChild(el("div", "pg-empty", "Carico…"));
+    A.api("/api/mini/state").then(function (j) {
+      if (j.active || j.end) return handle(j);
+      S.mini = j.info; drawDaily();
+    }).catch(function (e) { stage.innerHTML = ""; stage.appendChild(el("div", "pg-empty", errText(e))); });
+  }
+  function drawDaily() {
+    var I = S.mini; stage.innerHTML = ""; stage.className = "hs-stage daily hs-fadein";
+    var card = el("div", "hs-card");
+    card.appendChild(el("h2", "", "DAILY HEIST"));
+    card.appendChild(el("p", "hs-lead", "Due mini rapine al giorno, uguali per tutti: 3 giochini veloci ciascuna, " + I.time + " secondi in tutto e al " + I.max_alarms + "° allarme si fallisce. Costo " + I.cost + " $SDG, premio fisso " + I.prize + " $SDG. Ogni mini rapina si può rifare fino a " + I.plays + " volte al giorno, almeno " + Math.round(I.gap / 3600) + " ore dopo l'ultima partenza. Dalla mezzanotte italiana cambia lo schema."));
+    stage.appendChild(card);
+    var cd = [];
+    I.minis.forEach(function (m) {
+      var c = el("div", "hs-card hs-mini"); c.appendChild(el("h2", "", m.title.toUpperCase()));
+      var ul = el("ol", "hs-levels"); m.games.forEach(function (n) { var li = el("li"); li.appendChild(el("b", "", n)); ul.appendChild(li); }); c.appendChild(ul);
+      c.appendChild(el("p", "hs-prize", "Oggi: " + m.used + "/" + m.max + " tentativi"));
+      var go = el("button", "avi-go hs-go", ""); go.type = "button"; c.appendChild(go);
+      var t0 = Date.now(), w0 = m.wait;
+      function upd() {
+        var w = w0 < 0 ? -1 : Math.max(0, w0 - Math.floor((Date.now() - t0) / 1000));
+        if (w < 0) { go.disabled = true; go.textContent = "TENTATIVI FINITI: TORNA DOMANI"; }
+        else if (w > 0) { go.disabled = true; go.textContent = "DISPONIBILE TRA " + Math.floor(w / 3600) + ":" + pad2(Math.floor(w / 60) % 60) + ":" + pad2(w % 60); }
+        else if (I.balance != null && I.balance < I.cost) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
+        else { go.disabled = false; go.textContent = "ENTRA · " + I.cost + " $SDG"; }
+      }
+      upd(); S.timers.push(setInterval(upd, 1000));
+      go.addEventListener("click", function () { A.haptic("med"); snd("creak"); S.base = "/api/mini"; post("/api/mini/start", { which: m.id }).then(function (j) { if (j) handle(j); }).catch(function () {}); });
+      stage.appendChild(c);
+    });
+    if (A.isAdmin && A.isAdmin()) {
+      var rs = el("button", "hs-tool", "↺ Azzera attese e tentativi (admin)"); rs.type = "button"; rs.style.alignSelf = "center";
+      rs.addEventListener("click", function () { A.api("/api/mini/reset", "POST", {}).then(function (j) { S.mini = j.info; drawDaily(); }).catch(function (e) { A.toast(errText(e)); }); });
+      stage.appendChild(rs);
+    }
+  }
+
+  // ---------- giochini del Daily Heist ----------
+  function tbar(secs, fn) {                                  // barra del tempo del giochino; allo scadere chiama fn
+    var b = el("div", "hs-tbar"), i = el("i"); b.appendChild(i); stage.appendChild(b); var t0 = performance.now(), v = S.view, fired = false;
+    (function loop(n) { if (fired || root.hidden || S.view !== v) return; var f = (n - t0) / 1000 / secs; i.style.width = Math.max(0, 100 - f * 100) + "%"; if (f >= 1) { fired = true; fn(); return; } requestAnimationFrame(loop); })(t0);
+    return function () { fired = true; };
+  }
+  var HAT = ["#e0183a", "#3b82ff", "#ffd23b", "#2fd36f", "#a855f7", "#ff8a2b"], SKIN = ["#f2c9a0", "#d9a07a", "#a8693f", "#6b4429"];
+  function mgFace(v) {
+    var d = v.data;
+    stage.appendChild(el("div", "hs-sub", "Memorizza le guardie!"));
+    var q = el("div", "hs-sub big", ""); stage.appendChild(q);
+    var grid = el("div", "hs-guards"); stage.appendChild(grid); var cards = [];
+    d.guards.forEach(function (g, i) {
+      var b = el("button", "hs-guard"); b.type = "button"; b.disabled = true;
+      var face = el("i", "gf"); face.style.background = SKIN[g.skin]; var hat = el("i", "gh"); hat.style.background = HAT[g.hat];
+      var bd = el("i", "gb"); bd.style.background = HAT[g.badge]; b.appendChild(face); b.appendChild(hat); if (g.glasses) b.appendChild(el("i", "gg", "🕶")); b.appendChild(bd);
+      b.appendChild(el("span", "gn", String(i + 1)));
+      b.addEventListener("click", function () { if (b.disabled) return; A.haptic("light"); snd("click"); stopT && stopT(); act("an", { i: i }); });
+      grid.appendChild(b); cards.push(b);
+    });
+    var stopT = null;
+    later(function () {
+      cards.forEach(function (b) { b.classList.add("hid"); b.disabled = false; });
+      q.textContent = d.q; stopT = tbar(d.limit, function () { act("to"); });
+    }, d.show * 1000);
+  }
+  var CAB = { Rosso: "#e0183a", Blu: "#3b82ff", Giallo: "#ffd23b", Verde: "#2fd36f" };
+  function mgCable(v) {
+    var d = v.data;
+    stage.appendChild(el("div", "hs-sub big", d.q));
+    var box = el("div", "hs-cables"); stage.appendChild(box); var stop = tbar(d.limit, function () { act("to"); });
+    d.cables.forEach(function (n, i) {
+      var b = el("button", "hs-cable"); b.type = "button"; b.style.setProperty("--c", CAB[n]); b.appendChild(el("span", "cn", n)); b.appendChild(el("span", "cp", String(i + 1)));
+      b.addEventListener("click", function () { A.haptic("med"); snd("click"); stop(); act("an", { i: i }); });
+      box.appendChild(b);
+    });
+  }
+  function mgPrint(v) {
+    var d = v.data;
+    stage.appendChild(el("div", "hs-sub big", "Trova l'impronta IDENTICA a quella in alto"));
+    function draw(m, sz) {
+      var cv = el("canvas", "hs-fp"); cv.width = sz * 2; cv.height = sz * 2; cv.style.width = sz + "px"; cv.style.height = sz + "px"; var c = cv.getContext("2d"); c.scale(2, 2);
+      c.fillStyle = "#0b1424"; c.fillRect(0, 0, sz, sz); var u = sz / 5;
+      for (var i = 0; i < 5; i++) for (var j = 0; j < 5; j++) {
+        c.strokeStyle = m[i][j] ? "#8ff3ff" : "#ff6fc8"; c.lineWidth = Math.max(2, sz / 28);
+        c.beginPath(); if (m[i][j]) { c.arc(j * u + u / 2, i * u + u / 2, u * 0.34, 0.15, Math.PI * 1.1); } else { c.moveTo(j * u + u * 0.2, i * u + u * 0.8); c.lineTo(j * u + u * 0.8, i * u + u * 0.2); } c.stroke();
+      }
+      return cv;
+    }
+    var top = el("div", "hs-fptop"); top.appendChild(draw(d.target, 150)); stage.appendChild(top);
+    var row = el("div", "hs-fprow"); stage.appendChild(row); var stop = tbar(d.limit, function () { act("to"); });
+    d.cands.forEach(function (m, i) {
+      var b = el("button", "hs-fpc"); b.type = "button"; b.appendChild(draw(m, 92));
+      b.addEventListener("click", function () { A.haptic("med"); snd("click"); stop(); act("an", { i: i }); }); row.appendChild(b);
+    });
+  }
+  function mgFreq(v) {
+    var d = v.data;
+    stage.appendChild(el("div", "hs-sub big", "Sovrapponi l'onda verde alla rossa e tienila così " + d.need + " secondi"));
+    var Wd = 330, Hd = 170, cv = el("canvas", "hs-lz"); cv.width = Wd * 2; cv.height = Hd * 2; cv.style.width = Wd + "px"; cv.style.height = Hd + "px"; stage.appendChild(cv);
+    var c = cv.getContext("2d"); c.scale(2, 2);
+    var meter = el("div", "hs-tbar hs-meter"), mi = el("i"); meter.appendChild(mi); stage.appendChild(meter);
+    var sl = el("input", "hs-slider"); sl.type = "range"; sl.min = "1"; sl.max = "5.2"; sl.step = "0.01"; sl.value = "1.2"; stage.appendChild(sl);
+    var t0 = performance.now(), smp = [], lastS = 0, run = 0, lastT = t0, done = false, stop = tbar(d.limit, function () { done = true; act("to"); });
+    function tgt(t) { return d.f0 + d.amp * Math.sin(d.w * t + d.ph); }
+    (function loop(now) {
+      if (done || root.hidden || S.view !== v) return;
+      var t = (now - t0) / 1000, ft = tgt(t), f = +sl.value, ok = Math.abs(f - ft) <= d.tol;
+      run = ok ? run + (now - lastT) / 1000 : 0; lastT = now; mi.style.width = Math.min(100, run / d.need * 100) + "%"; mi.style.background = ok ? "#2fd36f" : "#ff6fc8";
+      if (now - lastS >= 50) { lastS = now; smp.push([Math.round(now - t0), +f.toFixed(3)]); }
+      c.clearRect(0, 0, Wd, Hd); c.fillStyle = "#0b1424"; c.fillRect(0, 0, Wd, Hd);
+      function wave(freq, col, w) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (var x = 0; x <= Wd; x += 3) { var u = x / Wd, y = Hd / 2 + Math.sin(2 * Math.PI * freq * u * 1.4 - t * 5) * (Hd * 0.34); x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); }
+      c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 8; wave(ft, "#ff4d68", 4); c.restore(); c.save(); c.shadowColor = "#2fd36f"; c.shadowBlur = 8; wave(f, "#58ffa8", 3); c.restore();
+      if (run >= d.need) { done = true; stop(); act("fq", { s: smp, fin: Math.round(now - t0) }); return; }
+      requestAnimationFrame(loop);
+    })(t0);
+  }
+  function mgVoice(v) {
+    var d = v.data;
+    stage.appendChild(el("div", "hs-sub big", "TAP quando l'indicatore passa sui nodi 1 → 2 → 3, in ordine"));
+    var bar = el("div", "hs-vbar"); stage.appendChild(bar); var ind = el("i", "vi"); bar.appendChild(ind);
+    d.nodes.forEach(function (n, k) { var z = el("i", "vz", String(k + 1)); z.style.left = ((n - d.w / 2) * 100) + "%"; z.style.width = (d.w * 100) + "%"; bar.appendChild(z); });
+    var dots = el("div", "hs-dots"); for (var q = 0; q < 3; q++) dots.appendChild(el("i", "")); stage.appendChild(dots);
+    var btn = el("button", "avi-go hs-go hs-hold", "TAP!"); btn.type = "button"; stage.appendChild(btn);
+    var t0 = performance.now(), taps = [], done = false, stop = tbar(d.limit, function () { done = true; act("to"); });
+    (function loop(now) { if (done || root.hidden || S.view !== v) return; ind.style.left = (tri(d.phase0 + d.speed * (now - t0) / 1000) * 100) + "%"; requestAnimationFrame(loop); })(t0);
+    btn.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); if (done) return; var tm = Math.round(performance.now() - t0); A.haptic("med"); snd("key");
+      var k = taps.length, p = tri(d.phase0 + d.speed * tm / 1000), good = Math.abs(p - d.nodes[k]) <= d.w / 2 + 0.01; taps.push(tm);
+      dots.children[k].className = good ? "on" : "bad";
+      if (!good || taps.length >= 3) { done = true; stop(); act("vt", { taps: taps }); }
+    });
   }
 
   // ----- 4. Serratura: tieni premuto e rilascia quando l'indicatore è nel verde (zona sempre più stretta) -----

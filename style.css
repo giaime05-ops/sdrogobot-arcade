@@ -790,3 +790,40 @@ button,input,select{font-family:inherit}
 .row[class*="bar-"]::before{opacity:.4}
 .row.r1 .nm-rb,.row.r2 .nm-rb,.row.r3 .nm-rb{background:linear-gradient(90deg,#ff3b4e,#ffd23b,#2fd36f,#35e6ff,#a855f7,#ff3b4e);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;box-shadow:none;filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000)}
 .row.r1 .nm,.row.r2 .nm,.row.r3 .nm{font-size:19px}
+/* heist: scelta rapina, zoom, daily */
+.hs-stage.sel{align-items:center}
+.hs-seltitle{font-family:"Bungee",sans-serif;font-size:20px;color:#ffb0e6;text-shadow:0 0 12px rgba(255,61,176,.7);margin:8px 0 10px;text-align:center}
+.hs-selwrap{position:relative;width:100%;border-radius:14px;overflow:hidden;box-shadow:0 0 24px rgba(168,85,255,.5);transition:transform .56s cubic-bezier(.6,.05,.3,1),opacity .56s ease;will-change:transform}
+.hs-selwrap img{display:block;width:100%;height:auto}
+.hs-selwrap.zoom{transform:scale(3.4);opacity:0}
+.hs-spot{position:absolute;background:transparent;border:2px solid rgba(143,243,255,.0);animation:hsspot 2.2s ease-in-out infinite}
+.hs-spot.big{left:29%;top:5%;width:66%;height:90%;border-radius:50%}
+.hs-spot.small{left:4%;top:38%;width:27%;height:44%;border-radius:16px}
+@keyframes hsspot{50%{border-color:rgba(143,243,255,.75);box-shadow:0 0 18px rgba(143,243,255,.45) inset,0 0 14px rgba(143,243,255,.35)}}
+.hs-selhint{margin-top:12px;text-align:center;font-size:15px}
+.hs-fadein{animation:hsfade .5s ease both}
+@keyframes hsfade{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:none}}
+.hs-stage.daily{gap:10px;overflow:auto}
+.hs-mini h2{font-size:17px}
+.hs-tbar{height:8px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;width:100%;margin:6px 0}
+.hs-tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff6fc8,#35e6ff)}
+.hs-guards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin:6px 0}
+.hs-guard{position:relative;height:104px;border-radius:12px;background:#0f1730;border:1px solid rgba(53,230,255,.3);padding:0}
+.hs-guard .gf{position:absolute;left:50%;top:30px;width:46px;height:50px;margin-left:-23px;border-radius:46% 46% 50% 50%}
+.hs-guard .gh{position:absolute;left:50%;top:16px;width:58px;height:18px;margin-left:-29px;border-radius:10px 10px 4px 4px}
+.hs-guard .gg{position:absolute;left:50%;top:42px;margin-left:-14px;font-size:26px;line-height:1;font-style:normal}
+.hs-guard .gb{position:absolute;right:8px;bottom:8px;width:16px;height:22px;border-radius:3px;border:1px solid #fff}
+.hs-guard .gn{position:absolute;left:6px;top:4px;font:700 13px Rajdhani,sans-serif;color:#8ff3ff}
+.hs-guard.hid .gf,.hs-guard.hid .gh,.hs-guard.hid .gg,.hs-guard.hid .gb{display:none}
+.hs-guard.hid:after{content:"?";position:absolute;inset:0;display:grid;place-items:center;font:700 40px Bungee,sans-serif;color:#35e6ff}
+.hs-cables{display:flex;gap:10px;justify-content:center;width:100%;margin:14px 0}
+.hs-cable{position:relative;flex:1;height:200px;border-radius:12px;background:linear-gradient(180deg,transparent 12%,var(--c) 12%,var(--c) 88%,transparent 88%);border:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;color:#0b0b14;padding:34px 0 8px;filter:drop-shadow(0 0 8px var(--c))}
+.hs-cable .cn{font:700 16px Rajdhani,sans-serif;writing-mode:vertical-rl;transform:rotate(180deg)}.hs-cable .cp{font:700 16px Bungee,sans-serif;color:#fff;text-shadow:0 0 4px #000}
+.hs-fptop{display:flex;justify-content:center;margin:8px 0}
+.hs-fprow{display:flex;gap:10px;justify-content:center;margin:10px 0;width:100%}
+.hs-fpc{padding:4px;border-radius:12px;background:rgba(10,4,20,.55);border:1px solid rgba(255,255,255,.2)}
+.hs-fp{border-radius:8px;display:block}
+.hs-slider{width:100%;margin:12px 0;accent-color:#58ffa8;height:34px}
+.hs-vbar{position:relative;height:54px;border-radius:12px;background:#0b1424;border:1px solid rgba(53,230,255,.4);width:100%;margin:14px 0}
+.hs-vbar .vz{position:absolute;top:4px;bottom:4px;border-radius:8px;background:rgba(47,211,111,.35);border:1px solid #2fd36f;display:grid;place-items:center;font:700 14px Bungee,sans-serif;color:#cfffe3;font-style:normal}
+.hs-vbar .vi{position:absolute;top:0;bottom:0;width:4px;margin-left:-2px;background:#fff;box-shadow:0 0 10px #8ff3ff}
