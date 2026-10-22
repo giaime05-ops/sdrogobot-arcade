@@ -637,8 +637,8 @@
         var w = w0 < 0 ? -1 : Math.max(0, w0 - Math.floor((Date.now() - t0) / 1000));
         if (w < 0) { go.disabled = true; go.textContent = "TENTATIVI FINITI: TORNA DOMANI"; }
         else if (w > 0) { go.disabled = true; go.textContent = "DISPONIBILE TRA " + Math.floor(w / 3600) + ":" + pad2(Math.floor(w / 60) % 60) + ":" + pad2(w % 60); }
-        else if (I.balance != null && I.balance < m.cost) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
-        else { go.disabled = false; go.textContent = m.cost ? "ENTRA · " + m.cost + " $SDG" : "ENTRA · GRATIS"; }
+        else if (I.balance != null && I.balance < (m.cost != null ? m.cost : I.cost)) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
+        else { go.disabled = false; var mc = m.cost != null ? m.cost : I.cost; go.textContent = mc ? "ENTRA · " + mc + " $SDG" : "ENTRA · GRATIS"; }
       }
       upd(); S.timers.push(setInterval(upd, 1000));
       go.addEventListener("click", function () { A.haptic("med"); snd("creak"); S.base = "/api/mini"; post("/api/mini/start", { which: m.id }).then(function (j) { if (j) handle(j); }).catch(function () {}); });
