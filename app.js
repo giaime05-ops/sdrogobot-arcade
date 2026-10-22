@@ -114,28 +114,35 @@
 
   // colore dell'avatar (per ora solo account admin di prova): scelto nel profilo, salvato sul telefono
   var AV = [
-    { id: "viola", g: ["#ff6fc8", "#7a5cff"] }, { id: "azzurro", g: ["#35e6ff", "#2a6bff"] }, { id: "verde", g: ["#52ff9a", "#14a05a"] }, { id: "arancio", g: ["#ffb347", "#ff5a36"] },
-    { id: "rosso", g: ["#ff5a6e", "#a8102a"], lock: "Vinci 25 partite al casinò" }, { id: "oro", g: ["#ffe27a", "#d9a94a"], lock: "Completa lo Sdrogo Heist" },
-    { id: "notte", g: ["#2b2b3a", "#00ffd5"], lock: "Gioca 500 partite nei giochi del casinò" }, { id: "arcobaleno", rb: true, lock: "Raggiungi 5 stelle Heist" }
+    { id: "viola", g: ["#ff6fc8", "#7a5cff"] }, { id: "nero", g: ["#15151c", "#3b3b4d"] }, { id: "rosso", g: ["#ff5a6e", "#a8102a"] },
+    { id: "giallo", g: ["#ffe45a", "#e0a800"], fg: "#3a2a00" }, { id: "verde", g: ["#52ff9a", "#14a05a"] }, { id: "blu", g: ["#4d8bff", "#1c3fd0"] },
+    { id: "azzurro", g: ["#35e6ff", "#2a6bff"] }, { id: "arancio", g: ["#ffb347", "#ff5a36"] }, { id: "argento", g: ["#f4f7fb", "#8e98aa"], fg: "#1b2230", cls: "av-metal" },
+    { id: "smeraldo", g: ["#2cffa0", "#047a4a"], cls: "av-metal" }, { id: "neonfucsia", g: ["#2a0a2a", "#5a0a4e"], fg: "#ff4de0", cls: "av-neon" },
+    { id: "neonviola", g: ["#14062e", "#2c0f6e"], fg: "#b97bff", cls: "av-neon" }, { id: "oro", g: ["#ffe27a", "#d9a94a"], fg: "#3a2600", cls: "av-metal" },
+    { id: "notte", g: ["#2b2b3a", "#00ffd5"] }, { id: "diamante", g: ["#e8fbff", "#7ad9ff"], fg: "#12315a", cls: "av-dia" }, { id: "arcobaleno", rb: true }
   ];
   function avStyle(c) { return c.rb ? "conic-gradient(#ff3b4e,#ffd23b,#2fd36f,#35e6ff,#a855f7,#ff3b4e)" : "linear-gradient(135deg," + c.g[0] + "," + c.g[1] + ")"; }
   // ---- personalizzazione profilo: salvata sul server, visibile a tutti (classifica, profili) ----
-  var NAMEC = { oro: "#ffd24a", ciano: "#35e6ff", viola: "#c28bff", rosa: "#ff6fc8", verde: "#52ff9a", rosso: "#ff5a6e", arancio: "#ffb347" };
+  var NAMEC = { nero: "#0b0b10", ciano: "#35e6ff", viola: "#c28bff", rosa: "#ff6fc8", verde: "#52ff9a", rosso: "#ff5a6e", arancio: "#ffb347", giallo: "#ffe45a", blu: "#4d8bff" };
+  var NMFX = { argento: 1, smeraldo: 1, neonfucsia: 1, neonviola: 1, oro: 1, diamante: 1 };
+  var BARFX = { fiamme: 1, fiammeblu: 1, inferno: 1, fiammeverdi: 1, dragone: 1, leggenda: 1 };
   function avById(id) { return AV.filter(function (c) { return c.id === id; })[0] || null; }
   function nameEl(text, st) {
     var n = document.createElement("span"); n.textContent = text; st = st || {};
-    if (st.name === "arcobaleno") n.className = "nm-rb nm-c"; else if (NAMEC[st.name]) { n.style.color = NAMEC[st.name]; n.className = "nm-c"; }
+    if (st.name === "arcobaleno") n.className = "nm-rb nm-c"; else if (NMFX[st.name]) n.className = "nm-c nm-fx nm-" + st.name;
+    else if (NAMEC[st.name]) { n.style.color = NAMEC[st.name]; n.className = "nm-c" + (st.name === "nero" ? " nm-dark" : ""); }
     return n;
   }
   function styleAvatar(av, st, letter) {
     if (!av) return; st = st || {};
     if (letter) av.textContent = letter;
-    av.className = av.className.replace(/\bfr-\w+/g, "").replace(/\s+/g, " ").trim();
+    av.className = av.className.replace(/\b(fr|av)-\w+/g, "").replace(/\s+/g, " ").trim();
     if (st.frame) av.classList.add("fr-" + st.frame);
     var c = avById(st.av);
-    av.style.background = c ? avStyle(c) : ""; av.style.color = c && c.id === "oro" ? "#3a2600" : "";
+    av.style.background = c ? avStyle(c) : ""; av.style.color = c && c.fg ? c.fg : "";
+    if (c && c.cls) av.classList.add(c.cls, "av-" + c.id);
   }
-  function styleRow(row, st) { if (st && st.bar) row.classList.add("bar-" + st.bar); }
+  function styleRow(row, st) { if (st && st.bar) { row.classList.add("bar-" + st.bar); if (BARFX[st.bar]) row.classList.add("bar-fx"); } }
   function applyAvatar() { styleAvatar($("avatar"), ME.style); }
 
   function render(me, opts) {

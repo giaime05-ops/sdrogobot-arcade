@@ -248,18 +248,35 @@
     }).catch(function (e) { grid.innerHTML = ""; grid.appendChild(el("div", "pg-empty", errMsg(e))); });
   }
   // ---------- Modifica profilo (colori nome/avatar, cornice, barra classifica) ----------
+  // voce = [id, nome, statistica, soglia, come sbloccarla]; senza statistica = colore base libero. "gw:slot" = vittorie in quel gioco.
+  var HEIST = function (n) { return ["stars", n, n === 1 ? "Vinci 1 Sdrogo Heist" : "Vinci " + n + " Sdrogo Heist"]; };
   var KIT = {
-    name: { title: "COLORE NOME", items: [["", "Bianco"], ["viola", "Viola"], ["ciano", "Ciano"], ["verde", "Verde", "quizzes_won", 10, "Vinci 10 quiz"], ["rosa", "Rosa", "duels_wins", 5, "Vinci 5 duelli"],
-      ["arancio", "Arancio", "casino_wins", 25, "Vinci 25 partite al casinò"], ["rosso", "Rosso", "net_profit", 5000, "Raggiungi +5.000 di profitto netto"], ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"],
-      ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
-    av: { title: "COLORE LETTERA AVATAR", items: [["", "Base"], ["viola", "Viola"], ["azzurro", "Azzurro"], ["verde", "Verde", "quizzes_won", 3, "Vinci 3 quiz"], ["arancio", "Arancio", "duels_wins", 3, "Vinci 3 duelli"], ["rosso", "Rosso", "casino_wins", 25, "Vinci 25 partite al casinò"],
-      ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"], ["notte", "Notte", "casino_wins", 100, "Vinci 100 partite al casinò"], ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
-    frame: { title: "CORNICE", items: [["", "Nessuna"], ["neon", "Neon"], ["ghiaccio", "Ghiaccio", "quizzes_won", 10, "Vinci 10 quiz"], ["fuoco", "Fuoco", "casino_wins", 50, "Vinci 50 partite al casinò"],
-      ["oro", "Oro", "stars", 1, "Completa lo Sdrogo Heist"], ["arcobaleno", "Arcobaleno", "stars", 5, "Raggiungi 5 stelle Heist"]] },
-    bar: { title: "BARRA IN CLASSIFICA", items: [["", "Classica"], ["viola", "Viola"], ["ciano", "Ciano", "quizzes_won", 5, "Vinci 5 quiz"], ["verde", "Verde", "duels_wins", 5, "Vinci 5 duelli"],
-      ["rossonero", "Rosso e nero", "casino_wins", 50, "Vinci 50 partite al casinò"], ["fuoco", "Fuoco", "net_profit", 10000, "Raggiungi +10.000 di profitto netto"],
-      ["royal", "Royal", "stars", 3, "Raggiungi 3 stelle Heist"]] }
+    name: { title: "COLORE NOME", items: [["", "Bianco"], ["nero", "Nero"], ["viola", "Viola"], ["rosso", "Rosso"], ["giallo", "Giallo"], ["verde", "Verde"], ["blu", "Blu"],
+      ["ciano", "Ciano", "quizzes_won", 10, "Vinci 10 quiz"], ["rosa", "Rosa", "duels_wins", 5, "Vinci 5 duelli"], ["arancio", "Arancio", "casino_wins", 25, "Vinci 25 partite al casinò"],
+      ["argento", "Argento", "casino_wins", 50, "Vinci 50 partite al casinò"], ["smeraldo", "Smeraldo", "gw:mastermind", 3, "Vinci 3 partite a Mastermind"],
+      ["neonfucsia", "Neon fucsia", "gw:slot", 10, "Vinci 10 volte alle slot"], ["neonviola", "Neon viola", "gw:aviator", 5, "Vinci 5 partite ad Aviator"],
+      ["oro", "Oro", "stars", 1, "Vinci 1 Sdrogo Heist"], ["diamante", "Diamante", "casino_wins", 200, "Vinci 200 partite al casinò"],
+      ["arcobaleno", "Arcobaleno", "stars", 5, "Vinci 5 Sdrogo Heist"]] },
+    av: { title: "COLORE AVATAR", items: [["", "Base"], ["nero", "Nero"], ["rosso", "Rosso"], ["giallo", "Giallo"], ["verde", "Verde"], ["blu", "Blu"],
+      ["azzurro", "Azzurro", "quizzes_won", 3, "Vinci 3 quiz"], ["arancio", "Arancio", "duels_wins", 3, "Vinci 3 duelli"], ["argento", "Argento", "casino_wins", 50, "Vinci 50 partite al casinò"],
+      ["smeraldo", "Smeraldo", "gw:blackjack", 10, "Vinci 10 mani a Blackjack"], ["neonfucsia", "Neon fucsia", "gw:roulette", 5, "Vinci 5 volte alla roulette"],
+      ["neonviola", "Neon viola", "gw:poker", 3, "Vinci 3 partite a Poker"], ["notte", "Notte", "casino_wins", 100, "Vinci 100 partite al casinò"],
+      ["oro", "Oro", "stars", 1, "Vinci 1 Sdrogo Heist"], ["diamante", "Diamante", "casino_wins", 200, "Vinci 200 partite al casinò"], ["arcobaleno", "Arcobaleno", "stars", 5, "Vinci 5 Sdrogo Heist"]] },
+    frame: { title: "CORNICE", items: [["", "Nessuna"], ["neon", "Viola"], ["bianco", "Bianco"], ["nero", "Nero"], ["rosso", "Rosso"], ["giallo", "Giallo"], ["verde", "Verde"], ["blu", "Blu"],
+      ["ghiaccio", "Ghiaccio", "quizzes_won", 10, "Vinci 10 quiz"], ["fuoco", "Fuoco", "casino_wins", 50, "Vinci 50 partite al casinò"], ["argento", "Argento", "gw:wordle", 5, "Vinci 5 partite a Wordle"],
+      ["smeraldo", "Smeraldo", "gw:scratch", 5, "Vinci 5 Gratta e vinci"], ["neonfucsia", "Neon fucsia", "gw:slot", 25, "Vinci 25 volte alle slot"], ["oro", "Oro", "stars", 1, "Vinci 1 Sdrogo Heist"],
+      ["diamante", "Diamante", "gw:mastermind", 10, "Vinci 10 partite a Mastermind"], ["arcobaleno", "Arcobaleno", "stars", 5, "Vinci 5 Sdrogo Heist"]] },
+    bar: { title: "BARRA IN CLASSIFICA (solo Sdrogo Heist)", items: [["", "Classica"], ["viola", "Viola"], ["ciano", "Ciano"], ["verde", "Verde"],
+      ["fiamme", "Fiamme", "stars", 1, "Vinci 1 Sdrogo Heist"], ["fiammeblu", "Fiamme blu", "stars", 3, "Vinci 3 Sdrogo Heist"], ["inferno", "Inferno", "stars", 5, "Vinci 5 Sdrogo Heist"],
+      ["fiammeverdi", "Fiamme verdi", "stars", 10, "Vinci 10 Sdrogo Heist"], ["dragone", "Dragone", "stars", 15, "Vinci 15 Sdrogo Heist"], ["leggenda", "Leggenda", "stars", 20, "Vinci 20 Sdrogo Heist"]] }
   };
+  function statOf(w, key) { return key.indexOf("gw:") === 0 ? ((w.game_wins || {})[key.slice(3)] || 0) : (w[key] || 0); }
+  function preview(k, id) {
+    var st = {}; if (id) st[k] = id;
+    if (k === "name") { var w = el("span", "pe-pv"); w.appendChild(A.nameEl("Aa", st)); return w; }
+    if (k === "bar") { var r = el("div", "row pe-mini"); A.styleRow(r, st); return r; }
+    var a = el("div", "avatar rav pe-av"); A.styleAvatar(a, st, "A"); return a;
+  }
   function editProfile(done) {
     var ov = profOv(); ov.innerHTML = ""; var card = el("div", "set-card prof-card pe-card");
     card.appendChild(el("h2", "", "MODIFICA PROFILO"));
@@ -271,8 +288,9 @@
       pav.className = "avatar rav"; A.styleAvatar(pav, cur, (nameTxt || "?").charAt(0).toUpperCase());
       prev.className = "row pe-prev"; A.styleRow(prev, cur); pnm.innerHTML = ""; pnm.appendChild(A.nameEl(nameTxt, cur));
     }
-    var hint = el("div", "av-hint", "Per prova (solo admin) hai già tutto sbloccato.");
-    A.api("/api/social/wallet").then(function (w) { w.stars = (A.me() || {}).stars || 0; KIT._w = w; build(); }).catch(function () { KIT._w = {}; build(); });
+    var isAd = !!(A.isAdmin && A.isAdmin());
+    var hint = el("div", "av-hint", isAd ? "Account di prova: vedi il 🔒 su ciò che sarebbe bloccato, ma puoi provarlo lo stesso." : "Tocca un oggetto 🔒 per vedere come sbloccarlo.");
+    A.api("/api/social/wallet").then(function (w) { KIT._w = w; build(); }).catch(function () { KIT._w = {}; build(); });
     var box = el("div"); card.appendChild(box);
     function build() {
       box.innerHTML = "";
@@ -281,13 +299,13 @@
         var sec = KIT[k]; box.appendChild(el("div", "pe-lab", sec.title));
         var row = el("div", "pe-row");
         sec.items.forEach(function (it) {
-          var locked = it[2] && !(A.isAdmin && A.isAdmin()) && ((KIT._w || {})[it[2]] || 0) < it[3];
+          var locked = !!it[2] && statOf(KIT._w || {}, it[2]) < it[3];
           var b = el("button", "pe-sw pe-" + k + (cur[k] === it[0] || (!cur[k] && !it[0]) ? " on" : "") + (locked ? " lock" : "")); b.type = "button"; b.title = it[1];
-          b.appendChild(el("span", "pe-dot pe-d-" + k + "-" + (it[0] || "base")));
+          b.appendChild(preview(k, it[0]));
           b.appendChild(el("i", "", it[1]));
           b.addEventListener("click", function () {
-            if (locked) { hint.textContent = "🔒 " + it[1] + ": " + it[4]; A.haptic("light"); return; }
-            hint.textContent = it[2] ? "Sbloccato: " + it[4] + (A.isAdmin() ? " (tu lo hai già per prova)" : "") : "";
+            if (locked && !isAd) { hint.textContent = "🔒 " + it[1] + ": " + it[4]; A.haptic("light"); return; }
+            hint.textContent = locked ? "🔒 " + it[1] + " è bloccato (lo provi perché sei admin): " + it[4] : (it[2] ? "✅ " + it[1] + " sbloccato: " + it[4] : "");
             if (it[0]) cur[k] = it[0]; else delete cur[k];
             Array.prototype.forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); }); paint(); A.haptic("light");
           });
