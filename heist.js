@@ -56,7 +56,7 @@
   }
   function drawHud(v) {
     hud.hidden = false;
-    lEl.textContent = "LIV " + v.level + "/" + (v.total || 6) + " · " + v.name + (v.round ? " · R" + v.round + "/" + v.rounds : "");
+    lEl.textContent = (v.mini ? "" : "LIV ") + v.level + "/" + (v.total || 6) + " · " + v.name + (v.round ? " · R" + v.round + "/" + v.rounds : "");
     aEl.innerHTML = "";
     for (var i = 0; i < v.max_alarms; i++) aEl.appendChild(el("i", i < v.alarms ? "on" : ""));
     startClock(v.left);
@@ -114,7 +114,7 @@
     var ul = el("ol", "hs-levels");
     (I.levels || []).forEach(function (l) { var li = el("li"); li.appendChild(el("b", "", l[0])); li.appendChild(document.createTextNode(" — " + l[1])); ul.appendChild(li); });
     card.appendChild(ul);
-    card.appendChild(el("p", "hs-prize", "Premio: " + (I.share || 20) + "% del Banco (" + (I.share_follia || 50) + "% con la Follia), minimo " + (I.prize_fixed || 200) + " $SDG · +1 Stella ⭐"));
+    card.appendChild(el("p", "hs-prize", "Premio: " + (I.share || 20) + "% del Banco (" + (I.share_follia || 50) + "% con la Follia) · +1 Stella ⭐. Se il Banco è quasi vuoto (raro) il premio è fisso: " + (I.prize_fixed || 500) + " $SDG"));
     var go = el("button", "avi-go hs-go", "ENTRA NELLA RAPINA · " + (I.cost || 150) + " $SDG"); go.type = "button";
     if (I.balance != null && I.balance < (I.cost || 150)) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
     var sel = null;
@@ -135,18 +135,24 @@
     stage.innerHTML = ""; stage.className = "hs-stage end"; hud.hidden = true;
     var c = el("div", "hs-card big " + (e.result === "win" ? "win" : "lose"));
     if (e.result === "win") {
-      c.appendChild(el("h2", "", "RAPINA PERFETTA!"));
+      c.appendChild(el("h2", "", e.alarms ? "RAPINA RIUSCITA!" : "RAPINA PERFETTA!"));
       var big = el("div", "hs-big", "+0 $SDG"); c.appendChild(big);
       var rest = el("div", "hs-rest"); rest.style.opacity = "0";
-      rest.appendChild(el("p", "hs-lead", "Tempo: " + Math.floor(e.elapsed / 60) + "m " + pad2(e.elapsed % 60) + "s · Allarmi: " + e.alarms + "/" + (e.mini ? ((S.mini && S.mini.max_alarms) || 3) : 3)));
+      var tiles = el("div", "hs-tiles");
+      function tile(ic, lab, val) { var t = el("div", "hs-tile"); t.appendChild(el("span", "ti", ic)); t.appendChild(el("b", "", val)); t.appendChild(el("small", "", lab)); tiles.appendChild(t); }
+      tile("⏱️", "tempo", Math.floor(e.elapsed / 60) + ":" + pad2(e.elapsed % 60));
+      tile("🚨", "allarmi", e.alarms + "/" + (e.mini ? ((S.mini && S.mini.max_alarms) || 3) : 3));
+      if (!e.mini) tile("⭐", "stella", "+1");
+      rest.appendChild(tiles);
       if (!e.mini) rest.appendChild(el("p", "hs-prize", "1 Titolo, 1 Persecuzione e 1 STELLA ⭐ aggiunti."));
       if (e.msg) rest.appendChild(el("p", "hs-lead", e.msg));
       c.appendChild(rest);
-      var tot = Math.max(0, e.prize | 0), dur = tot > 0 ? 3800 : 600, ct0 = performance.now(), rain = el("div", "hs-rain"); stage.appendChild(rain);
+      var lastCoin = 0, tot = Math.max(0, e.prize | 0), dur = tot > 0 ? 3800 : 600, ct0 = performance.now(), rain = el("div", "hs-rain"); stage.appendChild(rain);
       function tick(now) {                                                       // la cifra sale piano e poi sempre più veloce, con il tremolio che cresce
         if (!big.isConnected) return;
         var f = Math.min(1, (now - ct0) / dur), val = Math.round(tot * Math.pow(f, 2.6));
         big.textContent = "+" + A.fmt(val) + " $SDG"; big.style.transform = "scale(" + (1 + 0.28 * f) + ") translate(" + ((Math.random() - 0.5) * 10 * f) + "px," + ((Math.random() - 0.5) * 8 * f) + "px)";
+        if (now - lastCoin > 90 - f * 50) { lastCoin = now; snd("chip"); }
         if (Math.random() < 0.15 + f * 0.6) { var coin = el("i", "hs-coin", "🪙"); coin.style.left = (Math.random() * 96) + "%"; coin.style.animationDuration = (0.9 + Math.random() * 0.9) + "s"; rain.appendChild(coin); setTimeout(function () { coin.remove(); }, 2000); }
         if (f < 1) { requestAnimationFrame(tick); return; }
         big.style.transform = "scale(1.28)"; big.classList.add("pop"); snd("bigwin"); A.haptic("ok"); rest.style.transition = "opacity .6s"; rest.style.opacity = "1"; setTimeout(function () { rain.remove(); }, 1600);
@@ -156,7 +162,7 @@
       snd("lose"); A.haptic("bad");
       c.appendChild(el("h2", "", "RAPINA FALLITA"));
       c.appendChild(el("p", "hs-lead", e.msg || ""));
-      c.appendChild(el("p", "hs-prize", "Hai perso il pass da " + (e.mini ? ((S.mini && S.mini.cost) || 100) : ((S.info && S.info.cost) || 150)) + " $SDG."));
+      c.appendChild(el("p", "hs-prize", (e.paid === 0 ? "Questa volta non hai speso nulla." : "Hai perso i " + (e.paid != null ? e.paid : (e.mini ? ((S.mini && S.mini.cost) || 100) : ((S.info && S.info.cost) || 150))) + " $SDG d'ingresso.")));
     }
     if (!e.mini && e.result !== "win" && e.level && A.isAdmin && A.isAdmin()) {                // admin: ritenta proprio il livello in cui sei caduto
       var rt = el("button", "avi-go hs-go", "RIPROVA IL LIVELLO " + e.level); rt.type = "button";
@@ -173,7 +179,7 @@
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
     if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); stage.appendChild(up); later(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
-    ({ seq: lv1, laser: lvLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice, logic: mgLogic, laser: mgLaser })[v.kind](v);
+    ({ seq: lv1, laser: lvLaser, mgl: mgLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice, logic: mgLogic })[v.kind === "laser" && v.data ? "mgl" : v.kind](v);
   }
   function brief(title, text, label, fn) {
     var c = el("div", "hs-card"); c.appendChild(el("h2", "", title)); c.appendChild(el("p", "hs-lead", text));
@@ -268,7 +274,7 @@
     var head = el("div", "hs-sub", "Settore " + (v.r + 1) + "/" + v.rounds + " · Perni 0/" + pins.length); stage.appendChild(head);
     var msgEl = el("div", "hs-sub", "Raggiungi i perni in ordine"); stage.appendChild(msgEl);
     var avail = stage.clientHeight || 520;                                           // il labirinto e i tasti stanno sempre nella stessa schermata
-    var Wd = Math.round(Math.max(210, Math.min(340, (stage.clientWidth || 340) - 16, avail - 150))), cs = Wd / n;
+    var Wd = Math.round(Math.max(210, Math.min(340, (stage.clientWidth || 340) - 16, avail - 205))), cs = Wd / n;
     var cv = el("canvas", "hs-lz"); cv.width = Wd * 2; cv.height = Wd * 2; cv.style.width = Wd + "px"; cv.style.height = Wd + "px"; stage.appendChild(cv);
     var c = cv.getContext("2d"); c.scale(2, 2);
     var t0 = performance.now() + (v.delay || 0) * 1000, pos = [v.start[0], v.start[1]], vis = [pos[0], pos[1]], got = 0, mv = [], lastMv = -999, tEnter = 0, done = false;
@@ -279,13 +285,14 @@
       lastMv = tm; mv.push([Math.round(tm), d]); pos = [pos[0] + DIRV[d][0], pos[1] + DIRV[d][1]]; tEnter = tm; snd("key"); A.haptic("light");
       if (got < pins.length && pos[0] === pins[got][0] && pos[1] === pins[got][1]) { got++; snd("ok"); A.haptic("ok"); head.textContent = "Settore " + (v.r + 1) + "/" + v.rounds + " · Perni " + got + "/" + pins.length; msgEl.textContent = got === pins.length ? "Serratura aperta: corri all'uscita!" : "Perno " + got + " attivato: ora il " + (got + 1); }
     }
-    var pad = el("div", "hs-dpad"), order = [3, 0, 2, 1], names = { 0: "▲", 1: "▶", 2: "▼", 3: "◀" };
-    order.forEach(function (d) {
-      var b = el("button", "hs-dp d" + d, names[d]); b.type = "button"; var rep1 = 0, rep2 = 0;
+    var pad = el("div", "hs-dpad"), names = { 0: "▲", 1: "▶", 2: "▼", 3: "◀" };
+    var gl = el("div", "hs-dg l"), gr = el("div", "hs-dg r"); pad.appendChild(gl); pad.appendChild(gr);            // a sinistra ◀ ▶ (pollice sinistro), a destra ▲ ▼ (pollice destro)
+    [[3, gl], [1, gl], [0, gr], [2, gr]].forEach(function (x) {
+      var d = x[0], b = el("button", "hs-dp d" + d, names[d]); b.type = "button"; var rep1 = 0, rep2 = 0;
       function stopRep() { clearTimeout(rep1); clearInterval(rep2); }
       b.addEventListener("pointerdown", function (e) { e.preventDefault(); step(d); stopRep(); rep1 = setTimeout(function () { rep2 = setInterval(function () { step(d); }, 110); }, 260); });   // tenendo premuto si ripete
       ["pointerup", "pointercancel", "pointerleave"].forEach(function (n) { b.addEventListener(n, stopRep); });
-      pad.appendChild(b);
+      x[1].appendChild(b);
     });
     stage.appendChild(pad);
     var sw = null;                                                                    // anche uno scorrimento sul labirinto muove la sonda
@@ -342,12 +349,12 @@
     bridge: { bg: "#0a1436", road: "#1b2238", edge: "#c8d0e0", mark: "rgba(255,255,255,.35)" },
     dirt: { bg: "#1d2a12", road: "#5b3e23", edge: "#8a6a3a", mark: null },
     city: { bg: "#0b0b16", road: "#1b1b27", edge: "#ff6fc8", mark: "rgba(255,255,255,.4)" },
-    coast: { bg: "#06263d", road: "#1c2434", edge: "#35e6ff", mark: "rgba(255,255,255,.35)" }
+    coast: { bg: "#d8c58b", road: "#454a58", edge: "#fff3c4", mark: "rgba(255,255,255,.5)" }
   };
   function hsh(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
   function lvChase(v) {
     if (v.phase === "brief") {
-      brief("FUGA", "Sei alla guida del furgone: parte lento e accelera da solo, tu cambi corsia (tocca a sinistra o a destra dello schermo, o scorri il dito). ❌ Posti di blocco, auto, muri, rocce, relitti e il faro dell'elicottero ti fermano. 🛢️ Olio, buche, fango e coni ti fanno solo rallentare. Ai bivi trovi due strade con i loro cartelli: un simbolo di pericolo (🚁 🚔 🚧 🚨 🚓) segna la strada controllata dalla polizia, l'altra è libera. Cambia ambientazione a seconda della strada che scegli. Raggiungi il traguardo: poi il bot guida per te.", "VIA!", function () { act("rd"); });
+      brief("FUGA", "Sei alla guida del furgone: parte piano e accelera da solo, tu cambi corsia (tocca a sinistra o a destra, o scorri il dito). ❌ Posti di blocco, auto, muri, rocce, palme, relitti e il faro dell'elicottero ti fermano. 🛢️ Olio, buche, fango e coni ti fanno solo rallentare. Ai bivi trovi tre strade, ognuna col suo cartello: due hanno un simbolo di pericolo (🚁 🚓 🚧 🚨), quella senza simbolo è libera. Cambia ambientazione a seconda della strada scelta. Al traguardo il bot guida per te: scappa dalla polizia!", "VIA!", function () { act("rd"); });
       return;
     }
     stage.appendChild(el("div", "hs-sub", "Cambia corsia: tocca a sinistra / destra"));
@@ -365,8 +372,66 @@
     function key(e) { if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); go(1); } }
     document.addEventListener("keydown", key);
     function LX(l) { return 20 + lw * l + lw / 2; }
+    function fopt(f) { return f.opts || [f.L, { name: "✖ chiusa", emo: "" }, f.R]; }       // compatibile col vecchio formato (due sole strade)
+    var endKind = Math.random() < 0.5 ? "jump" : "garage";
     function say2(s, k) { toast = s; toastT = 1.2; if (k) { shake = 0.25; A.haptic("bad"); snd("lose"); } }
     var SLOWK = { oil: "🛢️ OLIO! Rallenti", pit: "🕳️ BUCA! Rallenti", mud: "🟤 FANGO! Rallenti", cone: "🔶 CONI! Rallenti" };
+    // ---- ostacoli disegnati (2D con un po' di profondità) ----
+    var CARC = ["#6ea8ff", "#ff6b6b", "#ffd23b", "#4ee08a", "#c58bff", "#f2f2f2", "#ff9a3c"];
+    function wob(x, y, rx, ry, n, sd, amp) { var pts = []; for (var i = 0; i < n; i++) { var a = i / n * 6.2832, r = 1 - amp + amp * 2 * hsh(sd * 13 + i * 3.7); pts.push([x + Math.cos(a) * rx * r, y + Math.sin(a) * ry * r]); } return pts; }
+    function poly(pts) { c.beginPath(); pts.forEach(function (q, i) { if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.closePath(); }
+    function smooth(pts) { var n = pts.length; c.beginPath(); for (var i = 0; i < n; i++) { var a = pts[i], b = pts[(i + 1) % n], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; if (i === 0) c.moveTo(mx, my); else c.quadraticCurveTo(a[0], a[1], mx, my); } var a0 = pts[0], b0 = pts[1]; c.quadraticCurveTo(a0[0], a0[1], (a0[0] + b0[0]) / 2, (a0[1] + b0[1]) / 2); c.closePath(); }
+    function drawWall(x, y) {
+      var w = lw - 6, h = 28, x0 = x - w / 2, y0 = y - 16; c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(x0 + 3, y0 + h, w, 5);
+      c.fillStyle = "#3b1d16"; c.fillRect(x0, y0, w, h);
+      for (var r = 0; r < 3; r++) { var off = r % 2 ? 0 : -12, by = y0 + 1 + r * 9; for (var bx = x0 + off; bx < x0 + w; bx += 25) { var l = Math.max(bx, x0), rr = Math.min(bx + 24, x0 + w); if (rr - l < 3) continue; c.fillStyle = (r + Math.floor(bx)) % 2 ? "#a6482f" : "#b9553a"; c.fillRect(l, by, rr - l, 8); c.fillStyle = "rgba(255,255,255,.18)"; c.fillRect(l, by, rr - l, 2); } }
+      c.strokeStyle = "#2a130e"; c.lineWidth = 2; c.strokeRect(x0, y0, w, h);
+    }
+    function drawRock(x, y, sd) {
+      c.fillStyle = "rgba(0,0,0,.35)"; c.beginPath(); c.ellipse(x + 4, y + 12, 26, 8, 0, 0, 7); c.fill();
+      var pts = wob(x, y - 2, 25, 17, 9, sd, 0.28); poly(pts); var g = c.createLinearGradient(x - 20, y - 20, x + 20, y + 16); g.addColorStop(0, "#b3b6c4"); g.addColorStop(1, "#4d4f5e"); c.fillStyle = g; c.fill(); c.strokeStyle = "#2f313c"; c.lineWidth = 2; c.stroke();
+      c.strokeStyle = "rgba(0,0,0,.35)"; c.lineWidth = 1.5; c.beginPath(); c.moveTo(pts[1][0], pts[1][1]); c.lineTo(x + 2, y - 2); c.lineTo(pts[5][0], pts[5][1]); c.moveTo(x + 2, y - 2); c.lineTo(pts[7][0], pts[7][1]); c.stroke();
+      c.fillStyle = "rgba(255,255,255,.28)"; c.beginPath(); c.moveTo(pts[0][0] - 6, pts[0][1] - 5); c.lineTo(pts[1][0], pts[1][1]); c.lineTo(x, y - 6); c.closePath(); c.fill();
+    }
+    function drawPalm(x, y, sd) {
+      c.fillStyle = "rgba(0,0,0,.3)"; c.beginPath(); c.ellipse(x + 6, y + 8, 26, 14, 0, 0, 7); c.fill();
+      for (var f = 0; f < 8; f++) { var a = f * 0.785 + sd; c.save(); c.translate(x, y - 2); c.rotate(a); var g = c.createLinearGradient(0, 0, 26, 0); g.addColorStop(0, "#1f6e35"); g.addColorStop(1, "#58c46a"); c.fillStyle = g; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(13, -7, 27, 0); c.quadraticCurveTo(13, 7, 0, 0); c.fill(); c.restore(); }
+      c.fillStyle = "#7a5222"; c.beginPath(); c.arc(x, y - 2, 4.5, 0, 7); c.fill(); c.fillStyle = "#d9a24a"; c.beginPath(); c.arc(x - 1, y - 3, 2, 0, 7); c.fill();
+    }
+    function drawPit(x, y, sd, en) {
+      var dirt = en === "dirt", pts = wob(x, y - 4, 25, 12, 11, sd, 0.32);
+      c.fillStyle = dirt ? "#2a190b" : "#0a0a0f"; poly(pts); c.fill(); c.strokeStyle = dirt ? "#8b6a3c" : "#6a6a78"; c.lineWidth = 2.5; c.stroke();
+      c.strokeStyle = dirt ? "rgba(120,86,48,.8)" : "rgba(130,130,145,.7)"; c.lineWidth = 1.2;
+      for (var k = 0; k < 5; k++) { var q = pts[(k * 2 + 1) % pts.length], dx = q[0] - x, dy = q[1] - (y - 4); c.beginPath(); c.moveTo(q[0], q[1]); c.lineTo(q[0] + dx * 0.35 + (hsh(sd + k) - 0.5) * 8, q[1] + dy * 0.45); c.stroke(); }
+      c.fillStyle = dirt ? "rgba(255,220,160,.12)" : "rgba(255,255,255,.07)"; c.beginPath(); c.ellipse(x - 6, y - 8, 10, 3, 0, 0, 7); c.fill();
+    }
+    function drawOil(x, y, sd, now) {
+      var pts = wob(x, y - 4, 30, 14, 9, sd, 0.22); smooth(pts); var g = c.createRadialGradient(x - 8, y - 9, 2, x, y - 4, 34); g.addColorStop(0, "#1c1530"); g.addColorStop(1, "#050508"); c.fillStyle = g; c.fill();
+      c.save(); smooth(pts); c.clip(); var ph = now / 700 + sd;
+      var cols = ["rgba(120,80,255,.55)", "rgba(40,225,205,.5)", "rgba(255,200,80,.42)", "rgba(255,90,170,.4)"];
+      for (var k = 0; k < 4; k++) { c.strokeStyle = cols[k]; c.lineWidth = 3; c.beginPath(); c.ellipse(x - 5 + Math.sin(ph + k) * 3, y - 6 + k * 1.4, 20 - k * 4, 7 - k * 1.2, -0.2, 3.5, 5.6); c.stroke(); }
+      c.fillStyle = "rgba(255,255,255,.35)"; c.beginPath(); c.ellipse(x - 12, y - 10, 6, 2, -0.3, 0, 7); c.fill(); c.restore();
+      c.strokeStyle = "rgba(160,140,255,.5)"; c.lineWidth = 1.5; smooth(pts); c.stroke();
+    }
+    function drawMud(x, y, sd) {
+      var pts = wob(x, y - 6, 32, 17, 10, sd, 0.25); smooth(pts); c.fillStyle = "#3a2410"; c.fill(); c.strokeStyle = "#6b4620"; c.lineWidth = 2; c.stroke();
+      c.fillStyle = "rgba(160,110,60,.45)"; for (var k = 0; k < 5; k++) { c.beginPath(); c.ellipse(x - 16 + k * 8, y - 8 + (hsh(sd + k) - 0.5) * 12, 4, 2, 0, 0, 7); c.fill(); }
+      c.fillStyle = "#3a2410"; for (var m = 0; m < 4; m++) { c.beginPath(); c.arc(x + (hsh(sd * 3 + m) - 0.5) * 70, y + 8 + hsh(sd * 5 + m) * 8, 2 + hsh(sd + m * 9) * 2, 0, 7); c.fill(); }
+    }
+    function drawCar(x, y, sd) {
+      var col = CARC[Math.floor(hsh(sd) * CARC.length)], vt = Math.floor(hsh(sd + 5) * 3), w = vt === 2 ? 32 : 30, h = vt === 2 ? 52 : 44;
+      c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(x - w / 2 + 3, y - h / 2 + 4, w, h);
+      c.fillStyle = col; c.fillRect(x - w / 2, y - h / 2, w, h); c.fillStyle = "rgba(255,255,255,.25)"; c.fillRect(x - w / 2, y - h / 2, 4, h);
+      c.fillStyle = "#0b1b3a"; c.fillRect(x - w / 2 + 4, y - h / 2 + 8, w - 8, 11); c.fillRect(x - w / 2 + 4, y + h / 2 - 17, w - 8, 8);
+      if (vt === 1) { c.fillStyle = "#111"; c.fillRect(x - 6, y - 5, 12, 2); c.fillRect(x - 6, y - 1, 12, 2); }
+      if (vt === 0) { c.fillStyle = "#ffd23b"; c.fillRect(x - 5, y - 4, 10, 5); }
+      c.fillStyle = "#ffe9a6"; c.fillRect(x - w / 2 + 2, y + h / 2 - 3, 6, 3); c.fillRect(x + w / 2 - 8, y + h / 2 - 3, 6, 3);
+    }
+    function drawVan(x, y, sc, al) {
+      c.save(); c.globalAlpha = al == null ? 1 : al; c.translate(x, y); c.scale(sc, sc);
+      c.shadowColor = "#ffd23b"; c.shadowBlur = 12; c.fillStyle = "#ffd23b"; c.fillRect(-14, -24, 28, 48); c.shadowBlur = 0;
+      c.fillStyle = "#1a1a24"; c.fillRect(-10, -14, 20, 12); c.fillStyle = "#ff3b5e"; c.fillRect(-12, 20, 6, 4); c.fillRect(6, 20, 6, 4); c.restore();
+    }
     function simStep() {
       sv = Math.min(v.vmax, sv + v.acc * DT); p += sv * DT; n++;
       for (var i = 0; i < obs.length; i++) {
@@ -376,7 +441,7 @@
           else { hitFlag = true; return; }
         }
       }
-      while (fi < forks.length && p >= forks[fi].d) { if (lane !== forks[fi].safe) { hitFlag = true; return; } say2("➜ " + (forks[fi].safe === 0 ? forks[fi].L.name : forks[fi].R.name), false); fi++; }
+      while (fi < forks.length && p >= forks[fi].d) { if (lane !== forks[fi].safe) { hitFlag = true; return; } say2("➜ " + fopt(forks[fi])[forks[fi].safe].name, false); fi++; }
     }
     function crash() { done = true; document.removeEventListener("keydown", key); A.haptic("bad"); act("ch", { hit: true }); }
     function finish() {
@@ -398,7 +463,8 @@
         else if (en === "bridge") { c.fillStyle = "#9aa4bd"; c.fillRect(10, yy - 3, 8, 6); c.fillRect(Wd - 18, yy - 3, 8, 6); c.fillStyle = "rgba(255,240,150," + (0.2 + r1 * 0.5) + ")"; c.fillRect(2 + r2 * 4, yy + 10, 3, 3); c.fillRect(Wd - 6 - r1 * 4, yy - 10, 3, 3); }
         else if (en === "dirt") { c.fillStyle = "#2c5a22"; c.beginPath(); c.arc(8 + r1 * 4, yy, 7 + r2 * 4, 0, 7); c.fill(); c.beginPath(); c.arc(Wd - 8 - r2 * 4, yy + 12, 6 + r1 * 4, 0, 7); c.fill(); c.fillStyle = "rgba(0,0,0,.18)"; for (var q = 0; q < 6; q++) c.fillRect(24 + hsh(k * 9 + q) * (Wd - 56), yy + (hsh(k * 5 + q) - 0.5) * 28, 4, 3); }
         else if (en === "city") { var bh = 24 + r1 * 24; c.fillStyle = "#14142a"; c.fillRect(0, yy - bh / 2, 18, bh); c.fillRect(Wd - 18, yy - bh / 2 + 4, 18, bh); c.fillStyle = "rgba(255,220,120,.8)"; for (var j = 0; j < 3; j++) { if (hsh(k * 3 + j) > 0.4) c.fillRect(4, yy - bh / 2 + 4 + j * 8, 4, 3); if (hsh(k * 7 + j) > 0.4) c.fillRect(Wd - 12, yy - bh / 2 + 8 + j * 8, 4, 3); } }
-        else if (en === "coast") { c.fillStyle = "rgba(53,230,255,.28)"; c.fillRect(Wd - 16, yy - 2, 14, 2); c.fillRect(Wd - 12, yy + 8, 10, 2); c.fillStyle = "#c9b77a"; c.fillRect(0, yy - 15, 8, 30); }
+        else if (en === "coast") { c.fillStyle = "#1c8fc0"; c.fillRect(Wd - 15, yy - 15, 15, 30); c.fillStyle = "rgba(255,255,255,.55)"; c.fillRect(Wd - 15 + 2 * r1, yy + 4, 9, 2); c.fillStyle = "#efe0a6"; c.fillRect(Wd - 17, yy - 15, 3, 30);
+          if (r2 > 0.45) { var px = 6 + r1 * 6, py = yy + (r2 - 0.5) * 20; c.fillStyle = "rgba(0,0,0,.25)"; c.beginPath(); c.arc(px + 2, py + 3, 9, 0, 7); c.fill(); c.fillStyle = "#6b4a22"; c.beginPath(); c.arc(px, py, 2, 0, 7); c.fill(); c.fillStyle = "#2f9a4a"; for (var fr = 0; fr < 6; fr++) { c.beginPath(); c.ellipse(px + Math.cos(fr * 1.05) * 5, py + Math.sin(fr * 1.05) * 5, 6, 2, fr * 1.05, 0, 7); c.fill(); } } }
       }
       for (var j2 = Math.floor((p - 10) / 8.5); j2 <= Math.ceil((p + PY / SC + 6) / 8.5); j2++) {   // segnaletica: tratteggio o tracce di ruote nello sterrato
         w = j2 * 8.5; yy = Y(w); if (yy < -14 || yy > Hd + 14) continue; var e2 = envAt(w), M = ENVC[e2].mark;
@@ -407,6 +473,49 @@
           else { c.fillStyle = "rgba(0,0,0,.22)"; c.fillRect(20 + lw * l - 6, yy - 12, 2, 24); c.fillRect(20 + lw * l + 4, yy - 12, 2, 24); }
         }
       }
+    }
+    // ---- finale: il bot guida, il furgone semina la polizia (salto sul fiume o rifugio) e il faro dell'elicottero lo perde ----
+    function drawCop(cx, cy, now) { if (cy > Hd + 30 || cy < -40) return; c.fillStyle = "#e9ecf5"; c.fillRect(cx - 12, cy - 20, 24, 42); c.fillStyle = Math.floor(now / 120) % 2 ? "#ff3b5e" : "#3b82ff"; c.fillRect(cx - 10, cy - 6, 9, 5); c.fillStyle = Math.floor(now / 120) % 2 ? "#3b82ff" : "#ff3b5e"; c.fillRect(cx + 1, cy - 6, 9, 5); }
+    var SP = 120, rampY = Hd * 0.42, gapA = Hd * 0.17, gapB = Hd * 0.31, doorY = Hd * 0.24, tR = 0, tDoor = 0;
+    function endScene(now, ft) {
+      var X = vx, t1 = (PY - (endKind === "jump" ? rampY : doorY + 16)) / SP, y, sc = 1, al = 1;
+      if (endKind === "jump") {
+        c.fillStyle = "#0a2a46"; c.fillRect(20, gapA, Wd - 40, gapB - gapA);                                  // fiume
+        c.fillStyle = "rgba(120,200,255,.35)"; for (var wv = 0; wv < 7; wv++) c.fillRect(24 + ((wv * 47 + now / 30) % (Wd - 60)), gapA + 6 + (wv % 3) * 10, 18, 2);
+        c.fillStyle = "#6b7184"; c.fillRect(20, gapA - 3, Wd - 40, 4); c.fillRect(20, gapB - 1, Wd - 40, 4);
+        c.fillStyle = "#3b3f50"; c.beginPath(); c.moveTo(X - 34, rampY + 26); c.lineTo(X + 34, rampY + 26); c.lineTo(X + 24, rampY); c.lineTo(X - 24, rampY); c.closePath(); c.fill();
+        c.fillStyle = "#ffb347"; for (var rs = 0; rs < 3; rs++) c.fillRect(X - 20 + rs * 14, rampY + 6 + rs * 5, 8, 3);
+        var u = (ft - t1) / 1.1;
+        if (ft < t1) y = PY - SP * ft;
+        else if (u < 1) { y = rampY - (rampY - (gapA - 36)) * u; sc = 1 + 0.55 * Math.sin(Math.PI * u); c.fillStyle = "rgba(0,0,0,.35)"; c.beginPath(); c.ellipse(X + 8, y + 26 + 18 * Math.sin(Math.PI * u), 14 * sc, 9, 0, 0, 7); c.fill(); if (ft - t1 < 0.05) { snd("whoosh"); A.haptic("med"); } }
+        else y = gapA - 36 - SP * (ft - t1 - 1.1);
+        drawVan(X, y, sc, 1);
+        var stopY = rampY + 62;                                                                         // la polizia frena sul bordo
+        for (var cp = 0; cp < 2; cp++) { var cy = Math.max(stopY + cp * 24, PY + 64 + cp * 22 - 104 * ft); drawCop(X + (cp ? 28 : -28), cy, now); if (cy <= stopY + cp * 24 + 1) { c.strokeStyle = "rgba(0,0,0,.4)"; c.lineWidth = 3; c.beginPath(); c.moveTo(X + (cp ? 22 : -34), cy + 20); c.lineTo(X + (cp ? 22 : -34), cy + 52); c.stroke(); } }
+      } else {
+        var bx = X - 52, bw = 104;                                                                      // capannone con portone
+        c.fillStyle = "#17172a"; c.fillRect(bx - 22, doorY - 34, bw + 44, 54); c.fillStyle = "#23233d"; c.fillRect(bx - 22, doorY - 34, bw + 44, 8);
+        c.fillStyle = "#050509"; c.fillRect(bx + 10, doorY - 20, bw - 20, 36);
+        var close = Math.max(0, Math.min(1, (ft - t1 - 0.3) / 0.7));
+        c.fillStyle = "#4a4f66"; c.fillRect(bx + 10, doorY - 20, bw - 20, 36 * close); c.strokeStyle = "#2b2f40"; c.lineWidth = 1; for (var sl2 = 1; sl2 < 4; sl2++) { c.beginPath(); c.moveTo(bx + 10, doorY - 20 + sl2 * 9 * 1); c.lineTo(bx + bw - 10, doorY - 20 + sl2 * 9); c.stroke(); }
+        y = PY - SP * ft; if (ft > t1) { var k = Math.min(1, (ft - t1) / 0.55); y = PY - SP * t1 - 18 * k; sc = 1 - 0.4 * k; al = 1 - k; if (ft - t1 < 0.05) snd("creak"); }
+        drawVan(X, y, sc, al);
+        for (var cp2 = 0; cp2 < 2; cp2++) drawCop(X + (cp2 ? 50 : -50), PY + 70 + cp2 * 24 - 112 * ft, now);        // passano oltre senza vederlo
+      }
+    }
+    function endOver(now, ft) {
+      var tx = endKind === "jump" ? vx : vx, ty = endKind === "jump" ? Hd * 0.3 : doorY, a = 0;
+      if (ft > 1.1) {
+        var f = Math.min(1, (ft - 1.1) / 0.8); a = 0.34 * f;
+        var sx = tx + Math.sin(ft * 2.1) * 70 * f, sy = ty + Math.sin(ft * 1.5) * 26 * f;
+        if (ft > 3.6) { var w = ft - 3.6; sx += w * 130; sy -= w * 70; a *= Math.max(0, 1 - w / 1.6); }                // il faro si allontana
+        if (a > 0.01) {
+          c.fillStyle = "rgba(255,245,170," + a + ")"; c.beginPath(); c.moveTo(sx - 5, 0); c.lineTo(sx + 5, 0); c.lineTo(sx + 44, sy); c.lineTo(sx - 44, sy); c.fill();
+          c.beginPath(); c.ellipse(sx, sy, 46, 18, 0, 0, 7); c.fill(); c.strokeStyle = "rgba(255,245,170," + Math.min(1, a * 2) + ")"; c.lineWidth = 1.5; c.stroke();
+          c.font = "18px sans-serif"; c.textAlign = "center"; c.globalAlpha = Math.min(1, a * 3); c.fillText("🚁", sx + 30, 22); c.globalAlpha = 1;
+        }
+      }
+      if (ft > 2.6) { var ban = Math.min(1, (ft - 2.6) / 0.6); c.globalAlpha = ban; c.textAlign = "center"; c.fillStyle = "#2fd36f"; c.font = "700 26px Bungee,sans-serif"; c.fillText("SEMINATI!", Wd / 2, Hd * 0.86); c.font = "700 13px Rajdhani,sans-serif"; c.fillStyle = "#fff"; c.fillText(ft < 4.2 ? "La polizia ha perso le tue tracce…" : "L'elicottero non vi trova più", Wd / 2, Hd * 0.86 + 22); c.globalAlpha = 1; }
     }
     (function loop(now) {
       if (done || root.hidden || S.view !== v) { done = true; document.removeEventListener("keydown", key); return; }
@@ -422,52 +531,54 @@
       c.textAlign = "center";
       forks.forEach(function (f) {
         var y = Y(f.d), dist = f.d - p;
-        if (dist < 175 && dist > -8) {                                                  // cartelli: due strade, un simbolo di pericolo accanto a quella controllata
-          var sy = Math.max(36, Math.min(130, Y(f.d - 75)));
-          c.fillStyle = "#0b1f33"; c.fillRect(24, sy - 24, (Wd - 48) / 2 - 2, 48); c.fillRect(Wd / 2 + 2, sy - 24, (Wd - 48) / 2 - 2, 48);
-          c.strokeStyle = "#35e6ff"; c.lineWidth = 2; c.strokeRect(24, sy - 24, Wd - 48, 48);
-          c.fillStyle = "#fff"; c.font = "700 12px Rajdhani,sans-serif";
-          c.fillText("◀ " + f.L.name, Wd * 0.27, sy - 4); c.fillText(f.R.name + " ▶", Wd * 0.73, sy - 4);
-          c.font = "20px sans-serif"; if (f.L.emo) c.fillText(f.L.emo, Wd * 0.27, sy + 18); if (f.R.emo) c.fillText(f.R.emo, Wd * 0.73, sy + 18);
+        if (dist < 190 && dist > -8) {                                                  // portale con un cartello per corsia: i simboli segnano le due strade controllate
+          var sy = Math.max(40, Math.min(132, Y(f.d - 80))), os = fopt(f);
+          c.fillStyle = "#5a6275"; c.fillRect(20, sy - 34, 4, 40); c.fillRect(Wd - 24, sy - 34, 4, 40);
+          for (var ol = 0; ol < 3; ol++) {
+            var gx = 20 + lw * ol + 3;
+            c.fillStyle = "#0b1f33"; c.fillRect(gx, sy - 32, lw - 6, 50); c.strokeStyle = "#35e6ff"; c.lineWidth = 2; c.strokeRect(gx, sy - 32, lw - 6, 50);
+            c.fillStyle = "#fff"; c.font = "700 11px Rajdhani,sans-serif"; c.fillText(os[ol].name, LX(ol), sy - 16);
+            c.fillStyle = "#35e6ff"; c.font = "700 14px sans-serif"; c.fillText("▼", LX(ol), sy - 2);
+            c.font = "22px sans-serif"; c.fillStyle = "#fff"; if (os[ol].emo) c.fillText(os[ol].emo, LX(ol), sy + 14);
+          }
         }
-        if (y > -20 && y < Hd + 20) { c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(20, y - 2, Wd - 40, 4); c.fillStyle = "rgba(255,255,255,.5)"; c.fillRect(Wd / 2 - 1.5, y - 40, 3, 40); }
+        if (y > -20 && y < Hd + 20) { c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(20, y - 2, Wd - 40, 4); c.fillStyle = "rgba(255,255,255,.5)"; c.fillRect(20 + lw - 1.5, y - 40, 3, 40); c.fillRect(20 + 2 * lw - 1.5, y - 40, 3, 40); }
       });
       obs.forEach(function (o) {
         var y = Y(o[0]), yb = Y(o[0] + o[3]); if (y < -40 || yb > Hd + 40) return;
         for (var l = 0; l < 3; l++) {
           if (!((o[1] >> l) & 1)) continue; var x = LX(l), ln = o[2], hh = Math.max(14, y - yb);
-          if (ln === "block") { c.fillStyle = "#e0183a"; c.fillRect(x - 28, y - 12, 56, 20); c.fillStyle = "#fff"; for (var j = 0; j < 4; j++) c.fillRect(x - 28 + j * 14 + 3, y - 12, 7, 20); }
-          else if (ln === "car") { c.fillStyle = "#6ea8ff"; c.fillRect(x - 15, y - 22, 30, 44); c.fillStyle = "#0b1b3a"; c.fillRect(x - 11, y - 14, 22, 12); c.fillStyle = "#fff"; c.fillRect(x - 13, y + 16, 7, 5); c.fillRect(x + 6, y + 16, 7, 5); }
+          var sd = o[0] * 0.37 + l, en2 = envAt(o[0]);
+          if (ln === "block") { c.fillStyle = "#e0183a"; c.fillRect(x - 28, y - 12, 56, 20); c.fillStyle = "#fff"; for (var j = 0; j < 4; j++) c.fillRect(x - 28 + j * 14 + 3, y - 12, 7, 20); c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(x - 28, y + 8, 56, 3); }
+          else if (ln === "car") drawCar(x, y, sd);
           else if (ln === "wreck") { c.fillStyle = "#3a2d2d"; c.fillRect(x - 16, y - 22, 32, 44); c.fillStyle = "#151010"; c.fillRect(x - 11, y - 12, 22, 12); c.fillStyle = "#ff8a2b"; c.fillRect(x - 6, y + 6, 12, 6); c.fillStyle = "rgba(255,255,255,.18)"; c.beginPath(); c.arc(x + 4, y - 26, 8, 0, 7); c.fill(); }
-          else if (ln === "rock") { c.fillStyle = "#7d7f8c"; c.beginPath(); c.moveTo(x - 24, y + 10); c.lineTo(x - 14, y - 14); c.lineTo(x + 6, y - 20); c.lineTo(x + 24, y - 4); c.lineTo(x + 18, y + 12); c.closePath(); c.fill(); c.strokeStyle = "#444654"; c.lineWidth = 2; c.stroke(); }
-          else if (ln === "wall") { c.fillStyle = "#6b1b2a"; c.fillRect(x - lw / 2 + 3, y - 14, lw - 6, 24); c.fillStyle = "#ff8aa0"; c.font = "700 10px Rajdhani,sans-serif"; c.fillText("MURO", x, y + 3); }
+          else if (ln === "rock") drawRock(x, y, sd);
+          else if (ln === "palm") drawPalm(x, y, sd);
+          else if (ln === "wall") drawWall(x, y);
           else if (ln === "light") { var gl = 0.25 + 0.12 * Math.sin(now / 120); c.fillStyle = "rgba(255,240,150," + gl + ")"; c.fillRect(x - lw / 2 + 3, yb, lw - 6, hh); c.strokeStyle = "rgba(255,240,150,.9)"; c.lineWidth = 2; c.strokeRect(x - lw / 2 + 3, yb, lw - 6, hh); c.font = "16px sans-serif"; c.fillText("🚁", x, yb + 14); }
-          else if (ln === "oil") { c.fillStyle = "rgba(8,8,12,.95)"; c.beginPath(); c.ellipse(x, y - 4, 30, 14, 0, 0, 7); c.fill(); c.strokeStyle = "#7a5af0"; c.lineWidth = 2; c.stroke(); }
-          else if (ln === "mud") { c.fillStyle = "#3a2410"; c.beginPath(); c.ellipse(x, y - 8, 32, 18, 0, 0, 7); c.fill(); c.strokeStyle = "#6b4620"; c.lineWidth = 2; c.stroke(); }
-          else if (ln === "cone") { c.fillStyle = "#ff8a2b"; for (var cq = -1; cq <= 1; cq++) { c.beginPath(); c.moveTo(x + cq * 16 - 7, y + 8); c.lineTo(x + cq * 16, y - 12); c.lineTo(x + cq * 16 + 7, y + 8); c.fill(); } }
-          else { c.fillStyle = "#050509"; c.beginPath(); c.ellipse(x, y - 4, 22, 11, 0, 0, 7); c.fill(); c.strokeStyle = "#555"; c.lineWidth = 2; c.stroke(); }
+          else if (ln === "oil") drawOil(x, y, sd, now);
+          else if (ln === "mud") drawMud(x, y, sd);
+          else if (ln === "cone") { for (var cq = -1; cq <= 1; cq++) { var kx = x + cq * 16; c.fillStyle = "rgba(0,0,0,.3)"; c.beginPath(); c.ellipse(kx + 2, y + 9, 9, 3, 0, 0, 7); c.fill(); c.fillStyle = "#ff8a2b"; c.beginPath(); c.moveTo(kx - 7, y + 8); c.lineTo(kx, y - 12); c.lineTo(kx + 7, y + 8); c.fill(); c.fillStyle = "#fff"; c.fillRect(kx - 4, y - 2, 8, 3); } }
+          else drawPit(x, y, sd, en2);
         }
       });
       var finish_y = Y(D); if (finish_y > -20 && finish_y < Hd) { for (var s2 = 0; s2 < 14; s2++) { c.fillStyle = s2 % 2 ? "#fff" : "#111"; c.fillRect(20 + s2 * ((Wd - 40) / 14), finish_y - 6, (Wd - 40) / 14, 12); } }
-      var driveY = PY - (fin ? Math.min(60, ft * 40) : 0);                              // all'arrivo il furgone prosegue da solo
-      var copGap = fin ? 70 + ft * 160 : 64 - spd * 22;
-      for (var cp = 0; cp < 2; cp++) { var cx = vx + (cp ? 26 : -26), cy = driveY + copGap + cp * 22; if (cy < Hd + 30) { c.fillStyle = "#e9ecf5"; c.fillRect(cx - 12, cy - 20, 24, 42); c.fillStyle = Math.floor(now / 120) % 2 ? "#ff3b5e" : "#3b82ff"; c.fillRect(cx - 10, cy - 6, 9, 5); c.fillStyle = Math.floor(now / 120) % 2 ? "#3b82ff" : "#ff3b5e"; c.fillRect(cx + 1, cy - 6, 9, 5); } }
-      c.save(); c.shadowColor = "#ffd23b"; c.shadowBlur = 12; c.fillStyle = "#ffd23b"; c.fillRect(vx - 14, driveY - 24, 28, 48); c.restore();
-      c.fillStyle = "#1a1a24"; c.fillRect(vx - 10, driveY - 14, 20, 12); c.fillStyle = "#ff3b5e"; c.fillRect(vx - 12, driveY + 20, 6, 4); c.fillRect(vx + 6, driveY + 20, 6, 4);
+      var driveY = PY;
+      if (fin) endScene(now, ft);
+      else {
+        var copGap = 64 - spd * 22;
+        for (var cp = 0; cp < 2; cp++) drawCop(vx + (cp ? 26 : -26), driveY + copGap + cp * 22, now);
+        drawVan(vx, driveY, 1, 1);
+      }
       if (curE === "tunnel") { var gr = c.createRadialGradient(vx, driveY, 30, Wd / 2, Hd / 2, Hd * 0.75); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.65)"); c.fillStyle = gr; c.fillRect(0, 0, Wd, Hd); }
       if (curE === "dirt" && spd > 0.1) { c.fillStyle = "rgba(150,110,60,.18)"; for (var du = 0; du < 5; du++) { c.beginPath(); c.arc(vx + (Math.random() - 0.5) * 30, driveY + 36 + du * 8, 5 + du * 2, 0, 7); c.fill(); } }
-      if (fin) {                                                                          // fari dell'elicottero che sorvolano a vuoto
-        var bx = Wd / 2 + Math.sin(ft * 2.2) * (Wd * 0.34); c.fillStyle = "rgba(255,245,170," + Math.max(0, 0.32 - ft * 0.06) + ")"; c.beginPath(); c.moveTo(bx - 8, 0); c.lineTo(bx + 8, 0); c.lineTo(bx + 46, Hd * 0.7); c.lineTo(bx - 46, Hd * 0.7); c.fill();
-      }
+      if (fin) endOver(now, ft);
       c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(20, 6, Wd - 40, 6); c.fillStyle = "#2fd36f"; c.fillRect(20, 6, (Wd - 40) * Math.max(0, Math.min(1, p / D)), 6);
       c.fillStyle = "#fff"; c.font = "700 14px Rajdhani,sans-serif"; c.textAlign = "left"; c.fillText(Math.round(sv * 3.6) + " km/h", 24, 28); c.textAlign = "center";
       if (toastT > 0) { c.fillStyle = "rgba(0,0,0,.55)"; c.fillRect(Wd / 2 - 90, Hd - 28 - 0, 180, 24); c.fillStyle = "#ffd23b"; c.font = "700 14px Rajdhani,sans-serif"; c.fillText(toast, Wd / 2, Hd - 11); }
-      if (fin) {
-        var ban = ft > 0.4 ? Math.min(1, (ft - 0.4) / 0.6) : 0; c.globalAlpha = ban; c.fillStyle = "#2fd36f"; c.font = "700 26px Bungee,sans-serif"; c.fillText("SEMINATI!", Wd / 2, Hd * 0.42); c.font = "700 13px Rajdhani,sans-serif"; c.fillStyle = "#fff"; c.fillText(ft < 2.6 ? "La polizia non riesce più a seguirti…" : "Il furgone sparisce nella notte 🌙", Wd / 2, Hd * 0.42 + 24); c.globalAlpha = 1;
-      }
       c.restore();
       if (now < t0) { c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, Wd, Hd); c.fillStyle = "#fff"; c.font = "700 30px Bungee,sans-serif"; c.textAlign = "center"; c.fillText(String(Math.ceil((t0 - now) / 1000)), Wd / 2, Hd / 2); }
-      if (fin && ft >= 4.6 && reply) { done = true; document.removeEventListener("keydown", key); if (!reply._none) handle(reply); return; }
+      if (fin && ft >= 6.0 && reply) { done = true; document.removeEventListener("keydown", key); if (!reply._none) handle(reply); return; }
       requestAnimationFrame(loop);
     })(performance.now());
   }
@@ -506,7 +617,14 @@
     var I = S.mini; stage.innerHTML = ""; stage.className = "hs-stage daily hs-fadein";
     var card = el("div", "hs-card");
     card.appendChild(el("h2", "", "DAILY HEIST"));
-    card.appendChild(el("p", "hs-lead", "Due mini rapine al giorno, uguali per tutti: 3 giochini ciascuna (memoria, matematica, logica, riflessi) con 3 round di difficoltà crescente, " + I.time + " secondi in tutto e al " + I.max_alarms + "° allarme si fallisce. Costo " + I.cost + " $SDG, premio fisso " + I.prize + " $SDG. Ogni mini rapina si può rifare fino a " + I.plays + " volte al giorno, almeno " + Math.round(I.gap / 3600) + " ore dopo l'ultima partenza. Dalla mezzanotte italiana cambia lo schema."));
+    var cs = I.costs || [I.cost];
+    var ul0 = el("ul", "hs-rules2");
+    [ "2 mini rapine al giorno, uguali per tutti, con 3 giochini ciascuna e 3 round di difficoltà crescente",
+      I.time + " secondi in tutto · al " + I.max_alarms + "° allarme la rapina fallisce",
+      "Ingresso: " + (cs.length > 1 ? "la 1ª volta " + (cs[0] ? cs[0] + " $SDG" : "GRATIS") + ", la 2ª " + cs[1] + " $SDG, la 3ª " + cs[cs.length - 1] + " $SDG" : cs[0] + " $SDG") + " · premio fisso " + I.prize + " $SDG",
+      "Fino a " + I.plays + " tentativi al giorno per ciascuna, con " + Math.round(I.gap / 3600) + " ore di pausa tra uno e l'altro",
+      "Lo schema cambia a mezzanotte (ora italiana)" ].forEach(function (t) { ul0.appendChild(el("li", "", t)); });
+    card.appendChild(ul0);
     stage.appendChild(card);
     var cd = [];
     I.minis.forEach(function (m) {
@@ -519,8 +637,8 @@
         var w = w0 < 0 ? -1 : Math.max(0, w0 - Math.floor((Date.now() - t0) / 1000));
         if (w < 0) { go.disabled = true; go.textContent = "TENTATIVI FINITI: TORNA DOMANI"; }
         else if (w > 0) { go.disabled = true; go.textContent = "DISPONIBILE TRA " + Math.floor(w / 3600) + ":" + pad2(Math.floor(w / 60) % 60) + ":" + pad2(w % 60); }
-        else if (I.balance != null && I.balance < I.cost) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
-        else { go.disabled = false; go.textContent = "ENTRA · " + I.cost + " $SDG"; }
+        else if (I.balance != null && I.balance < m.cost) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
+        else { go.disabled = false; go.textContent = m.cost ? "ENTRA · " + m.cost + " $SDG" : "ENTRA · GRATIS"; }
       }
       upd(); S.timers.push(setInterval(upd, 1000));
       go.addEventListener("click", function () { A.haptic("med"); snd("creak"); S.base = "/api/mini"; post("/api/mini/start", { which: m.id }).then(function (j) { if (j) handle(j); }).catch(function () {}); });
@@ -668,7 +786,8 @@
     var term = el("div", "hs-term");
     term.appendChild(el("div", "hs-tl", "OBIETTIVO")); term.appendChild(el("div", "hs-target", String(v.target)));
     term.appendChild(el("div", "hs-tl", "VALORE ATTUALE")); term.appendChild(el("div", "hs-val", String(v.val)));
-    term.appendChild(el("div", "hs-tl", "Parti da " + v.start + " · si può fare in " + v.min_moves + " mosse (ne hai 5) · mosse rimaste"));
+    term.appendChild(el("div", "hs-tl", "Parti da " + v.start + " · si risolve in " + v.min_moves + " mosse"));
+    term.appendChild(el("div", "hs-tl", "Mosse rimaste (" + v.left_moves + "/5)"));
     term.appendChild(dots(5, v.left_moves)); stage.appendChild(term);
     var ops = el("div", "hs-ops"); stage.appendChild(ops);
     v.ops.forEach(function (o, i) {
@@ -677,22 +796,23 @@
       ops.appendChild(b);
     });
     var r = el("button", "avi-back hs-reset", "🔄 RESET"); r.type = "button"; r.addEventListener("click", function () { act("hr"); }); stage.appendChild(r);
-    stage.appendChild(el("div", "hs-note", "÷ solo se il valore è divisibile · niente valori negativi"));
+    stage.insertBefore(el("div", "hs-note", "÷ solo se il valore è divisibile · niente valori negativi"), r);
   }
 
   // ----- 4. Caveau: codice a 4 cifre (tutte diverse) -----
   var guess = [];
   function lv4(v) {
     guess = [];
-    var top = el("div", "hs-sub", "Caveau · tentativi " + v.tries + "/" + v.max_tries + " · ⏳ "); var vt = el("b", "", clock(v.vault_left)); top.appendChild(vt); stage.appendChild(top);
-    var vl = v.vault_left, t0 = Date.now(); S.timers.push(setInterval(function () { vt.textContent = clock(Math.max(0, vl - (Date.now() - t0) / 1000)); }, 500));
-    var hint = el("div", "hs-hint"); hint.appendChild(document.createTextNode("Intercettato: "));
-    for (var i = 0; i < 4; i++) hint.appendChild(el("span", i === v.hint[0] ? "on" : "", i === v.hint[0] ? String(v.hint[1]) : "▫"));
+    stage.appendChild(el("div", "hs-sub", "Caveau · tentativo " + Math.min(v.max_tries, v.tries + 1) + "/" + v.max_tries));
+    var hint = el("div", "hs-hint"); hint.appendChild(document.createTextNode("Cifre già note: "));
+    var known = {}; (v.hints || []).forEach(function (h) { known[h[0]] = h[1]; });
+    for (var i = 0; i < 4; i++) hint.appendChild(el("span", known[i] != null ? "on" : "", known[i] != null ? String(known[i]) : "▫"));
     stage.appendChild(hint);
     var hist = el("div", "hs-hist"); stage.appendChild(hist);
-    v.hist.slice(-5).forEach(function (h) {
+    v.hist.forEach(function (h) {
       var r = el("div", "hs-hrow"); r.appendChild(el("b", "", h[0].join(" "))); r.appendChild(el("span", "g", "🟢 " + h[1])); r.appendChild(el("span", "y", "🟡 " + h[2])); hist.appendChild(r);
     });
+    hist.scrollTop = hist.scrollHeight; later(function () { hist.scrollTop = hist.scrollHeight; }, 50);
     var slots = el("div", "hs-slots"); stage.appendChild(slots);
     function draw() { slots.innerHTML = ""; for (var k = 0; k < 4; k++) slots.appendChild(el("i", guess[k] != null ? "on" : "", guess[k] != null ? String(guess[k]) : "")); }
     draw();
@@ -706,7 +826,7 @@
     var ok = el("button", "hs-key send", "INVIA"); ok.type = "button";
     ok.addEventListener("click", function () { if (guess.length !== 4) { A.toast("Servono 4 cifre"); return; } act("vs", { g: guess.slice() }); });
     pad.appendChild(ok);
-    stage.appendChild(el("div", "hs-note", "🟢 cifra giusta al posto giusto · 🟡 cifra giusta al posto sbagliato · cifre tutte diverse"));
+    stage.appendChild(el("div", "hs-note", "🟢 cifra giusta al posto giusto · 🟡 cifra giusta al posto sbagliato · le 4 cifre sono tutte diverse"));
   }
 
   // ----- 5. Fuga: rapporti e mezzi -----

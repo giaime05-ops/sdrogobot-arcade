@@ -661,9 +661,9 @@ button,input,select{font-family:inherit}
 .hs-card.lose h2{color:#ff9aa8}
 .hs-sub{font-family:"Rajdhani",sans-serif;font-size:15px;color:#cdbfea;text-align:center}.hs-sub.big{font-size:20px;color:#fff;font-weight:700}
 .hs-note{font-size:12px;color:#a99bc7;text-align:center;max-width:340px}
-.hs-up{position:absolute;left:0;right:0;top:40%;text-align:center;z-index:5;font-family:"Bungee",sans-serif;font-size:20px;color:#7dffb0;text-shadow:0 0 18px rgba(80,255,150,.8);animation:hsup 1.5s ease both;pointer-events:none}
-@keyframes hsup{0%{opacity:0;transform:scale(.8)}15%,80%{opacity:1;transform:none}100%{opacity:0}}
-.hs-say{position:absolute;left:12px;right:12px;top:6px;z-index:6;padding:9px 12px;border-radius:12px;text-align:center;font-size:14px;font-weight:600;background:rgba(14,8,24,.94);border:1px solid rgba(255,255,255,.2);color:#fff;pointer-events:none}.hs-say.bad{border-color:#ff3b4e;color:#ffb3bf}.hs-say.ok{border-color:#2fd36f;color:#b9ffd2}
+.hs-up{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 74px);white-space:nowrap;padding:8px 18px;border-radius:14px;background:rgba(8,20,16,.96);border:1px solid rgba(80,255,150,.5);text-align:center;z-index:7;font-family:"Bungee",sans-serif;font-size:20px;color:#7dffb0;text-shadow:0 0 18px rgba(80,255,150,.8);animation:hsup 1.5s ease both;pointer-events:none}
+@keyframes hsup{0%{opacity:0;transform:translateX(-50%) scale(.8)}15%,80%{opacity:1;transform:translateX(-50%)}100%{opacity:0;transform:translateX(-50%)}}
+.hs-say{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);z-index:8;padding:9px 12px;border-radius:12px;text-align:center;font-size:14px;font-weight:600;background:rgba(14,8,24,.94);border:1px solid rgba(255,255,255,.2);color:#fff;pointer-events:none}.hs-say.bad{border-color:#ff3b4e;color:#ffb3bf}.hs-say.ok{border-color:#2fd36f;color:#b9ffd2}
 .hs-flash{position:absolute;inset:0;pointer-events:none;z-index:8;opacity:0}.hs-flash.bad{background:radial-gradient(circle,rgba(255,40,70,.0) 30%,rgba(255,40,70,.55))}.hs-flash.go{animation:hsfl .7s ease-out}
 @keyframes hsfl{0%{opacity:1}100%{opacity:0}}
 /* livello 1 */
@@ -938,3 +938,23 @@ button,input,select{font-family:inherit}
 .mx-bets button{font:700 16px Rajdhani,sans-serif;padding:10px 14px;border-radius:12px;border:1px solid rgba(53,230,255,.5);background:rgba(53,230,255,.1);color:#fff;cursor:pointer}
 .mx-bets button.f{border-color:rgba(255,107,138,.6);background:rgba(255,107,138,.12)}.mx-bets button.r{border-color:rgba(255,61,176,.7);background:rgba(255,61,176,.14)}
 .mx-bets button:disabled{opacity:.4}
+
+/* Bypass circuiti: tasti a due pollici (◀ ▶ a sinistra, ▲ ▼ a destra) + caveau compatto */
+.hs-dpad{justify-content:space-between !important;width:100%;max-width:340px;gap:10px !important;align-items:center}
+.hs-dg{display:flex;gap:6px}.hs-dg.r{flex-direction:column}
+.hs-dg.l .hs-dp{width:68px;height:96px}.hs-dg.r .hs-dp{width:112px;height:45px}
+.hs-hist{height:132px;overflow-y:auto;overscroll-behavior:contain;gap:2px !important;padding-right:2px}
+.hs-hrow{padding:1px 12px !important;font-size:15px !important;flex:0 0 auto}
+.hs-slots i{width:44px !important;height:50px !important;line-height:46px !important;font-size:26px !important}
+.hs-key{padding:10px 0 !important}
+.hs-stage.lv5{gap:8px}
+
+.hs-stage.end{justify-content:center;gap:14px}
+.hs-tiles{display:flex;gap:10px;justify-content:center;margin:12px 0 4px}
+.hs-tile{min-width:78px;padding:10px 8px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);display:flex;flex-direction:column;align-items:center;gap:2px}
+.hs-tile .ti{font-size:22px}.hs-tile b{font:700 20px Rajdhani,sans-serif;color:#fff}.hs-tile small{font-size:11px;color:#a99bc7;text-transform:uppercase;letter-spacing:.08em}
+
+.hs-rules2{margin:8px 0 2px;padding-left:18px;text-align:left;font-size:13px;color:#cdbfea;display:flex;flex-direction:column;gap:5px}
+.hs-guards{display:flex !important;flex-wrap:wrap;justify-content:center;gap:8px}
+.hs-guards .hs-guard{flex:0 0 calc(33.33% - 6px);width:auto}
+.hs-lvl{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
