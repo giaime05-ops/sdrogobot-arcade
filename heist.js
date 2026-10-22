@@ -179,7 +179,7 @@
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
     if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); stage.appendChild(up); later(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
-    ({ seq: lv1, laser: lvLaser, mgl: mgLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice, logic: mgLogic })[v.kind === "laser" && v.data ? "mgl" : v.kind](v);
+    ({ seq: lv1, laser: lvLaser, mgl: mgLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice, logic: mgLogic, dodge: mgDodge, simon: mgSimon })[v.kind === "laser" && v.data ? "mgl" : v.kind](v);
   }
   function brief(title, text, label, fn) {
     var c = el("div", "hs-card"); c.appendChild(el("h2", "", title)); c.appendChild(el("p", "hs-lead", text));
@@ -219,7 +219,7 @@
   // ----- 2. Corridoio laser: tieni premuto per avanzare, fermati quando il raggio è acceso -----
   function lvLaser(v, key) {
     if (v.phase === "brief") {
-      brief("CORRIDOIO LASER", "Tieni premuto per avanzare lungo il corridoio, rilascia per fermarti. I raggi si accendono e si spengono a ritmi diversi: attraversali solo quando sono spenti. Se tocchi un raggio acceso scatta l'allarme.", "ENTRA NEL CORRIDOIO", function () { act("rd"); });
+      brief("CORRIDOIO LASER", "Tieni premuto per avanzare lungo il corridoio, rilascia per fermarti. I raggi ROSSI si accendono e si spengono: attraversali solo quando sono spenti. Le lineette VERDI scivolano a destra e a sinistra: passa quando non sono davanti a te. Se ne tocchi una scatta l'allarme.", "ENTRA NEL CORRIDOIO", function () { act("rd"); });
       return;
     }
     stage.appendChild(el("div", "hs-sub big", "Non toccare i raggi accesi!"));
@@ -245,6 +245,14 @@
       // traguardo
       c.fillStyle = "#2fd36f"; c.font = "700 12px Rajdhani,sans-serif"; c.textAlign = "center"; c.fillText("USCITA ▲", W / 2, 20);
       v.lasers.forEach(function (l) {
+        if (l.g) {                                                                   // laser VERDE: lineetta che scivola a destra e a sinistra
+          var gy = yOf(l.x), gx = 0.5 + l.amp * Math.sin(2 * Math.PI * (t + l.ph) / l.p), cw = W - 96, hw = cw * l.hw, mx = 48 + cw * gx;
+          c.strokeStyle = "rgba(47,211,111,.22)"; c.lineWidth = 1; c.setLineDash([3, 5]); c.beginPath(); c.moveTo(48 + cw * (0.5 - l.amp), gy); c.lineTo(48 + cw * (0.5 + l.amp), gy); c.stroke(); c.setLineDash([]);
+          c.save(); c.shadowColor = "#2fd36f"; c.shadowBlur = 16; c.strokeStyle = "#58ffa8"; c.lineWidth = 5; c.lineCap = "round"; c.beginPath(); c.moveTo(mx - hw, gy); c.lineTo(mx + hw, gy); c.stroke(); c.restore();
+          c.fillStyle = "#555e78"; c.fillRect(mx - 5, gy - 5, 10, 10);
+          if (t >= 0 && Math.abs(gx - 0.5) < l.hw && Math.abs(x - l.x) < v.zone && !hitSent) { hitSent = true; release(); done = true; A.haptic("bad"); act("lz", { hit: true }); }
+          return;
+        }
         var y = yOf(l.x), isOn = t >= 0 && on(l, t), warn = t >= 0 && !isOn && ((t + l.ph) % l.p) > l.p - 0.22;
         c.fillStyle = "#555e78"; c.fillRect(36, y - 7, 12, 14); c.fillRect(W - 48, y - 7, 12, 14);
         if (isOn) { c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 16; c.strokeStyle = "#ff4d68"; c.lineWidth = 4; c.beginPath(); c.moveTo(48, y); c.lineTo(W - 48, y); c.stroke(); c.restore(); }
@@ -354,7 +362,7 @@
   function hsh(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
   function lvChase(v) {
     if (v.phase === "brief") {
-      brief("FUGA", "Sei alla guida del furgone: parte piano e accelera da solo, tu cambi corsia (tocca a sinistra o a destra, o scorri il dito). ❌ Posti di blocco, auto, muri, rocce, palme, relitti e il faro dell'elicottero ti fermano. 🛢️ Olio, buche, fango e coni ti fanno solo rallentare. Ai bivi trovi tre strade, ognuna col suo cartello: due hanno un simbolo di pericolo (🚁 🚓 🚧 🚨), quella senza simbolo è libera. Cambia ambientazione a seconda della strada scelta. Al traguardo il bot guida per te: scappa dalla polizia!", "VIA!", function () { act("rd"); });
+      brief("FUGA", "Sei alla guida del furgone: parte piano e accelera da solo, tu cambi corsia (tocca a sinistra o a destra, o scorri il dito). ❌ Posti di blocco, auto, muri, rocce, palme e relitti ti fermano. Negli ultimi secondi le corsie si chiudono una alla volta: resta su quella che rimane aperta! 🛢️ Olio, buche, fango e coni ti fanno solo rallentare. Ai bivi trovi tre strade, ognuna col suo cartello: due hanno un simbolo di pericolo (🚁 🚓 🚧 🚨), quella senza simbolo è libera. Cambia ambientazione a seconda della strada scelta. Al traguardo il bot guida per te: scappa dalla polizia!", "VIA!", function () { act("rd"); });
       return;
     }
     stage.appendChild(el("div", "hs-sub", "Cambia corsia: tocca a sinistra / destra"));
@@ -434,6 +442,7 @@
     }
     function simStep() {
       sv = Math.min(v.vmax, sv + v.acc * DT); p += sv * DT; n++;
+      for (var bi = 0; bi < obs.length; bi++) if (obs[bi][2] === "barr" && !slowed["b" + bi] && p >= obs[bi][0] - 190) { slowed["b" + bi] = 1; say2("⚠️ Una corsia si sta chiudendo!", false); }
       for (var i = 0; i < obs.length; i++) {
         var o = obs[i]; if (o[0] > p + 5) break;
         if (p + H > o[0] && p - H < o[0] + o[3] && ((o[1] >> lane) & 1)) {
@@ -555,6 +564,12 @@
           else if (ln === "rock") drawRock(x, y, sd);
           else if (ln === "palm") drawPalm(x, y, sd);
           else if (ln === "wall") drawWall(x, y);
+          else if (ln === "barr") {                                                    // corsia chiusa: barriera di cemento a strisce per tutto il tratto finale
+            c.fillStyle = "#2a2d3a"; c.fillRect(x - lw / 2 + 2, yb, lw - 4, hh);
+            c.fillStyle = "rgba(255,138,43,.22)"; for (var bs = 0; bs * 24 < hh; bs++) if (bs % 2) c.fillRect(x - lw / 2 + 2, y - bs * 24 - 24, lw - 4, 24);
+            c.fillStyle = "#e9ecf5"; c.fillRect(x - lw / 2 + 2, yb, 4, hh); c.fillRect(x + lw / 2 - 6, yb, 4, hh);
+            c.fillStyle = "#ff8a2b"; c.fillRect(x - lw / 2 + 2, y - 14, lw - 4, 14); c.fillStyle = "#111"; for (var bj = 0; bj < 6; bj++) c.fillRect(x - lw / 2 + 4 + bj * ((lw - 8) / 6), y - 14, (lw - 8) / 12, 14);
+          }
           else if (ln === "light") { var gl = 0.25 + 0.12 * Math.sin(now / 120); c.fillStyle = "rgba(255,240,150," + gl + ")"; c.fillRect(x - lw / 2 + 3, yb, lw - 6, hh); c.strokeStyle = "rgba(255,240,150,.9)"; c.lineWidth = 2; c.strokeRect(x - lw / 2 + 3, yb, lw - 6, hh); c.font = "16px sans-serif"; c.fillText("🚁", x, yb + 14); }
           else if (ln === "oil") drawOil(x, y, sd, now);
           else if (ln === "mud") drawMud(x, y, sd);
@@ -744,6 +759,60 @@
       requestAnimationFrame(loop);
     })(t0);
   }
+  // ----- mini: FUGA LAMPO (3 checkpoint): sbarre laser che scendono, cambi corsia -----
+  function mgDodge(v) {
+    var d = v.data, W = 300, H = 380, lw = (W - 40) / 3, PYr = H - 70, T = 0.4;
+    stage.appendChild(el("div", "hs-sub big", "Checkpoint " + (v.round || 1) + "/" + (v.rounds || 3) + " · schiva i laser: tocca a sinistra / destra"));
+    var cv = el("canvas", "hs-lz"); cv.width = W * 2; cv.height = H * 2; cv.style.width = W + "px"; cv.style.height = H + "px"; cv.style.touchAction = "none"; stage.appendChild(cv);
+    var c = cv.getContext("2d"); c.scale(2, 2);
+    var t0 = performance.now() + (d.delay || 1) * 1000, lane = 1, vx = W / 2, ev = [], done = false, sx0 = 0, lastEv = -999;
+    var endT = d.bars[d.bars.length - 1][0] + T + 0.5;
+    function LX(l) { return 20 + lw * l + lw / 2; }
+    function go(k) { if (done) return; var tm = performance.now() - t0; if (tm < 0 || tm - lastEv < 70) return; var nl = Math.max(0, Math.min(2, lane + k)); if (nl === lane) return; lane = nl; lastEv = tm; ev.push([Math.round(tm), lane]); A.haptic("light"); snd("tick"); }
+    cv.addEventListener("pointerdown", function (e) { e.preventDefault(); sx0 = e.clientX; });
+    cv.addEventListener("pointerup", function (e) { var dx = e.clientX - sx0; if (Math.abs(dx) > 26) go(dx > 0 ? 1 : -1); else { var r = cv.getBoundingClientRect(); go(e.clientX - r.left < r.width / 2 ? -1 : 1); } });
+    function key(e) { if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); go(1); } }
+    document.addEventListener("keydown", key);
+    (function loop(now) {
+      if (done || root.hidden || S.view !== v) { done = true; document.removeEventListener("keydown", key); return; }
+      var t = (now - t0) / 1000; vx += (LX(lane) - vx) * 0.35;
+      c.clearRect(0, 0, W, H); c.fillStyle = "#070b16"; c.fillRect(0, 0, W, H); c.fillStyle = "#12182a"; c.fillRect(20, 0, W - 40, H);
+      c.fillStyle = "rgba(53,230,255,.5)"; c.fillRect(19, 0, 2, H); c.fillRect(W - 21, 0, 2, H);
+      for (var l = 1; l < 3; l++) { c.fillStyle = "rgba(255,255,255,.18)"; for (var y = ((now / 8) % 36) - 36; y < H; y += 36) c.fillRect(20 + lw * l - 1, y, 2, 18); }
+      var hit = false;
+      d.bars.forEach(function (b) {
+        var y = PYr - (b[0] - t) / d.fall * (PYr + 20); if (y < -20 || y > H + 20) return;
+        for (var k = 0; k < 3; k++) if ((b[1] >> k) & 1) {
+          c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 14; c.fillStyle = "#ff4d68"; c.fillRect(20 + lw * k + 3, y - 5, lw - 6, 10); c.restore();
+          c.fillStyle = "#fff"; c.fillRect(20 + lw * k + 6, y - 1, lw - 12, 2);
+        }
+        if (t >= b[0] && t <= b[0] + T && (b[1] >> lane) & 1) hit = true;
+      });
+      c.fillStyle = "#ffd23b"; c.fillRect(vx - 13, PYr - 22, 26, 44); c.fillStyle = "#1a1a24"; c.fillRect(vx - 9, PYr - 13, 18, 11); c.fillStyle = "#ff3b5e"; c.fillRect(vx - 11, PYr + 17, 6, 4); c.fillRect(vx + 5, PYr + 17, 6, 4);
+      c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(20, 6, W - 40, 5); c.fillStyle = "#2fd36f"; c.fillRect(20, 6, (W - 40) * Math.max(0, Math.min(1, t / endT)), 5);
+      if (now < t0) { c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, W, H); c.fillStyle = "#fff"; c.font = "700 30px Bungee,sans-serif"; c.textAlign = "center"; c.fillText(String(Math.ceil((t0 - now) / 1000)), W / 2, H / 2); }
+      if (hit) { done = true; document.removeEventListener("keydown", key); A.haptic("bad"); act("dg", { hit: true }); return; }
+      if (t >= endT) { done = true; document.removeEventListener("keydown", key); act("dg", { ev: ev, fin: Math.round(t * 1000) }); return; }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  }
+  // ----- mini: SEQUENZA DI SICUREZZA: guarda e ripeti -----
+  function mgSimon(v) {
+    var d = v.data, COL = ["#ff4d68", "#4d8bff", "#2fd36f", "#ffd23b"], seq = d.seq, got = [], ready = false, done = false, stop = null;
+    var hint = el("div", "hs-sub big", "Memorizza la sequenza…"); stage.appendChild(hint);
+    var dots2 = el("div", "hs-dots"); for (var q = 0; q < seq.length; q++) dots2.appendChild(el("i", "")); stage.appendChild(dots2);
+    var grid = el("div", "hs-simon"), pads = [];
+    for (var i = 0; i < 4; i++) { (function (i) { var b = el("button", "hs-sp"); b.type = "button"; b.style.setProperty("--c", COL[i]); b.addEventListener("pointerdown", function (e) { e.preventDefault(); tap(i); }); pads.push(b); grid.appendChild(b); })(i); }
+    stage.appendChild(grid);
+    function flash(i, ms) { pads[i].classList.add("lit"); snd("key"); later(function () { pads[i].classList.remove("lit"); }, ms || 260); }
+    seq.forEach(function (p, k) { later(function () { flash(p, 520); }, 900 + k * 780); });
+    later(function () { ready = true; hint.textContent = "Ora tocca tu, nello stesso ordine!"; stop = tbar(d.limit, function () { done = true; act("to"); }); }, 900 + seq.length * 780 + 200);
+    function tap(i) {
+      if (!ready || done) return; A.haptic("light"); flash(i, 160); got.push(i); var k = got.length - 1;
+      dots2.children[k].className = got[k] === seq[k] ? "on" : "bad";
+      if (got[k] !== seq[k] || got.length >= seq.length) { done = true; stop && stop(); act("sq", { s: got }); }
+    }
+  }
   function mgVoice(v) {
     var d = v.data;
     stage.appendChild(el("div", "hs-sub big", "TAP quando l'indicatore passa sui nodi " + d.nodes.map(function (x, k) { return k + 1; }).join(" → ") + ", in ordine"));
@@ -804,10 +873,12 @@
   function lv4(v) {
     guess = [];
     stage.appendChild(el("div", "hs-sub", "Caveau · tentativo " + Math.min(v.max_tries, v.tries + 1) + "/" + v.max_tries));
-    var hint = el("div", "hs-hint"); hint.appendChild(document.createTextNode("Cifre già note: "));
     var known = {}; (v.hints || []).forEach(function (h) { known[h[0]] = h[1]; });
-    for (var i = 0; i < 4; i++) hint.appendChild(el("span", known[i] != null ? "on" : "", known[i] != null ? String(known[i]) : "▫"));
-    stage.appendChild(hint);
+    if ((v.hints || []).length) {                                                      // dopo i 9 tentativi: una cifra del nuovo codice è già svelata
+      var hint = el("div", "hs-hint"); hint.appendChild(document.createTextNode("Cifre già note: "));
+      for (var i = 0; i < 4; i++) hint.appendChild(el("span", known[i] != null ? "on" : "", known[i] != null ? String(known[i]) : "▫"));
+      stage.appendChild(hint);
+    }
     var hist = el("div", "hs-hist"); stage.appendChild(hist);
     v.hist.forEach(function (h) {
       var r = el("div", "hs-hrow"); r.appendChild(el("b", "", h[0].join(" "))); r.appendChild(el("span", "g", "🟢 " + h[1])); r.appendChild(el("span", "y", "🟡 " + h[2])); hist.appendChild(r);

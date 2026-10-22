@@ -85,6 +85,7 @@
       admin:  !!(j && j.admin),
       badge:  (j && j.badge) || "",
       stars:  +(j && j.stars) || 0,
+      isnew:  !!(j && j.new),
       style:  (j && j.style) || {},
       maint:  (j && j.maintenance) || "off"
     };
@@ -119,18 +120,23 @@
     { id: "azzurro", g: ["#35e6ff", "#2a6bff"] }, { id: "arancio", g: ["#ffb347", "#ff5a36"] }, { id: "argento", g: ["#f4f7fb", "#8e98aa"], fg: "#1b2230", cls: "av-metal" },
     { id: "smeraldo", g: ["#2cffa0", "#047a4a"], cls: "av-metal" }, { id: "neonfucsia", g: ["#2a0a2a", "#5a0a4e"], fg: "#ff4de0", cls: "av-neon" },
     { id: "neonviola", g: ["#14062e", "#2c0f6e"], fg: "#b97bff", cls: "av-neon" }, { id: "oro", g: ["#ffe27a", "#d9a94a"], fg: "#3a2600", cls: "av-metal" },
-    { id: "notte", g: ["#2b2b3a", "#00ffd5"] }, { id: "diamante", g: ["#e8fbff", "#7ad9ff"], fg: "#12315a", cls: "av-dia" }, { id: "arcobaleno", rb: true }
+    { id: "notte", g: ["#2b2b3a", "#00ffd5"] }, { id: "tramonto", g: ["#ff9a3c", "#b0208a"], cls: "av-gr" }, { id: "oceano", g: ["#35e6ff", "#0a3fa8"], cls: "av-gr" }, { id: "lava", g: ["#ffd23b", "#c4160a"], cls: "av-gr" },
+    { id: "aurora", g: ["#52ff9a", "#7a5cff"], cls: "av-gr" }, { id: "galassia", g: ["#2a0a5e", "#ff4dc8"], cls: "av-gal" },
+    { id: "diamante", g: ["#e8fbff", "#7ad9ff"], fg: "#12315a", cls: "av-dia" }, { id: "arcobaleno", rb: true }
   ];
   function avStyle(c) { return c.rb ? "conic-gradient(#ff3b4e,#ffd23b,#2fd36f,#35e6ff,#a855f7,#ff3b4e)" : "linear-gradient(135deg," + c.g[0] + "," + c.g[1] + ")"; }
   // ---- personalizzazione profilo: salvata sul server, visibile a tutti (classifica, profili) ----
   var NAMEC = { nero: "#0b0b10", ciano: "#35e6ff", viola: "#c28bff", rosa: "#ff6fc8", verde: "#52ff9a", rosso: "#ff5a6e", arancio: "#ffb347", giallo: "#ffe45a", blu: "#4d8bff" };
-  var NMFX = { argento: 1, smeraldo: 1, neonfucsia: 1, neonviola: 1, oro: 1, diamante: 1 };
-  var BARFX = { fiamme: 1, fiammeblu: 1, inferno: 1, fiammeverdi: 1, dragone: 1, leggenda: 1 };
+  var NMFX = { argento: 1, smeraldo: 1, neonfucsia: 1, neonviola: 1, oro: 1, diamante: 1, tramonto: 1, oceano: 1, lava: 1, aurora: 1, galassia: 1 };
+  var BARFX = { fiamme: 1, fiammeblu: 1, inferno: 1, fiammeverdi: 1, dragone: 1, leggenda: 1, onde: 1, vento: 1, tempesta: 1, aurora: 1 };
   function avById(id) { return AV.filter(function (c) { return c.id === id; })[0] || null; }
   function nameEl(text, st) {
-    var n = document.createElement("span"); n.textContent = text; st = st || {};
-    if (st.name === "arcobaleno") n.className = "nm-rb nm-c"; else if (NMFX[st.name]) n.className = "nm-c nm-fx nm-" + st.name;
-    else if (NAMEC[st.name]) { n.style.color = NAMEC[st.name]; n.className = "nm-c" + (st.name === "nero" ? " nm-dark" : ""); }
+    var n = document.createElement("span"); st = st || {};
+    if (st.name === "arcobaleno" || NMFX[st.name]) {                              // effetti con testo sfumato: il testo sta dentro un guscio (che nei podi/barre diventa una pillola scura leggibile)
+      n.className = "nm-c"; var i = document.createElement("span"); i.textContent = text; i.className = st.name === "arcobaleno" ? "nm-rb" : "nm-fx nm-" + st.name; n.appendChild(i); return n;
+    }
+    n.textContent = text;
+    if (NAMEC[st.name]) { n.style.color = NAMEC[st.name]; n.className = "nm-c" + (st.name === "nero" ? " nm-dark" : ""); }
     return n;
   }
   function styleAvatar(av, st, letter) {
@@ -147,7 +153,8 @@
 
   function render(me, opts) {
     opts = opts || {};
-    ME.admin = !!me.admin;
+    ME.admin = !!me.admin; ME.isnew = !!me.isnew;
+    try { if (window.Arcade3D && window.Arcade3D.setHeist) window.Arcade3D.setHeist(SBX || ME.isnew); } catch (e) {}
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     ME.style = me.style || {}; maintBanner(me.maint);
     var pn = $("pname"); pn.textContent = ""; pn.appendChild(nameEl(name, ME.style));
@@ -263,11 +270,11 @@
     document.body.classList.toggle("sbx", SBX);
     var b = $("sbxBar"); if (b) b.hidden = !SBX;
     if (window.ArcadeTabs && window.ArcadeTabs.reset) window.ArcadeTabs.reset();
-    try { if (window.Arcade3D && window.Arcade3D.setHeist) window.Arcade3D.setHeist(SBX); } catch (e) {}
+    try { if (window.Arcade3D && window.Arcade3D.setHeist) window.Arcade3D.setHeist(SBX || ME.isnew); } catch (e) {}
     return refreshMe();
   }
 
-  window.Arcade = { avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  window.Arcade = { newOn: function () { return !!(SBX || ME.isnew); }, tip: tip, avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 

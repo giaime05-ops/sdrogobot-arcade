@@ -215,7 +215,7 @@
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
     var pst = other ? (other.style || {}) : (A.me().style || {});
     A.styleAvatar(head.firstChild, pst);
-    if (!other && A.isAdmin && A.isAdmin() && A.isSandbox && A.isSandbox()) {   // personalizzazione: solo account admin di prova
+    if (!other && A.newOn && A.newOn()) {   // personalizzazione: solo account admin di prova
       var eb = el("button", "set-ok prof-edit", "✨ MODIFICA PROFILO"); eb.type = "button";
       eb.addEventListener("click", function () { A.haptic("light"); editProfile(function () { openProfile(); }); });
       card.appendChild(eb);
@@ -248,29 +248,24 @@
     }).catch(function (e) { grid.innerHTML = ""; grid.appendChild(el("div", "pg-empty", errMsg(e))); });
   }
   // ---------- Modifica profilo (colori nome/avatar, cornice, barra classifica) ----------
-  // voce = [id, nome, statistica, soglia, come sbloccarla]; senza statistica = colore base libero. "gw:slot" = vittorie in quel gioco.
-  var HEIST = function (n) { return ["stars", n, n === 1 ? "Vinci 1 Sdrogo Heist" : "Vinci " + n + " Sdrogo Heist"]; };
+  // [id, nome]: i requisiti di sblocco arrivano dal server (portafoglio.style_req), così c'è una sola fonte. Senza requisito = libero.
   var KIT = {
-    name: { title: "COLORE NOME", items: [["", "Bianco"], ["nero", "Nero"], ["viola", "Viola"], ["rosso", "Rosso"], ["giallo", "Giallo"], ["verde", "Verde"], ["blu", "Blu"],
-      ["ciano", "Ciano", "quizzes_won", 10, "Vinci 10 quiz"], ["rosa", "Rosa", "duels_wins", 5, "Vinci 5 duelli"], ["arancio", "Arancio", "casino_wins", 25, "Vinci 25 partite al casinò"],
-      ["argento", "Argento", "casino_wins", 50, "Vinci 50 partite al casinò"], ["smeraldo", "Smeraldo", "gw:mastermind", 3, "Vinci 3 partite a Mastermind"],
-      ["neonfucsia", "Neon fucsia", "gw:slot", 10, "Vinci 10 volte alle slot"], ["neonviola", "Neon viola", "gw:aviator", 5, "Vinci 5 partite ad Aviator"],
-      ["oro", "Oro", "stars", 1, "Vinci 1 Sdrogo Heist"], ["diamante", "Diamante", "casino_wins", 200, "Vinci 200 partite al casinò"],
-      ["arcobaleno", "Arcobaleno", "stars", 5, "Vinci 5 Sdrogo Heist"]] },
-    av: { title: "COLORE AVATAR", items: [["", "Base"], ["nero", "Nero"], ["rosso", "Rosso"], ["giallo", "Giallo"], ["verde", "Verde"], ["blu", "Blu"],
-      ["azzurro", "Azzurro", "quizzes_won", 3, "Vinci 3 quiz"], ["arancio", "Arancio", "duels_wins", 3, "Vinci 3 duelli"], ["argento", "Argento", "casino_wins", 50, "Vinci 50 partite al casinò"],
-      ["smeraldo", "Smeraldo", "gw:blackjack", 10, "Vinci 10 mani a Blackjack"], ["neonfucsia", "Neon fucsia", "gw:roulette", 5, "Vinci 5 volte alla roulette"],
-      ["neonviola", "Neon viola", "gw:poker", 3, "Vinci 3 partite a Poker"], ["notte", "Notte", "casino_wins", 100, "Vinci 100 partite al casinò"],
-      ["oro", "Oro", "stars", 1, "Vinci 1 Sdrogo Heist"], ["diamante", "Diamante", "casino_wins", 200, "Vinci 200 partite al casinò"], ["arcobaleno", "Arcobaleno", "stars", 5, "Vinci 5 Sdrogo Heist"]] },
-    frame: { title: "CORNICE", items: [["", "Nessuna"], ["neon", "Viola"], ["bianco", "Bianco"], ["nero", "Nero"], ["rosso", "Rosso"], ["giallo", "Giallo"], ["verde", "Verde"], ["blu", "Blu"],
-      ["ghiaccio", "Ghiaccio", "quizzes_won", 10, "Vinci 10 quiz"], ["fuoco", "Fuoco", "casino_wins", 50, "Vinci 50 partite al casinò"], ["argento", "Argento", "gw:wordle", 5, "Vinci 5 partite a Wordle"],
-      ["smeraldo", "Smeraldo", "gw:scratch", 5, "Vinci 5 Gratta e vinci"], ["neonfucsia", "Neon fucsia", "gw:slot", 25, "Vinci 25 volte alle slot"], ["oro", "Oro", "stars", 1, "Vinci 1 Sdrogo Heist"],
-      ["diamante", "Diamante", "gw:mastermind", 10, "Vinci 10 partite a Mastermind"], ["arcobaleno", "Arcobaleno", "stars", 5, "Vinci 5 Sdrogo Heist"]] },
-    bar: { title: "BARRA IN CLASSIFICA (solo Sdrogo Heist)", items: [["", "Classica"], ["viola", "Viola"], ["ciano", "Ciano"], ["verde", "Verde"],
-      ["fiamme", "Fiamme", "stars", 1, "Vinci 1 Sdrogo Heist"], ["fiammeblu", "Fiamme blu", "stars", 3, "Vinci 3 Sdrogo Heist"], ["inferno", "Inferno", "stars", 5, "Vinci 5 Sdrogo Heist"],
-      ["fiammeverdi", "Fiamme verdi", "stars", 10, "Vinci 10 Sdrogo Heist"], ["dragone", "Dragone", "stars", 15, "Vinci 15 Sdrogo Heist"], ["leggenda", "Leggenda", "stars", 20, "Vinci 20 Sdrogo Heist"]] }
+    name: { title: "COLORE NOME", items: [["", "Bianco"], ["viola", "Viola"], ["rosso", "Rosso"], ["ciano", "Ciano"], ["rosa", "Rosa"], ["verde", "Verde"], ["giallo", "Giallo"], ["blu", "Blu"], ["arancio", "Arancio"],
+      ["argento", "Argento"], ["smeraldo", "Smeraldo"], ["neonfucsia", "Neon fucsia"], ["neonviola", "Neon viola"], ["oro", "Oro"], ["tramonto", "Tramonto"], ["oceano", "Oceano"], ["lava", "Lava"],
+      ["aurora", "Aurora"], ["galassia", "Galassia"], ["diamante", "Diamante"], ["arcobaleno", "Arcobaleno"]] },
+    av: { title: "COLORE AVATAR", items: [["", "Base"], ["rosso", "Rosso"], ["blu", "Blu"], ["nero", "Nero"], ["giallo", "Giallo"], ["verde", "Verde"], ["azzurro", "Azzurro"], ["arancio", "Arancio"],
+      ["argento", "Argento"], ["smeraldo", "Smeraldo"], ["neonfucsia", "Neon fucsia"], ["neonviola", "Neon viola"], ["notte", "Notte"], ["tramonto", "Tramonto"], ["oceano", "Oceano"], ["lava", "Lava"],
+      ["aurora", "Aurora"], ["galassia", "Galassia"], ["oro", "Oro"], ["diamante", "Diamante"], ["arcobaleno", "Arcobaleno"]] },
+    frame: { title: "CORNICE", items: [["", "Nessuna"], ["neon", "Viola"], ["bianco", "Bianco"], ["ghiaccio", "Ghiaccio"], ["fuoco", "Fuoco"], ["argento", "Argento"], ["smeraldo", "Smeraldo"],
+      ["onde", "Onde"], ["vento", "Vento"], ["elettrico", "Elettrico"], ["neonfucsia", "Neon fucsia"], ["galassia", "Galassia"], ["oro", "Oro"], ["diamante", "Diamante"], ["arcobaleno", "Arcobaleno"]] },
+    bar: { title: "BARRA IN CLASSIFICA", items: [["", "Classica"], ["viola", "Viola"], ["ciano", "Ciano"], ["fiamme", "Fiamme"], ["onde", "Onde"], ["fiammeblu", "Fiamme blu"], ["vento", "Vento"],
+      ["inferno", "Inferno"], ["tempesta", "Tempesta"], ["fiammeverdi", "Fiamme verdi"], ["aurora", "Aurora"], ["dragone", "Dragone"], ["leggenda", "Leggenda"]] }
   };
-  function statOf(w, key) { return key.indexOf("gw:") === 0 ? ((w.game_wins || {})[key.slice(3)] || 0) : (w[key] || 0); }
+  function statOf(w, key) {
+    if (key.indexOf("gw:") === 0) return (w.game_wins || {})[key.slice(3)] || 0;
+    if (key.indexOf("st:") === 0) return (w.stats || {})[key.slice(3)] || 0;
+    return w[key] || 0;
+  }
   function preview(k, id) {
     var st = {}; if (id) st[k] = id;
     if (k === "name") { var w = el("span", "pe-pv"); w.appendChild(A.nameEl("Aa", st)); return w; }
@@ -289,29 +284,37 @@
       prev.className = "row pe-prev"; A.styleRow(prev, cur); pnm.innerHTML = ""; pnm.appendChild(A.nameEl(nameTxt, cur));
     }
     var isAd = !!(A.isAdmin && A.isAdmin());
-    var hint = el("div", "av-hint", isAd ? "Account di prova: vedi il 🔒 su ciò che sarebbe bloccato, ma puoi provarlo lo stesso." : "Tocca un oggetto 🔒 per vedere come sbloccarlo.");
+    var hint = el("div", "av-hint", isAd ? "Account di prova: 🔒 = bloccato per i giocatori, tu puoi provarlo lo stesso. Tocca un 🔒 per vedere come si sblocca." : "Tocca un oggetto 🔒 per vedere come si sblocca.");
     A.api("/api/social/wallet").then(function (w) { KIT._w = w; build(); }).catch(function () { KIT._w = {}; build(); });
-    var box = el("div"); card.appendChild(box);
+    var box = el("div", "pe-accs"); card.appendChild(box);
+    var openK = {};
     function build() {
       box.innerHTML = "";
       Object.keys(KIT).forEach(function (k) {
         if (k === "_w") return;
-        var sec = KIT[k]; box.appendChild(el("div", "pe-lab", sec.title));
-        var row = el("div", "pe-row");
+        var sec = KIT[k], w = KIT._w || {}, req = w.style_req || {};
+        var wrap = el("div", "pe-acc" + (openK[k] ? " open" : "")), head = el("button", "pe-acc-h"); head.type = "button";
+        var cur0 = cur[k] ? (sec.items.filter(function (x) { return x[0] === cur[k]; })[0] || [0, ""])[1] : sec.items[0][1];
+        head.appendChild(el("b", "", sec.title)); head.appendChild(el("span", "pe-acc-v", cur0)); head.appendChild(el("i", "pe-acc-c", "▾"));
+        var bodyW = el("div", "pe-acc-b"), row = el("div", "pe-row"); bodyW.appendChild(row);
+        head.addEventListener("click", function () {
+          A.haptic("light"); var o = !wrap.classList.contains("open"); openK[k] = o; wrap.classList.toggle("open", o);
+          bodyW.style.maxHeight = o ? row.scrollHeight + 16 + "px" : "0px";
+        });
         sec.items.forEach(function (it) {
-          var locked = !!it[2] && statOf(KIT._w || {}, it[2]) < it[3];
-          var b = el("button", "pe-sw pe-" + k + (cur[k] === it[0] || (!cur[k] && !it[0]) ? " on" : "") + (locked ? " lock" : "")); b.type = "button"; b.title = it[1];
-          b.appendChild(preview(k, it[0]));
-          b.appendChild(el("i", "", it[1]));
+          var rq = req[k + "." + it[0]], locked = !!rq && statOf(w, rq[0]) < rq[1];
+          var b = el("button", "pe-sw pe-" + k + (cur[k] === it[0] || (!cur[k] && !it[0]) ? " on" : "") + (locked ? " lock" : "")); b.type = "button";
+          b.appendChild(preview(k, it[0])); b.appendChild(el("i", "", it[1]));
           b.addEventListener("click", function () {
-            if (locked && !isAd) { hint.textContent = "🔒 " + it[1] + ": " + it[4]; A.haptic("light"); return; }
-            hint.textContent = locked ? "🔒 " + it[1] + " è bloccato (lo provi perché sei admin): " + it[4] : (it[2] ? "✅ " + it[1] + " sbloccato: " + it[4] : "");
+            if (locked) { A.tip(b, "🔒 " + it[1] + ": " + rq[2]); A.haptic("light"); if (!isAd) return; }
+            else if (rq) A.tip(b, "✅ " + it[1] + " sbloccato: " + rq[2]);
             if (it[0]) cur[k] = it[0]; else delete cur[k];
-            Array.prototype.forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); }); paint(); A.haptic("light");
+            Array.prototype.forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); }); head.querySelector(".pe-acc-v").textContent = it[1]; paint(); A.haptic("light");
           });
           row.appendChild(b);
         });
-        box.appendChild(row);
+        wrap.appendChild(head); wrap.appendChild(bodyW); box.appendChild(wrap);
+        if (openK[k]) bodyW.style.maxHeight = "2000px";
       });
       paint();
     }
