@@ -1114,3 +1114,5 @@ button,input,select{font-family:inherit}
 .row.pd3 .rk{background-image:linear-gradient(100deg,#d9823f 20%,#ffd9ae 45%,#d9823f 70%);filter:drop-shadow(0 0 3px #8c4a1f)}
 @keyframes pdshine{0%{background-position:200% 0}100%{background-position:-100% 0}}
 .xprog{height:8px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin:6px 0}.xprog i{display:block;height:100%;background:linear-gradient(90deg,#ff3db0,#35e6ff);box-shadow:0 0 8px rgba(255,61,176,.7)}
+.bdg.q0{color:#06210f;background:linear-gradient(180deg,#e4ffc8,#7dff5a 55%,#26b84a);box-shadow:0 0 9px rgba(120,255,90,.8),inset 0 1px 0 rgba(255,255,255,.8)}
+.bdg.q0 svg{fill:#06210f}

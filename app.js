@@ -117,6 +117,10 @@
         e.classList.add("h5"); e.title = "5 Win — Sdrogo Heist V1";
         e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2l2.2 5.6L20 8.3l-4.3 3.9L17 18l-5-3-5 3 1.3-5.8L4 8.3l5.8-.7z"/><circle cx="12" cy="21" r="1.6"/></svg>H5';
         e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "5 Win — Sdrogo Heist V1"); });
+      } else if (k === "q0") {                                      // Re dei Quiz — Sdrogobot V0
+        e.classList.add("q0"); e.title = "Re dei Quiz — Sdrogobot V0";
+        e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 1.5 5A3 3 0 0 0 9 20h1V3zm6 0h-1v17h1a3 3 0 0 0 3.5-4 3 3 0 0 0 1.5-5 3 3 0 0 0-2-5 3 3 0 0 0-3-3z"/></svg>Q0';
+        e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re dei Quiz — Sdrogobot V0"); });
       } else {
         e.title = "Sdrogobot v1 — Re del Casinò originale";
         e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re del Casinò — Sdrogobot V1"); });
@@ -172,7 +176,7 @@
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     ME.style = me.style || {}; maintBanner(me.maint);
     var pn = $("pname"); pn.textContent = ""; pn.appendChild(nameEl(name, ME.style));
-    if (SBX) { me = Object.assign({}, me, { badge: "v1,h5", stars: Math.max(3, me.stars || 0), stars_old: Math.max(2, me.stars_old || 0) }); }     // account admin: badge e stelle sempre visibili, per provarli
+    if (SBX) { me = Object.assign({}, me, { badge: "v1,h5,q0", stars: Math.max(3, me.stars || 0), stars_old: Math.max(2, me.stars_old || 0) }); }     // account admin: badge e stelle sempre visibili, per provarli
     if (me.badge) pn.appendChild(badgeEl(me.badge));
     ME.stars = me.stars; ME.stars_old = me.stars_old; ME.badge = me.badge;
     if (me.stars_old > 0) pn.appendChild(starEl(me.stars_old, true));
