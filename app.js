@@ -85,6 +85,7 @@
       admin:  !!(j && j.admin),
       badge:  (j && j.badge) || "",
       stars:  +(j && j.stars) || 0,
+      stars_old: +(j && j.stars_old) || 0,
       isnew:  !!(j && j.new),
       style:  (j && j.style) || {},
       maint:  (j && j.maintenance) || "off"
@@ -100,10 +101,11 @@
     t.style.top = Math.max(8, r.top - t.offsetHeight - 8) + "px";
     tipT = setTimeout(function () { t.classList.add("off"); setTimeout(function () { t.remove(); }, 250); }, 3000);
   }
-  function starEl(n) {
-    var st = document.createElement("span"); st.className = "pstar";
+  function starEl(n, old) {
+    var st = document.createElement("span"); st.className = "pstar" + (old ? " old" : "");
     st.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.6l-6 3.4 1.3-6.7-5-4.7 6.8-.8z"/></svg>' + (n > 1 ? "<b>" + n + "</b>" : "");
-    st.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(st, n > 1 ? "Vittorie a Sdrogo Heist: " + n : "Vittoria a Sdrogo Heist"); });
+    var what = old ? "vecchia Struggle Heist" : "Sdrogo Heist";
+    st.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(st, n > 1 ? "Vittorie a " + what + ": " + n : "Vittoria a " + what); });
     return st;
   }
   function badgeEl(b) {
@@ -170,9 +172,10 @@
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     ME.style = me.style || {}; maintBanner(me.maint);
     var pn = $("pname"); pn.textContent = ""; pn.appendChild(nameEl(name, ME.style));
-    if (SBX) { me = Object.assign({}, me, { badge: "v1", stars: Math.max(3, me.stars || 0) }); }     // account admin: badge e stelle sempre visibili, per provarli
+    if (SBX) { me = Object.assign({}, me, { badge: "v1,h5", stars: Math.max(3, me.stars || 0), stars_old: Math.max(2, me.stars_old || 0) }); }     // account admin: badge e stelle sempre visibili, per provarli
     if (me.badge) pn.appendChild(badgeEl(me.badge));
-    ME.stars = me.stars; ME.badge = me.badge;
+    ME.stars = me.stars; ME.stars_old = me.stars_old; ME.badge = me.badge;
+    if (me.stars_old > 0) pn.appendChild(starEl(me.stars_old, true));
     if (me.stars > 0) pn.appendChild(starEl(me.stars));
     $("avatar").textContent = (name.trim()[0] || "?").toUpperCase(); applyAvatar();
     $("pcoins").textContent = me.coins === null || me.coins === undefined ? "—" : fmt(me.coins);

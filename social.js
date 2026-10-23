@@ -233,7 +233,7 @@
     var wh = el("div", "prof-who"); var nb = el("b", "", ""), pnEl = $("pname");
     if (other) { card.querySelector("h2").textContent = "PROFILO GIOCATORE"; head.firstChild.textContent = (other.name || "?").charAt(0).toUpperCase(); }
     nb.appendChild(A.nameEl(other ? other.name : (pnEl && pnEl.firstChild ? pnEl.firstChild.textContent : ""), other ? other.style : A.me().style));
-    var mm = other ? { badge: other.badge, stars: other.stars } : (A.me ? A.me() : {}); if (mm.badge && A.badgeEl) nb.appendChild(A.badgeEl(mm.badge)); if (mm.stars > 0 && A.starEl) nb.appendChild(A.starEl(mm.stars));
+    var mm = other ? { badge: other.badge, stars: other.stars, stars_old: other.stars_old } : (A.me ? A.me() : {}); if (mm.badge && A.badgeEl) nb.appendChild(A.badgeEl(mm.badge)); if (mm.stars_old > 0 && A.starEl) nb.appendChild(A.starEl(mm.stars_old, true)); if (mm.stars > 0 && A.starEl) nb.appendChild(A.starEl(mm.stars));
     wh.appendChild(nb);
     var bl = el("span", "", ""); bl.appendChild(el("i", "ci")); bl.appendChild(document.createTextNode(" " + (other ? (other.balance != null ? A.fmt(other.balance) : "—") : ($("pcoins") ? $("pcoins").textContent : "—")) + " $SDG"));
     wh.appendChild(bl); head.appendChild(wh); card.appendChild(head);
