@@ -29,6 +29,30 @@
       if (w.wheel_available) { wt.textContent = "Disponibile ora! Gira dalla home"; wt.className = "xtimer on"; }
       else { wt.textContent = "Si rinnova tra " + clock(w.wheel_in - el_s); wt.className = "xtimer"; if (w.wheel_in - el_s <= 0) return true; }
     });
+    // ---- PRESTITO DAL BANCO ----
+    var ln = w.loan;
+    if (ln && (ln.owed > 0 || ln.low)) {
+      var lc = el("div", "qcard xcard"); lc.appendChild(el("h3", "", "PRESTITO DEL BANCO"));
+      if (ln.owed > 0) {
+        lc.appendChild(el("div", "xdebt", "Devi ancora restituire " + ln.owed + " $SDG"));
+        lc.appendChild(el("div", "qmeta", "Il " + ln.cut + "% di ogni tua vincita, in qualsiasi gioco, va al Banco finché il debito non è saldato. Nel frattempo non puoi donare."));
+      } else {
+        lc.appendChild(el("div", "qtxt", "Stai finendo i soldi! Il Banco ti presta fino a " + ln.daily_max + " $SDG al giorno (+" + ln.fee + "% da restituire). Ripaga col " + ln.cut + "% di ogni vincita."));
+        var row = el("div", "xloan");
+        ln.options.forEach(function (o) {
+          var lb = el("button", "xbtn", o + " $SDG"); lb.type = "button";
+          lb.addEventListener("click", function () {
+            lb.disabled = true; A.haptic("med");
+            A.api("/api/extra/loan_take", "POST", { amount: o }).then(function (r) { A.haptic("ok"); if (A.toast) A.toast(r.msg || "Prestito concesso"); load(box); })
+              .catch(function (e) { lb.disabled = false; if (A.toast) A.toast(errMsg(e)); });
+          });
+          row.appendChild(lb);
+        });
+        if (!ln.options.length) lc.appendChild(el("div", "qmeta", "Hai già preso il massimo di oggi: torna domani."));
+        lc.appendChild(row);
+      }
+      box.appendChild(lc);
+    }
     // ---- LAVORA ----
     var c = el("div", "qcard xcard"); c.appendChild(el("h3", "", "LAVORA"));
     c.appendChild(el("div", "qtxt", "Risolvi un enigma entro " + w.time + " secondi e guadagni " + w.reward + " $SDG. Riservato a chi ha meno di " + w.max_balance + " $SDG."));

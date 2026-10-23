@@ -762,7 +762,7 @@
   }
   // ----- mini: SCATTO LASER (3 checkpoint): salta i raggi a terra, abbassati sotto quelli alti. Un solo pad con due tasti -----
   function mgDodge(v) {
-    var d = v.data, W = 330, H = 250, GY = 186, AIR = d.air, WW = d.w, SPD = 260;
+    var d = v.data, W = 330, H = 250, GY = 186, AIR = d.air, WW = d.w, SPD = 220 + 12 * d.obs.length;
     stage.appendChild(el("div", "hs-sub big", "Checkpoint " + (v.round || 1) + "/" + (v.rounds || 3) + " · SALTA i raggi a terra, ABBASSATI sotto quelli alti"));
     var cv = el("canvas", "hs-lz"); cv.width = W * 2; cv.height = H * 2; cv.style.width = W + "px"; cv.style.height = H + "px"; cv.style.touchAction = "none"; stage.appendChild(cv);
     var c = cv.getContext("2d"); c.scale(2, 2);

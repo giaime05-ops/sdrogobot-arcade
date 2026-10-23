@@ -58,7 +58,19 @@
       var fresh = has && lsGet("arc_q_seen") !== day;
       setBadge(claim, fresh);
       if (fresh && lsGet("arc_q_ban") !== day && cur !== "act") { lsSet("arc_q_ban", day); questBanner(); }
-    }).catch(function () {}).then(function () { badgeBusy = false; });
+    }).catch(function () {}).then(function () { badgeBusy = false; loanBanner(); });
+  }
+  // saldo basso: avviso una volta al giorno con rimando al prestito del Banco (sezione Extra)
+  function loanBanner() {
+    if (!A.newOn() || lsGet("arc_l_ban") === dayKey() || cur === "act") return;
+    A.api("/api/extra/loan", "POST", {}).then(function (l) {
+      if (!l || !l.eligible || lsGet("arc_l_ban") === dayKey()) return;
+      lsSet("arc_l_ban", dayKey());
+      var b = document.createElement("div"); b.className = "q-ban warn"; b.textContent = "⚠️ Stai finendo i soldi: chiedi un prestito al Banco (Extra)";
+      b.addEventListener("click", function () { b.remove(); show("act", true); });
+      document.body.appendChild(b);
+      setTimeout(function () { b.classList.add("off"); setTimeout(function () { b.remove(); }, 400); }, 6000);
+    }).catch(function () {});
   }
   function show(name, fromUser) {
     var idx = ORDER.indexOf(name); if (idx < 0) return;

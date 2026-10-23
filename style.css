@@ -1088,3 +1088,8 @@ button,input,select{font-family:inherit}
 .row.bar-tempesta:not(.r1):not(.r2):not(.r3){background:radial-gradient(ellipse 70px 26px at 20% 0,#3a4068,transparent 70%),radial-gradient(ellipse 90px 30px at 62% 0,#2c3158,transparent 70%),radial-gradient(ellipse 60px 22px at 92% 0,#3a4068,transparent 70%),linear-gradient(90deg,#090a1c,#161a3e 55%,#090a1c)}
 .row.bar-tempesta::before{opacity:0;animation:flsh 3.6s linear infinite;background:var(--bolt) 24% 0/22px 100% no-repeat,var(--bolt) 71% 0/18px 100% no-repeat,radial-gradient(ellipse at 24% 0,rgba(220,235,255,.9),rgba(120,150,255,.35) 40%,transparent 70%),radial-gradient(ellipse at 71% 0,rgba(220,235,255,.8),transparent 60%)}
 @keyframes flsh{0%,84%{opacity:0}86%{opacity:1}88%{opacity:.15}90%{opacity:.9}93%{opacity:.2}96%{opacity:.7}100%{opacity:0}}
+
+.q-ban.warn{border-color:#ff9f43;color:#ffe2bf;box-shadow:0 0 18px rgba(255,159,67,.55);white-space:normal;max-width:88vw;text-align:center}
+.xloan{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.xloan .xbtn{flex:1 1 30%}
+.xdebt{font:700 18px Rajdhani,sans-serif;color:#ffb35c;margin:6px 0}
