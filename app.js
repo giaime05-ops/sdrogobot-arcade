@@ -104,8 +104,8 @@
   function starEl(n, old) {
     var st = document.createElement("span"); st.className = "pstar" + (old ? " old" : "");
     st.innerHTML = '<svg viewBox="0 0 24 24"><path d="m12 2.6 2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.6l-6 3.4 1.3-6.7-5-4.7 6.8-.8z"/></svg>' + (n > 1 ? "<b>" + n + "</b>" : "");
-    var what = old ? "vecchia Struggle Heist" : "Sdrogo Heist";
-    st.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(st, n > 1 ? "Vittorie a " + what + ": " + n : "Vittoria a " + what); });
+    var what = old ? "Sdrogo Heist V1" : "Sdrogo Heist V2";
+    st.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(st, n > 1 ? "Win " + what + " ×" + n : "Win " + what); });
     return st;
   }
   function badgeEl(b) {
@@ -114,9 +114,9 @@
       k = k.trim(); if (!k) return;
       var e = document.createElement("span"); e.className = "bdg";
       if (k === "h5") {                                             // 5 vittorie nella vecchia Struggle Heist (V1)
-        e.classList.add("h5"); e.title = "5 vittorie — Struggle Heist V1";
+        e.classList.add("h5"); e.title = "5 Win — Sdrogo Heist V1";
         e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2l2.2 5.6L20 8.3l-4.3 3.9L17 18l-5-3-5 3 1.3-5.8L4 8.3l5.8-.7z"/><circle cx="12" cy="21" r="1.6"/></svg>H5';
-        e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "5 vittorie — Struggle Heist V1 (la vecchia versione)"); });
+        e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "5 Win — Sdrogo Heist V1"); });
       } else {
         e.title = "Sdrogobot v1 — Re del Casinò originale";
         e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re del Casinò — Sdrogobot V1"); });

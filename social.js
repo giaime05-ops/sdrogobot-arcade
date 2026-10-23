@@ -113,7 +113,7 @@
       box.innerHTML = "";
       if (!j.top.length) { empty(box, "Nessuno in questa classifica, per ora."); return; }
       j.top.forEach(function (r) {
-        var row = el("div", "row" + (r.rank <= 3 ? " r" + r.rank : "") + (r.me ? " me" : ""));
+        var row = el("div", "row" + (r.rank <= 3 ? " pd pd" + r.rank : "") + (r.me ? " me" : ""));
         var rst = r.me && !r.style ? (A.me().style || {}) : (r.style || {});
         row.appendChild(el("div", "rk", String(r.rank)));
         var rav = el("div", "avatar rav"); A.styleAvatar(rav, rst, (r.name || "?").charAt(0).toUpperCase()); row.appendChild(rav);
