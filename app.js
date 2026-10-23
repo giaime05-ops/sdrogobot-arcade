@@ -107,10 +107,22 @@
     return st;
   }
   function badgeEl(b) {
-    var e = document.createElement("span"); e.className = "bdg"; e.title = "Sdrogobot v1 — Re del Casinò originale";
-    e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re del Casinò — Sdrogobot V1"); });
-    e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>V1';
-    return e;
+    var wrap = document.createElement("span"); wrap.className = "bdgs";
+    String(b || "").split(",").forEach(function (k) {
+      k = k.trim(); if (!k) return;
+      var e = document.createElement("span"); e.className = "bdg";
+      if (k === "h5") {                                             // 5 vittorie nella vecchia Struggle Heist (V1)
+        e.classList.add("h5"); e.title = "5 vittorie — Struggle Heist V1";
+        e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2l2.2 5.6L20 8.3l-4.3 3.9L17 18l-5-3-5 3 1.3-5.8L4 8.3l5.8-.7z"/><circle cx="12" cy="21" r="1.6"/></svg>H5';
+        e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "5 vittorie — Struggle Heist V1 (la vecchia versione)"); });
+      } else {
+        e.title = "Sdrogobot v1 — Re del Casinò originale";
+        e.addEventListener("click", function (ev) { ev.stopPropagation(); haptic("light"); tip(e, "Re del Casinò — Sdrogobot V1"); });
+        e.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>V1';
+      }
+      wrap.appendChild(e);
+    });
+    return wrap;
   }
 
   // colore dell'avatar (per ora solo account admin di prova): scelto nel profilo, salvato sul telefono

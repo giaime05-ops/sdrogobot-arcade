@@ -1093,3 +1093,13 @@ button,input,select{font-family:inherit}
 .xloan{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .xloan .xbtn{flex:1 1 30%}
 .xdebt{font:700 18px Rajdhani,sans-serif;color:#ffb35c;margin:6px 0}
+
+.bdgs{display:inline}
+.bdg{position:relative;overflow:hidden}
+.bdg::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-20deg);animation:bdgshine 3.2s ease-in-out infinite}
+.bdg.h5{color:#02222b;background:linear-gradient(180deg,#d8fbff,#35e6ff 55%,#1a8fd6);box-shadow:0 0 9px rgba(53,230,255,.8),inset 0 1px 0 rgba(255,255,255,.8)}
+.bdg.h5 svg{fill:#02222b}
+@keyframes bdgshine{0%,55%{left:-60%}100%{left:130%}}
+.pstar{color:#ff4de0}
+.pstar svg{fill:rgba(255,77,224,.3);stroke:#ff4de0;filter:drop-shadow(0 0 4px #ff4de0) drop-shadow(0 0 9px rgba(255,77,224,.7))}
+.pstar b{color:#ffd0f4;text-shadow:0 0 6px #ff4de0}
