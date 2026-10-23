@@ -37,6 +37,14 @@
         lc.appendChild(el("div", "xdebt", "Da restituire: " + ln.owed + " $SDG"));
         lc.appendChild(el("div", "qtxt", "Prestito " + ln.amount + " $SDG · totale da rendere " + ln.total + " · già restituiti " + ln.paid + " $SDG."));
         var pr = el("div", "xprog"); var pi = el("i"); pi.style.width = Math.min(100, Math.round(ln.paid / Math.max(1, ln.total) * 100)) + "%"; pr.appendChild(pi); lc.appendChild(pr);
+        var rp = el("button", "xbtn", "SALDA TUTTO (" + ln.owed + " $SDG)"); rp.type = "button";
+        if (ln.balance < ln.owed) { rp.disabled = true; rp.textContent = "SALDA TUTTO (" + ln.owed + ") · mancano " + (ln.owed - ln.balance); }
+        rp.addEventListener("click", function () {
+          rp.disabled = true; A.haptic("med");
+          A.api("/api/extra/loan_repay", "POST", {}).then(function (r) { A.haptic("ok"); if (A.toast) A.toast(r.msg || "Prestito saldato"); load(box); })
+            .catch(function (e) { rp.disabled = false; if (A.toast) A.toast(errMsg(e)); });
+        });
+        lc.appendChild(rp);
         lc.appendChild(el("div", "qmeta", "Il " + ln.cut + "% di ogni tua vincita, in qualsiasi gioco, va al Banco finché il debito non è saldato. Nel frattempo non puoi donare."));
       } else {
         lc.appendChild(el("div", "qtxt", "Il Banco presta fino a " + ln.daily_max + " $SDG al giorno (+" + ln.fee + "% da restituire) a chi ha meno di " + ln.trigger + " $SDG. Ripaghi col " + ln.cut + "% di ogni vincita."));
