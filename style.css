@@ -1071,3 +1071,20 @@ button,input,select{font-family:inherit}
 .row.bar-fx:not(.r1):not(.r2):not(.r3) .nm,.row.bar-fx:not(.r1):not(.r2):not(.r3) .vl{text-shadow:0 1px 3px #000,0 0 7px rgba(0,0,0,.85)}
 .row.bar-fx .nm-c{padding:0 9px;border-radius:999px;background-color:rgba(10,4,20,.6)}
 .nm-fx,.nm-rb,.row .nm-fx,.row .nm-rb{text-shadow:none!important}
+.hs-act{display:flex;gap:10px;width:min(330px,94%);margin:10px auto}.hs-actb{flex:1;margin:0!important;padding:16px 4px!important;font-size:17px!important}
+.tab .dot.new{min-width:10px;width:10px;height:10px;padding:0;top:6px;left:calc(50% + 10px);background:#35e6ff;box-shadow:0 0 10px rgba(53,230,255,.9);animation:twk 1.4s ease-in-out infinite}
+.q-ban{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 46px);transform:translateX(-50%);z-index:9500;padding:9px 18px;border-radius:999px;background:rgba(14,8,34,.94);border:1px solid #35e6ff;color:#bff4ff;font:700 16px Rajdhani,sans-serif;letter-spacing:.5px;box-shadow:0 0 18px rgba(53,230,255,.5);animation:qban .45s ease both;white-space:nowrap}
+.q-ban.off{opacity:0;transition:opacity .35s}
+@keyframes qban{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
+/* vento e tempesta v2 */
+:root{
+--w1:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='18' viewBox='0 0 140 18'%3E%3Cpath d='M0 9H96C110 9 118 3 112 3C106 3 106 12 118 12' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+--w2:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='14' viewBox='0 0 100 14'%3E%3Cpath d='M0 7H64C76 7 82 2 77 2C72 2 72 10 82 10' fill='none' stroke='%23cfeeff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+--w3:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='16' viewBox='0 0 120 16'%3E%3Cpath d='M0 8H80C94 8 100 2 95 2C90 2 90 11 100 11' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+--bolt:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='64' viewBox='0 0 26 64'%3E%3Cpath d='M16 0L4 32H12L7 64L23 26H15Z' fill='white' stroke='%23ffe27a' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.row.bar-vento::before{background:var(--w1) 0 18%/140px 18px repeat-x,var(--w2) 40px 52%/100px 14px repeat-x,var(--w3) 80px 82%/120px 16px repeat-x;opacity:.8;animation:wnd2 3.2s linear infinite}
+@keyframes wnd2{to{background-position:280px 18%,240px 52%,360px 82%}}
+.row.bar-vento::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 20% 50%,rgba(255,255,255,.12),transparent 60%);animation:aur 5s ease-in-out infinite alternate;background-size:200% 100%}
+.row.bar-tempesta:not(.r1):not(.r2):not(.r3){background:radial-gradient(ellipse 70px 26px at 20% 0,#3a4068,transparent 70%),radial-gradient(ellipse 90px 30px at 62% 0,#2c3158,transparent 70%),radial-gradient(ellipse 60px 22px at 92% 0,#3a4068,transparent 70%),linear-gradient(90deg,#090a1c,#161a3e 55%,#090a1c)}
+.row.bar-tempesta::before{opacity:0;animation:flsh 3.6s linear infinite;background:var(--bolt) 24% 0/22px 100% no-repeat,var(--bolt) 71% 0/18px 100% no-repeat,radial-gradient(ellipse at 24% 0,rgba(220,235,255,.9),rgba(120,150,255,.35) 40%,transparent 70%),radial-gradient(ellipse at 71% 0,rgba(220,235,255,.8),transparent 60%)}
+@keyframes flsh{0%,84%{opacity:0}86%{opacity:1}88%{opacity:.15}90%{opacity:.9}93%{opacity:.2}96%{opacity:.7}100%{opacity:0}}

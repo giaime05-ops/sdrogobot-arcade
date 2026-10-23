@@ -35,17 +35,29 @@
     offTimer = setTimeout(function () { ORDER.forEach(function (n, i) { if (i !== idx) views[n].classList.add("off"); }); }, 340);
   }
   // pallino rosso sulla scheda Attività quando c'è un premio da riscattare
-  function setBadge(n) {
+  function setBadge(n, isNew) {
     var t = document.querySelector('.tab[data-tab="act"]'); if (!t) return;
     var d = t.querySelector(".dot");
-    if (!n) { if (d) d.remove(); return; }
+    if (!n && !isNew) { if (d) d.remove(); return; }
     if (!d) { d = document.createElement("i"); d.className = "dot"; t.appendChild(d); }
-    d.textContent = String(n);
+    d.classList.toggle("new", !n); d.textContent = n ? String(n) : "";           // rosso con numero = premio da riscattare; azzurro vuoto = missioni nuove di oggi
+  }
+  // missioni nuove ogni giorno: pallino azzurro finché non apri Attività + un banner in alto la prima volta che entri
+  function dayKey() { try { return new Date().toLocaleDateString("sv"); } catch (e) { return String(new Date().getDate()); } }
+  function lsGet(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function questBanner() {
+    var b = document.createElement("div"); b.className = "q-ban"; b.textContent = "🎯 Nuove missioni disponibili!";
+    b.addEventListener("click", function () { b.remove(); show("act", true); }); document.body.appendChild(b);
+    setTimeout(function () { b.classList.add("off"); setTimeout(function () { b.remove(); }, 400); }, 4200);
   }
   function refreshBadge() {
     if (!A.inTelegram || badgeBusy) return; badgeBusy = true;
     A.api("/api/social/quests").then(function (j) {
-      setBadge((j.quests || []).filter(function (q) { return q.done && !q.claimed; }).length);
+      var claim = (j.quests || []).filter(function (q) { return q.done && !q.claimed; }).length, day = dayKey(), has = (j.quests || []).length > 0;
+      var fresh = has && lsGet("arc_q_seen") !== day;
+      setBadge(claim, fresh);
+      if (fresh && lsGet("arc_q_ban") !== day && cur !== "act") { lsSet("arc_q_ban", day); questBanner(); }
     }).catch(function () {}).then(function () { badgeBusy = false; });
   }
   function show(name, fromUser) {
@@ -58,7 +70,7 @@
     if (fromUser) A.haptic("light");
     syncCoins();
     if (name === "lead") loadLead();
-    if (name === "act") loadAct();
+    if (name === "act") { loadAct(); lsSet("arc_q_seen", dayKey()); refreshBadge(); }
     if (name === "shop" && window.ArcadeShop) window.ArcadeShop.load();
     if (name === "mp" && window.ArcadeMulti) window.ArcadeMulti.load();
     if (name === "hub") { A.refreshMe(); refreshBadge(); }

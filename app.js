@@ -283,7 +283,7 @@
     var g = GAMES[key]; if (!g) return;
     if (el) { el.classList.add("press"); setTimeout(function () { el.classList.remove("press"); }, 140); }
     haptic("light");
-    if (key === "heist" && !SBX) return;                      // per ora solo nell'account admin di prova
+    if (key === "heist" && !(SBX || ME.isnew)) return;                      // per ora solo nell'account admin di prova
     if (!g.ready) {
       if (g.note) sheet(g.name, g.note); else toast(g.name + ": in arrivo");
     } else if (window.ArcadeGames && window.ArcadeGames[key]) {

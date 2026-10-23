@@ -115,6 +115,7 @@
     (I.levels || []).forEach(function (l) { var li = el("li"); li.appendChild(el("b", "", l[0])); li.appendChild(document.createTextNode(" — " + l[1])); ul.appendChild(li); });
     card.appendChild(ul);
     card.appendChild(el("p", "hs-prize", "Premio: " + (I.share || 20) + "% del Banco (" + (I.share_follia || 50) + "% con la Follia) · +1 Stella ⭐. Se il Banco è quasi vuoto (raro) il premio è fisso: " + (I.prize_fixed || 500) + " $SDG"));
+    if (I.alarm_share) card.appendChild(el("p", "hs-prize", "Ogni allarme taglia il premio: " + I.alarm_share.join("% → ") + "% del Banco (0 → 2 allarmi; il terzo fa fallire)."));
     var go = el("button", "avi-go hs-go", "ENTRA NELLA RAPINA · " + (I.cost || 150) + " $SDG"); go.type = "button";
     if (I.balance != null && I.balance < (I.cost || 150)) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
     var sel = null;
@@ -250,7 +251,7 @@
           c.strokeStyle = "rgba(47,211,111,.22)"; c.lineWidth = 1; c.setLineDash([3, 5]); c.beginPath(); c.moveTo(48 + cw * (0.5 - l.amp), gy); c.lineTo(48 + cw * (0.5 + l.amp), gy); c.stroke(); c.setLineDash([]);
           c.save(); c.shadowColor = "#2fd36f"; c.shadowBlur = 16; c.strokeStyle = "#58ffa8"; c.lineWidth = 5; c.lineCap = "round"; c.beginPath(); c.moveTo(mx - hw, gy); c.lineTo(mx + hw, gy); c.stroke(); c.restore();
           c.fillStyle = "#555e78"; c.fillRect(mx - 5, gy - 5, 10, 10);
-          if (t >= 0 && Math.abs(gx - 0.5) < l.hw && Math.abs(x - l.x) < v.zone && !hitSent) { hitSent = true; release(); done = true; A.haptic("bad"); act("lz", { hit: true }); }
+          if (t >= 0 && Math.abs(gx - 0.5) < l.hw + 0.03 && Math.abs(x - l.x) < v.zone && !hitSent) { hitSent = true; release(); done = true; A.haptic("bad"); act("lz", { hit: true }); }
           return;
         }
         var y = yOf(l.x), isOn = t >= 0 && on(l, t), warn = t >= 0 && !isOn && ((t + l.ph) % l.p) > l.p - 0.22;
@@ -759,37 +760,41 @@
       requestAnimationFrame(loop);
     })(t0);
   }
-  // ----- mini: FUGA LAMPO (3 checkpoint): sbarre laser che scendono, cambi corsia -----
+  // ----- mini: SCATTO LASER (3 checkpoint): salta i raggi a terra, abbassati sotto quelli alti. Un solo pad con due tasti -----
   function mgDodge(v) {
-    var d = v.data, W = 300, H = 380, lw = (W - 40) / 3, PYr = H - 70, T = 0.4;
-    stage.appendChild(el("div", "hs-sub big", "Checkpoint " + (v.round || 1) + "/" + (v.rounds || 3) + " · schiva i laser: tocca a sinistra / destra"));
+    var d = v.data, W = 330, H = 250, GY = 186, AIR = d.air, WW = d.w, SPD = 260;
+    stage.appendChild(el("div", "hs-sub big", "Checkpoint " + (v.round || 1) + "/" + (v.rounds || 3) + " · SALTA i raggi a terra, ABBASSATI sotto quelli alti"));
     var cv = el("canvas", "hs-lz"); cv.width = W * 2; cv.height = H * 2; cv.style.width = W + "px"; cv.style.height = H + "px"; cv.style.touchAction = "none"; stage.appendChild(cv);
     var c = cv.getContext("2d"); c.scale(2, 2);
-    var t0 = performance.now() + (d.delay || 1) * 1000, lane = 1, vx = W / 2, ev = [], done = false, sx0 = 0, lastEv = -999;
-    var endT = d.bars[d.bars.length - 1][0] + T + 0.5;
-    function LX(l) { return 20 + lw * l + lw / 2; }
-    function go(k) { if (done) return; var tm = performance.now() - t0; if (tm < 0 || tm - lastEv < 70) return; var nl = Math.max(0, Math.min(2, lane + k)); if (nl === lane) return; lane = nl; lastEv = tm; ev.push([Math.round(tm), lane]); A.haptic("light"); snd("tick"); }
-    cv.addEventListener("pointerdown", function (e) { e.preventDefault(); sx0 = e.clientX; });
-    cv.addEventListener("pointerup", function (e) { var dx = e.clientX - sx0; if (Math.abs(dx) > 26) go(dx > 0 ? 1 : -1); else { var r = cv.getBoundingClientRect(); go(e.clientX - r.left < r.width / 2 ? -1 : 1); } });
-    function key(e) { if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); } else if (e.key === "ArrowRight") { e.preventDefault(); go(1); } }
+    var pad = el("div", "hs-act"), bj = el("button", "avi-go hs-go hs-actb", "⬆ SALTA"), bd = el("button", "avi-go hs-go hs-actb alt", "⬇ ABBASSATI");
+    bj.type = bd.type = "button"; pad.appendChild(bj); pad.appendChild(bd); stage.appendChild(pad);
+    var t0 = performance.now() + (d.delay || 1) * 1000, ev = [], act0 = null, done = false, PX = 70, endT = d.obs[d.obs.length - 1][0] + WW + 0.6;
+    function stateAt(t) { return act0 && t >= act0.s && t <= act0.s + AIR ? act0.k : ""; }
+    function start(k) { var tm = (performance.now() - t0) / 1000; if (done || tm < 0) return; if (act0 && tm < act0.s + AIR + 0.05) return; act0 = { s: tm, k: k }; ev.push([Math.round(tm * 1000), k]); A.haptic("light"); snd("tick"); }
+    function bind(b, k) { b.addEventListener("pointerdown", function (e) { e.preventDefault(); start(k); }); }
+    bind(bj, "j"); bind(bd, "d");
+    var sx0 = 0, sy0 = 0;
+    cv.addEventListener("pointerdown", function (e) { e.preventDefault(); sx0 = e.clientX; sy0 = e.clientY; });
+    cv.addEventListener("pointerup", function (e) { var dy = e.clientY - sy0; if (dy < -20) start("j"); else if (dy > 20) start("d"); });
+    function key(e) { if (e.key === "ArrowUp" || e.key === " ") { e.preventDefault(); start("j"); } else if (e.key === "ArrowDown") { e.preventDefault(); start("d"); } }
     document.addEventListener("keydown", key);
     (function loop(now) {
       if (done || root.hidden || S.view !== v) { done = true; document.removeEventListener("keydown", key); return; }
-      var t = (now - t0) / 1000; vx += (LX(lane) - vx) * 0.35;
-      c.clearRect(0, 0, W, H); c.fillStyle = "#070b16"; c.fillRect(0, 0, W, H); c.fillStyle = "#12182a"; c.fillRect(20, 0, W - 40, H);
-      c.fillStyle = "rgba(53,230,255,.5)"; c.fillRect(19, 0, 2, H); c.fillRect(W - 21, 0, 2, H);
-      for (var l = 1; l < 3; l++) { c.fillStyle = "rgba(255,255,255,.18)"; for (var y = ((now / 8) % 36) - 36; y < H; y += 36) c.fillRect(20 + lw * l - 1, y, 2, 18); }
+      var t = (now - t0) / 1000, st = stateAt(t);
+      c.clearRect(0, 0, W, H); var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0b1424"); g.addColorStop(1, "#060a14"); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      c.fillStyle = "rgba(53,230,255,.07)"; for (var k = 0; k < 9; k++) c.fillRect(((k * 47 - t * 60) % (W + 40) + W + 40) % (W + 40) - 20, 10, 1, GY - 10);
+      c.fillStyle = "#131a2e"; c.fillRect(0, GY, W, H - GY); c.fillStyle = "rgba(53,230,255,.55)"; c.fillRect(0, GY, W, 2);
       var hit = false;
-      d.bars.forEach(function (b) {
-        var y = PYr - (b[0] - t) / d.fall * (PYr + 20); if (y < -20 || y > H + 20) return;
-        for (var k = 0; k < 3; k++) if ((b[1] >> k) & 1) {
-          c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 14; c.fillStyle = "#ff4d68"; c.fillRect(20 + lw * k + 3, y - 5, lw - 6, 10); c.restore();
-          c.fillStyle = "#fff"; c.fillRect(20 + lw * k + 6, y - 1, lw - 12, 2);
-        }
-        if (t >= b[0] && t <= b[0] + T && (b[1] >> lane) & 1) hit = true;
+      d.obs.forEach(function (o) {
+        var x = PX + (o[0] - t) * SPD, wpx = WW * SPD; if (x > W + 30 || x + wpx < -30) return;
+        if (o[1] === "L") { c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 14; c.fillStyle = "#ff4d68"; c.fillRect(x, GY - 16, wpx, 16); c.restore(); c.fillStyle = "#fff"; c.fillRect(x + 2, GY - 9, wpx - 4, 2); c.fillStyle = "#555e78"; c.fillRect(x - 2, GY - 6, wpx + 4, 6); }
+        else { c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 14; c.fillStyle = "#ff4d68"; c.fillRect(x, GY - 62, wpx, 22); c.restore(); c.fillStyle = "#fff"; c.fillRect(x + 2, GY - 52, wpx - 4, 2); c.fillStyle = "#555e78"; c.fillRect(x - 2, GY - 100, wpx + 4, 38); }
+        if (t >= o[0] && t <= o[0] + WW && st !== (o[1] === "L" ? "j" : "d")) hit = true;
       });
-      c.fillStyle = "#ffd23b"; c.fillRect(vx - 13, PYr - 22, 26, 44); c.fillStyle = "#1a1a24"; c.fillRect(vx - 9, PYr - 13, 18, 11); c.fillStyle = "#ff3b5e"; c.fillRect(vx - 11, PYr + 17, 6, 4); c.fillRect(vx + 5, PYr + 17, 6, 4);
-      c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(20, 6, W - 40, 5); c.fillStyle = "#2fd36f"; c.fillRect(20, 6, (W - 40) * Math.max(0, Math.min(1, t / endT)), 5);
+      var u = act0 && st ? (t - act0.s) / AIR : 0, py = GY, sy = 1;                         // ladro: salto ad arco o abbassato
+      if (st === "j") py = GY - 70 * Math.sin(Math.PI * Math.min(1, u)); else if (st === "d") sy = 0.55;
+      c.save(); c.translate(PX - 14, py); c.scale(1, sy); c.shadowColor = "#35e6ff"; c.shadowBlur = 12; c.fillStyle = "#8ff3ff"; c.fillRect(0, -44, 18, 44); c.fillStyle = "#0b1424"; c.fillRect(11, -36, 5, 7); c.restore();
+      c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(10, 8, W - 20, 5); c.fillStyle = "#2fd36f"; c.fillRect(10, 8, (W - 20) * Math.max(0, Math.min(1, t / endT)), 5);
       if (now < t0) { c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, W, H); c.fillStyle = "#fff"; c.font = "700 30px Bungee,sans-serif"; c.textAlign = "center"; c.fillText(String(Math.ceil((t0 - now) / 1000)), W / 2, H / 2); }
       if (hit) { done = true; document.removeEventListener("keydown", key); A.haptic("bad"); act("dg", { hit: true }); return; }
       if (t >= endT) { done = true; document.removeEventListener("keydown", key); act("dg", { ev: ev, fin: Math.round(t * 1000) }); return; }
