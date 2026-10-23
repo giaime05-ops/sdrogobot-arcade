@@ -26,7 +26,7 @@
     hud = el("div", "hs-hud"); hud.hidden = true;
     lEl = el("div", "hs-lvl"); tEl = el("div", "hs-time", "5:00"); aEl = el("div", "hs-alm");
     hud.appendChild(lEl); hud.appendChild(tEl); hud.appendChild(aEl);
-    if (A.isAdmin && A.isAdmin()) {                                               // strumenti admin: riprova il livello / salta al prossimo
+    if (A.isSandbox && A.isSandbox()) {                                               // strumenti admin: riprova il livello / salta al prossimo
       var tl = el("div", "hs-tools");
       var rb = el("button", "hs-tool", "↺ Riprova livello"), sb = el("button", "hs-tool", "⏭ Salta livello"); rb.type = sb.type = "button";
       rb.addEventListener("click", function () { act("retry"); }); sb.addEventListener("click", function () { act("skip"); });
@@ -119,7 +119,7 @@
     var go = el("button", "avi-go hs-go", "ENTRA NELLA RAPINA · " + (I.cost || 150) + " $SDG"); go.type = "button";
     if (I.balance != null && I.balance < (I.cost || 150)) { go.disabled = true; go.textContent = "SALDO INSUFFICIENTE"; }
     var sel = null;
-    if (A.isAdmin && A.isAdmin()) {                                                // admin: si può cominciare da un livello qualsiasi
+    if (A.isSandbox && A.isSandbox()) {                                                // admin: si può cominciare da un livello qualsiasi
       sel = el("select", "hs-sel"); (I.names || []).forEach(function (n, i) { var o = el("option", "", "Parti dal livello " + (i + 1) + (n ? " · " + n : "")); o.value = String(i + 1); sel.appendChild(o); });
       if (S.startLvl) sel.value = String(S.startLvl); card.appendChild(sel);
     }
@@ -165,7 +165,7 @@
       c.appendChild(el("p", "hs-lead", e.msg || ""));
       c.appendChild(el("p", "hs-prize", (e.paid === 0 ? "Questa volta non hai speso nulla." : "Hai perso i " + (e.paid != null ? e.paid : (e.mini ? ((S.mini && S.mini.cost) || 100) : ((S.info && S.info.cost) || 150))) + " $SDG d'ingresso.")));
     }
-    if (!e.mini && e.result !== "win" && e.level && A.isAdmin && A.isAdmin()) {                // admin: ritenta proprio il livello in cui sei caduto
+    if (!e.mini && e.result !== "win" && e.level && A.isSandbox && A.isSandbox()) {                // admin: ritenta proprio il livello in cui sei caduto
       var rt = el("button", "avi-go hs-go", "RIPROVA IL LIVELLO " + e.level); rt.type = "button";
       rt.addEventListener("click", function () { post("/api/heist/start", { lvl: e.level }).then(function (j) { if (j) handle(j); }).catch(function () {}); });
       c.appendChild(rt);
@@ -660,7 +660,7 @@
       go.addEventListener("click", function () { A.haptic("med"); snd("creak"); S.base = "/api/mini"; post("/api/mini/start", { which: m.id }).then(function (j) { if (j) handle(j); }).catch(function () {}); });
       stage.appendChild(c);
     });
-    if (A.isAdmin && A.isAdmin()) {
+    if (A.isSandbox && A.isSandbox()) {
       var rs = el("button", "hs-tool", "↺ Azzera attese e tentativi (admin)"); rs.type = "button"; rs.style.alignSelf = "center";
       rs.addEventListener("click", function () { A.api("/api/mini/reset", "POST", {}).then(function (j) { S.mini = j.info; drawDaily(); }).catch(function (e) { A.toast(errText(e)); }); });
       stage.appendChild(rs);

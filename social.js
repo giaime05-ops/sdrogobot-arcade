@@ -307,7 +307,7 @@
       pav.className = "avatar rav"; A.styleAvatar(pav, cur, (nameTxt || "?").charAt(0).toUpperCase());
       prev.className = "row pe-prev"; A.styleRow(prev, cur); pnm.innerHTML = ""; pnm.appendChild(A.nameEl(nameTxt, cur));
     }
-    var isAd = !!(A.isAdmin && A.isAdmin());
+    var isAd = !!(A.isSandbox && A.isSandbox());
     var hint = el("div", "av-hint", isAd ? "Account di prova: 🔒 = bloccato per i giocatori, tu puoi provarlo lo stesso. Tocca un 🔒 per vedere come si sblocca." : "Tocca un oggetto 🔒 per vedere come si sblocca.");
     A.api("/api/social/wallet").then(function (w) { KIT._w = w; build(); }).catch(function () { KIT._w = {}; build(); });
     var box = el("div", "pe-accs"); card.appendChild(box);
