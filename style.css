@@ -1156,16 +1156,16 @@ button,input,select{font-family:inherit}
 .hbtns .gearbtn svg{width:22px;height:22px}
 .hbtns .frbtn{margin-right:0}
 .frdot{top:-6px;right:-6px}
-.frbub{position:fixed;z-index:9300;padding:7px 14px;border-radius:14px;background:rgba(10,6,22,.94);border:1.5px solid #2fd36f;color:#c8ffdc;font:700 16px Rajdhani,sans-serif;letter-spacing:.3px;box-shadow:0 0 14px rgba(47,211,111,.5);white-space:nowrap;cursor:pointer}
+.frbub{position:fixed;z-index:9300;padding:3px 8px;border-radius:10px;background:rgba(10,6,22,.94);border:1.5px solid #2fd36f;color:#c8ffdc;font:700 12px Rajdhani,sans-serif;letter-spacing:.3px;box-shadow:0 0 14px rgba(47,211,111,.5);white-space:nowrap;cursor:pointer}
 .frbub::before{content:"";position:absolute;top:-7px;left:var(--cx,50%);width:11px;height:11px;margin-left:-6px;background:rgba(10,6,22,.97);border-left:1.5px solid #2fd36f;border-top:1.5px solid #2fd36f;transform:rotate(45deg)}
 .frbub.swap{animation:frswap .4s ease both}
 @keyframes frswap{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 
 /* dorso carte personalizzato Sdrogo Arcade */
-.mc.back,.mx-shoe{background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 90%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%232a0a4a%22/%3E%3Cstop offset=%221%22 stop-color=%22%230c0420%22/%3E%3C/linearGradient%3E%3Cpattern id=%22p%22 width=%228%22 height=%228%22 patternUnits=%22userSpaceOnUse%22 patternTransform=%22rotate(45)%22%3E%3Cpath d=%22M0 0H8%22 stroke=%22%23ff3db0%22 stroke-opacity=%22.16%22 stroke-width=%221%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect width=%2264%22 height=%2290%22 rx=%227%22 fill=%22url(%23g)%22/%3E%3Crect width=%2264%22 height=%2290%22 rx=%227%22 fill=%22url(%23p)%22/%3E%3Crect x=%223.5%22 y=%223.5%22 width=%2257%22 height=%2283%22 rx=%225%22 fill=%22none%22 stroke=%22%23e8c36a%22 stroke-width=%221.6%22/%3E%3Crect x=%227%22 y=%227%22 width=%2250%22 height=%2276%22 rx=%223%22 fill=%22none%22 stroke=%22%23ff3db0%22 stroke-opacity=%22.7%22 stroke-width=%22.8%22/%3E%3Ccircle cx=%2232%22 cy=%2245%22 r=%2219%22 fill=%22%2312052b%22 stroke=%22%2335e6ff%22 stroke-width=%221.4%22/%3E%3Ctext x=%2232%22 y=%2258%22 text-anchor=%22middle%22 font-family=%22Arial Black,Impact,sans-serif%22 font-weight=%22900%22 font-size=%2238%22 fill=%22%23ff5ccf%22 stroke=%22%23ffd0f4%22 stroke-width=%22.6%22%3ES%3C/text%3E%3Cpath d=%22M32 22V68%22 stroke=%22%23e8c36a%22 stroke-width=%222%22 stroke-linecap=%22round%22/%3E%3C/svg%3E") center/100% 100% no-repeat,#12052b!important;border-color:#e8c36a!important}
+.mc.back,.mx-shoe{background:url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2064%2090%22%3E%3Crect%20width=%2264%22%20height=%2290%22%20rx=%227%22%20fill=%22%230a0a0c%22/%3E%3Crect%20x=%226%22%20y=%226%22%20width=%2252%22%20height=%2278%22%20rx=%223.5%22%20fill=%22none%22%20stroke=%22%23d9b45a%22%20stroke-width=%221.5%22/%3E%3Ccircle%20cx=%2232%22%20cy=%2245%22%20r=%2216%22%20fill=%22%231a1406%22%20stroke=%22%23e8c36a%22%20stroke-width=%222.2%22/%3E%3Ccircle%20cx=%2232%22%20cy=%2245%22%20r=%2212.2%22%20fill=%22none%22%20stroke=%22%23b8923a%22%20stroke-width=%221%22/%3E%3Ctext%20x=%2232%22%20y=%2253%22%20text-anchor=%22middle%22%20font-family=%22Arial%20Black,Arial,sans-serif%22%20font-weight=%22900%22%20font-size=%2222%22%20fill=%22%23f2cf6e%22%3E%24%3C/text%3E%3C/svg%3E") center/100% 100% no-repeat!important;border-color:#2a2410!important;color:transparent}
 .mx-shoe{box-shadow:3px 3px 0 #2a1450,6px 6px 0 #1d0e3a!important}
 /* tavolo blackjack rosso come nel single player */
-.mx-felt.bj{background:radial-gradient(ellipse at 50% 45%,#c8203c,#8a0f26 68%,#5a0818);border-color:#ff5a7a;box-shadow:inset 0 0 40px rgba(0,0,0,.5),0 0 18px rgba(255,61,110,.45)}
+.mx-felt.bj{background:linear-gradient(180deg,#3a0c14,#1a0508);border-color:#7a2a3a;box-shadow:inset 0 0 28px rgba(0,0,0,.6),0 0 14px rgba(255,46,77,.18)}
 
 #mpBody.fit .mx-felt.pk .mc.cm{width:36px;height:52px;margin-left:3px}
 .mx-banner{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:6;text-align:center;padding:12px 22px;border-radius:18px;background:rgba(8,4,20,.9);border:2px solid #ffd24a;box-shadow:0 0 24px rgba(255,210,74,.55);animation:mxban .45s cubic-bezier(.2,1.3,.4,1) both;white-space:nowrap}
@@ -1218,3 +1218,11 @@ button,input,select{font-family:inherit}
 .rc-lap{font:700 16px Rajdhani,sans-serif;color:#cdbfe6}
 .rc-x{position:absolute;left:8px;top:40px;z-index:3;font:700 14px Rajdhani,sans-serif;color:#fff;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:4px 10px}
 #mpBody.fit .mp-card.tbl,#mpBody.fit .mp-card.rc-track{flex:0 0 auto}
+
+.mx-pot .chs{display:inline-flex;vertical-align:middle;margin-left:6px}
+.mx-pot .ch{width:11px;height:11px;border-radius:50%;margin-left:-5px;border:1.5px solid rgba(0,0,0,.55);box-shadow:0 1px 2px #000}
+.mx-pot .ch.c0{background:#ffe27a}.mx-pot .ch.c1{background:#ff5a7a}.mx-pot .ch.c2{background:#35e6ff}
+.mx-seat.hl-raise .mx-cs{filter:drop-shadow(0 0 7px #ff3db0)}.mx-seat.hl-raise .mx-info{color:#ff9ad8;text-shadow:0 0 8px #ff3db0}
+.mx-seat.hl-allin .mx-cs{animation:alpulse .7s ease-in-out infinite alternate}.mx-seat.hl-allin .mx-info{color:#ffe27a;text-shadow:0 0 10px #ffb300;font-weight:700}
+@keyframes alpulse{from{filter:drop-shadow(0 0 4px #ffb300)}to{filter:drop-shadow(0 0 13px #ffd54a)}}
+.mp-rowc{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0}

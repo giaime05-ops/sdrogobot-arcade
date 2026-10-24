@@ -10,7 +10,7 @@
   var dot = el("i", "frdot"); dot.hidden = true; btn.appendChild(dot);
   var hb = gear.parentNode;
   if (!hb.classList.contains("hbtns")) { hb = el("div", "hbtns"); gear.parentNode.insertBefore(hb, gear); hb.appendChild(gear); }
-  hb.insertBefore(btn, gear);
+  hb.appendChild(btn);
 
   var list = [], told = {}, timer = 0, box = null;
   function ago(s) { return s < 60 ? "ora" : s < 3600 ? Math.floor(s / 60) + " min fa" : s < 86400 ? Math.floor(s / 3600) + " h fa" : Math.floor(s / 86400) + " g fa"; }
@@ -19,7 +19,8 @@
   var bub = null, bi = 0, bt = 0, names = [];
   function placeBub() {
     if (!bub) return;
-    if (document.body.getAttribute("data-tab") !== "hub" || !btn.getClientRects().length || btn.getBoundingClientRect().width < 10 || !document.getElementById("top") || document.getElementById("top").offsetParent === null) { bub.style.display = "none"; return; }
+    var gameOpen = ["avi", "gm", "g4", "heist"].some(function (id) { var n = $(id); return n && !n.hidden; });
+    if (gameOpen || document.body.getAttribute("data-tab") !== "hub" || !btn.getClientRects().length || btn.getBoundingClientRect().width < 10 || !document.getElementById("top") || document.getElementById("top").offsetParent === null) { bub.style.display = "none"; return; }
     bub.style.display = ""; var r = btn.getBoundingClientRect(), hr = hb.getBoundingClientRect(), W = window.innerWidth;
     bub.style.top = Math.round(hr.bottom + 10) + "px";
     var w = bub.offsetWidth || 150, left = Math.max(8, Math.min(W - w - 8, r.left + r.width / 2 - w / 2));
