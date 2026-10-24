@@ -8,27 +8,42 @@
   var btn = el("button", "gearbtn frbtn"); btn.type = "button"; btn.hidden = true; btn.setAttribute("aria-label", "Amici");
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17.5" cy="9" r="2.4"/><path d="M17 14.6c2.4.1 4 1.8 4 4.4"/></svg>';
   var dot = el("i", "frdot"); dot.hidden = true; btn.appendChild(dot);
-  gear.parentNode.insertBefore(btn, gear);
+  var hb = gear.parentNode;
+  if (!hb.classList.contains("hbtns")) { hb = el("div", "hbtns"); gear.parentNode.insertBefore(hb, gear); hb.appendChild(gear); }
+  hb.insertBefore(btn, gear);
 
   var list = [], told = {}, timer = 0, box = null;
   function ago(s) { return s < 60 ? "ora" : s < 3600 ? Math.floor(s / 60) + " min fa" : s < 86400 ? Math.floor(s / 3600) + " h fa" : Math.floor(s / 86400) + " g fa"; }
 
-  function banner(names) {
-    var b = el("div", "q-ban frban"); b.textContent = "🟢 " + names.join(", ") + (names.length > 1 ? " sono online" : " è online");
-    b.addEventListener("click", function () { b.remove(); open(); });
-    document.body.appendChild(b);
-    setTimeout(function () { b.classList.add("off"); setTimeout(function () { b.remove(); }, 400); }, 4500);
+  // fumetto sotto il tasto: "Marco è online", un nome alla volta (scorre se sono più persone), resta finché c'è qualcuno online
+  var bub = null, bi = 0, bt = 0, names = [];
+  function placeBub() {
+    if (!bub) return;
+    if (document.body.getAttribute("data-tab") !== "hub" || !btn.getClientRects().length || btn.getBoundingClientRect().width < 10 || !document.getElementById("top") || document.getElementById("top").offsetParent === null) { bub.style.display = "none"; return; }
+    bub.style.display = ""; var r = btn.getBoundingClientRect(), hr = hb.getBoundingClientRect(), W = window.innerWidth;
+    bub.style.top = Math.round(hr.bottom + 10) + "px";
+    var w = bub.offsetWidth || 150, left = Math.max(8, Math.min(W - w - 8, r.left + r.width / 2 - w / 2));
+    bub.style.left = left + "px"; bub.style.setProperty("--cx", Math.round(r.left + r.width / 2 - left) + "px");
+  }
+  function showName() {
+    if (!names.length) { if (bub) { bub.remove(); bub = null; } return; }
+    if (!bub) { bub = el("div", "frbub"); bub.addEventListener("click", open); document.body.appendChild(bub); }
+    var t = names[bi % names.length] + " è online"; bi++;
+    bub.textContent = t; bub.classList.remove("swap"); void bub.offsetWidth; bub.classList.add("swap"); placeBub();
+  }
+  function setNames(n) {
+    var same = n.join("|") === names.join("|"); names = n;
+    if (!same || !bub) { bi = 0; showName(); }
+    clearInterval(bt); if (names.length > 1) bt = setInterval(showName, 3200);
   }
   function poll() {
-    if (!A.isSandbox()) { btn.hidden = true; return; }
+    if (!A.isSandbox()) { btn.hidden = true; setNames([]); return; }
     btn.hidden = false;
     A.api("/api/social/friends").then(function (j) {
       list = j.friends || [];
       var on = list.filter(function (f) { return f.online; });
       dot.hidden = !on.length; dot.textContent = String(on.length);
-      var fresh = on.filter(function (f) { return !told[f.pid]; });
-      list.forEach(function (f) { if (f.online) told[f.pid] = 1; else delete told[f.pid]; });
-      if (fresh.length) banner(fresh.slice(0, 3).map(function (f) { return f.name; }));
+      setNames(on.slice(0, 8).map(function (f) { return f.name; }));
       if (box && !box.hidden) paint();
     }).catch(function () {});
   }
@@ -57,6 +72,6 @@
     paint(); box.hidden = false; A.haptic("light"); poll();
   }
   btn.addEventListener("click", open);
-  poll(); timer = setInterval(poll, 25000);
+  poll(); timer = setInterval(poll, 25000); setInterval(placeBub, 700);
   setInterval(function () { if (A.isSandbox() === btn.hidden) poll(); }, 1500);
 })();

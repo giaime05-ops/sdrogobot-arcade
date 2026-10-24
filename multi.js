@@ -29,44 +29,70 @@
   function names() { return [BOT].concat(st.players.length ? st.players : [{ id: "1", name: "Marco" }, { id: "2", name: "Giulia" }, { id: "3", name: "Luca" }]); }
 
   // ====================================================================== lobby
+  function backBar(title, to) {
+    var h = el("div", "mp-top"); var bk = el("button", "mp-back", "‹ Multi"); bk.type = "button"; bk.addEventListener("click", to || lobby);
+    h.appendChild(bk); h.appendChild(el("div", "mp-title", title)); body.appendChild(h); return h;
+  }
+  // ---- home del multiplayer: grandi riquadri, uno per sezione
   function lobby() {
-    fit(false);
-    epoch++; body.innerHTML = "";
+    fit(true); epoch++; body.innerHTML = "";
     body.appendChild(el("div", "pg-me", "🛠️ Prototipo (solo admin): gli avversari sono simulati"));
-    body.appendChild(el("div", "mp-sec", "SFIDA DIRETTA"));
-    var c = el("div", "mp-card"); body.appendChild(c);
-    c.appendChild(el("div", "", "Avversario"));
-    var rp = el("div", "mp-row"); c.appendChild(rp);
-    if (!st.opp) st.opp = BOT;
-    function pPlayers() { chips(rp, names().slice(0, 12).map(function (p) { return [p.id, p.name]; }), st.opp.id, function (it) { st.opp = { id: it[0], name: it[1] }; pPlayers(); }); }
-    pPlayers();
-    c.appendChild(el("div", "", "Gioco"));
-    var rg = el("div", "mp-row"); c.appendChild(rg);
-    function pG() { chips(rg, GAMES, st.game, function (it) { if (it[2] === false) { A.toast(it[1] + ": presto"); return; } st.game = it[0]; pG(); }); } pG();
-    c.appendChild(el("div", "", "Puntata"));
-    var rb = el("div", "mp-row"); c.appendChild(rb);
-    function pB() { chips(rb, [10, 50, 100, 500, 1000].map(function (n) { return [n, A.fmt(n)]; }), st.bet, function (it) { st.bet = it[0]; pB(); }); } pB();
-    c.appendChild(el("div", "", "Round (al meglio di)"));
-    var rr = el("div", "mp-row"); c.appendChild(rr);
-    function pR() { chips(rr, [1, 3, 5].map(function (n) { return [n, String(n)]; }), st.rounds, function (it) { st.rounds = it[0]; pR(); }); } pR();
-    var go = el("button", "mp-go", "INVIA SFIDA"); go.type = "button"; go.addEventListener("click", send); c.appendChild(go);
-    var gb = el("button", "mp-go mp-alt", "🤖 PROVA SUBITO CONTRO UN BOT"); gb.type = "button"; gb.addEventListener("click", function () { st.opp = BOT; duel(); }); c.appendChild(gb);
-
-    body.appendChild(el("div", "mp-sec", "TAVOLI (fino a 4 giocatori)"));
+    var g = el("div", "mp-hub"); body.appendChild(g);
+    [["🃏", "TAVOLI", "Blackjack e Poker fino a 4 giocatori", tables, true], ["⚔️", "SFIDE 1v1", "Sasso-carta-forbici, dadi, tris, roulette…", duels, true],
+     ["🏎️", "CORSA F1", "Giri a tempo, fantasma e classifica", function () { if (window.ArcadeRace) { fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); } }, true],
+     ["🧠", "QUIZ", "Quiz multiplayer: in arrivo", null, false]].forEach(function (t) {
+      var b = el("button", "mp-tile" + (t[4] ? "" : " off")); b.type = "button";
+      b.appendChild(el("i", "", t[0])); b.appendChild(el("b", "", t[1])); b.appendChild(el("span", "", t[2]));
+      b.addEventListener("click", function () { if (t[3]) { A.haptic("light"); t[3](); } else A.toast("Presto!"); }); g.appendChild(b);
+    });
+  }
+  // ---- tavoli
+  function tables() {
+    fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI");
     [["Poker Texas", "🂡", "pk"], ["Blackjack insieme", "🃏", "bj"]].forEach(function (t) {
-      var tc = el("div", "mp-card"); tc.appendChild(el("div", "", t[1] + " " + t[0]));
-      var seats = el("div"); tc.appendChild(seats); var n = 1;
+      var tc = el("div", "mp-card tbl"); tc.appendChild(el("div", "mp-ttl", t[1] + " " + t[0]));
+      var seats = el("div", "mp-seats"); tc.appendChild(seats); var n = 1;
       function paintSeats() {
         seats.innerHTML = "";
         for (var i = 0; i < 4; i++) { var s = el("span", "mp-seat" + (i === 0 ? " me" : ""), i < n ? (i === 0 ? "Tu" : "🤖 Bot " + i) : "libero"); seats.appendChild(s); }
       }
       paintSeats();
-      var j = el("button", "mp-go", "AGGIUNGI BOT AL TAVOLO"); j.type = "button";
+      var rw = el("div", "mp-end");
+      var j = el("button", "mp-go", "+ BOT"); j.type = "button";
       j.addEventListener("click", function () { if (n < 4) { n++; paintSeats(); A.haptic("light"); } else A.toast("Tavolo pieno"); });
-      var gt = el("button", "mp-go mp-alt", "▶ GIOCA CON I BOT"); gt.type = "button";
+      var gt = el("button", "mp-go mp-alt", "▶ GIOCA"); gt.type = "button";
       gt.addEventListener("click", function () { var bots = Math.max(1, n - 1); if (t[2] === "bj") bjTable(bots); else pkTable(bots); });
-      tc.appendChild(j); tc.appendChild(gt); body.appendChild(tc);
+      rw.appendChild(j); rw.appendChild(gt); tc.appendChild(rw); body.appendChild(tc);
     });
+  }
+  // ---- sfide 1v1, tutto in una schermata
+  var ICON = { srf: "✊", dadi: "🎲", hl: "⬆️", tris: "❌", quiz: "🧠", ghig: "🪓", rou: "🎡" };
+  function duels() {
+    fit(true); epoch++; body.innerHTML = ""; backBar("SFIDE 1v1");
+    var c = el("div", "mp-card mp-duel"); body.appendChild(c);
+    if (!st.opp) st.opp = BOT;
+    c.appendChild(el("div", "mp-lab", "Avversario"));
+    var rp = el("div", "mp-row scroll"); c.appendChild(rp);
+    function pPlayers() { chips(rp, names().slice(0, 12).map(function (p) { return [p.id, p.name]; }), st.opp.id, function (it) { st.opp = { id: it[0], name: it[1] }; pPlayers(); }); } pPlayers();
+    c.appendChild(el("div", "mp-lab", "Gioco"));
+    var rg = el("div", "mp-games"); c.appendChild(rg);
+    function pG() {
+      rg.innerHTML = "";
+      GAMES.forEach(function (it) {
+        var b = el("button", "mp-gt" + (it[0] === st.game ? " on" : "") + (it[2] === false ? " off" : "")); b.type = "button";
+        b.appendChild(el("i", "", ICON[it[0]] || "🎮")); b.appendChild(el("span", "", it[1].replace(/^\S+\s/, "")));
+        b.addEventListener("click", function () { if (it[2] === false) { A.toast(it[1] + ": presto"); return; } A.haptic("light"); st.game = it[0]; pG(); }); rg.appendChild(b);
+      });
+    } pG();
+    var two = el("div", "mp-two"); c.appendChild(two);
+    var cb = el("div"); cb.appendChild(el("div", "mp-lab", "Puntata")); var rb = el("div", "mp-row scroll"); cb.appendChild(rb); two.appendChild(cb);
+    function pB() { chips(rb, [10, 50, 100, 500, 1000].map(function (n) { return [n, A.fmt(n)]; }), st.bet, function (it) { st.bet = it[0]; pB(); }); } pB();
+    var cr = el("div"); cr.appendChild(el("div", "mp-lab", "Round")); var rr = el("div", "mp-row"); cr.appendChild(rr); two.appendChild(cr);
+    function pR() { chips(rr, [1, 3, 5].map(function (n) { return [n, String(n)]; }), st.rounds, function (it) { st.rounds = it[0]; pR(); }); } pR();
+    var rw = el("div", "mp-end");
+    var go = el("button", "mp-go", "INVIA SFIDA"); go.type = "button"; go.addEventListener("click", send);
+    var gb = el("button", "mp-go mp-alt", "🤖 PROVA COL BOT"); gb.type = "button"; gb.addEventListener("click", function () { st.opp = BOT; duel(); });
+    rw.appendChild(go); rw.appendChild(gb); c.appendChild(rw);
   }
   function send() {
     fit(false); epoch++; body.innerHTML = ""; var c = el("div", "mp-card"); c.appendChild(el("div", "mp-sec", "SFIDA INVIATA A " + st.opp.name.toUpperCase()));
@@ -88,7 +114,7 @@
       var won = me > op; draw(); area.innerHTML = "";
       msg.textContent = won ? "🏆 HAI VINTO +" + A.fmt(st.bet) + " $SDG (simulato)" : "💀 HAI PERSO −" + A.fmt(st.bet) + " $SDG (simulato)"; msg.className = "pg-me " + (won ? "mp-win" : "mp-lose"); A.haptic(won ? "ok" : "bad");
       var r1 = el("button", "mp-go", "RIGIOCA"); r1.type = "button"; r1.addEventListener("click", duel);
-      var r2 = el("button", "mp-go mp-alt", "TORNA ALLA LOBBY"); r2.type = "button"; r2.addEventListener("click", lobby); area.appendChild(r1); area.appendChild(r2);
+      var r2 = el("button", "mp-go mp-alt", "LOBBY"); r2.type = "button"; r2.addEventListener("click", duels); area.appendChild(r1); area.appendChild(r2);
     }
     function next() {
       if (!alive(E)) return; draw(); area.innerHTML = ""; msg.className = "pg-me";
@@ -102,6 +128,19 @@
       });
     }
     next();
+  }
+  // banner centrale con l'esito della mano (sparisce da solo)
+  function banner(felt, big, small, cls) {
+    var b = el("div", "mx-banner " + (cls || "")); b.appendChild(el("b", "", big)); if (small) b.appendChild(el("span", "", small)); felt.appendChild(b);
+    var e = epoch; setTimeout(function () { if (b.parentNode) { b.classList.add("off"); setTimeout(function () { b.remove(); }, 400); } }, 3200);
+  }
+  // "Rigioca": si riparte solo quando tutti i giocatori hanno confermato (i bot confermano uno alla volta)
+  function rematch(area, n, go, E) {
+    area.innerHTML = ""; var w = el("div", "mp-wait"), k = 1; area.appendChild(w);
+    var bk = el("button", "mp-go mp-alt", "LOBBY"); bk.type = "button"; bk.addEventListener("click", lobby); area.appendChild(bk);
+    function paintW() { w.textContent = "⏳ Rigioca · " + k + "/" + n + " pronti"; }
+    paintW();
+    (function tick() { if (!alive(E)) return; if (k >= n) return go(); wait(600 + rnd(600)).then(function () { if (!alive(E)) return; k++; paintW(); tick(); }); })();
   }
   function fit(on) { body.classList.toggle("fit", !!on); }
   function say(msg, t, cls) { msg.textContent = t; msg.className = "pg-me " + (cls || ""); }
@@ -376,11 +415,13 @@
             if (p.st === "bust") p.res = ["lose", "perde"]; else if (dv > 21 || v > dv) p.res = ["win", nat ? "BLACKJACK!" : "vince"]; else if (v === dv) p.res = ["push", "pari"]; else p.res = ["lose", "perde"];
             if (p.me) profit += p.res[0] === "win" ? Math.round(st.bet * (nat ? 1.5 : 1)) : (p.res[0] === "lose" ? -st.bet : 0);
           });
-          paint(false); var me = P[0].res; snd(me[0] === "win" ? "win" : (me[0] === "lose" ? "lose" : "click"));
+          paint(false); var me = P[0].res; var dme = me[0] === "win" ? Math.round(st.bet * (P[0].cards.length === 2 && bjVal(P[0].cards) === 21 ? 1.5 : 1)) : (me[0] === "lose" ? -st.bet : 0);
+          banner(felt, me[0] === "win" ? (me[1] === "BLACKJACK!" ? "BLACKJACK!" : "HAI VINTO!") : (me[0] === "push" ? "PAREGGIO" : "VINCE IL BANCO"), (dme >= 0 ? "+" : "−") + A.fmt(Math.abs(dme)) + " $SDG · tu " + bjVal(P[0].cards) + " vs banco " + bjVal(dealer), me[0]);
+          snd(me[0] === "win" ? "win" : (me[0] === "lose" ? "lose" : "click"));
           say(msg, me[0] === "win" ? "Hai vinto la mano!" : (me[0] === "push" ? "Pareggio" : "Il banco batte la tua mano"), me[0] === "win" ? "mp-win" : (me[0] === "lose" ? "mp-lose" : ""));
           tot.textContent = "Saldo prova: " + (profit >= 0 ? "+" : "−") + A.fmt(Math.abs(profit)) + " $SDG (simulato)"; area.innerHTML = "";
           var en = el("div", "mp-end"); area.appendChild(en);
-          var a1 = el("button", "mp-go", "NUOVA MANO"); a1.type = "button"; a1.addEventListener("click", hand);
+          var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); });
           var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a1); en.appendChild(a2);
         });
       })();
@@ -417,7 +458,7 @@
     var deck, board, pot, cur, dealer = 0;
     function paint(show) {
       felt.innerHTML = ""; felt.appendChild(shoe);
-      var cm = el("div", "mx-cs"); cm.style.cssText = "position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)";
+      var cm = el("div", "mx-cs"); cm.style.cssText = "position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);flex-wrap:wrap;max-width:124px;row-gap:5px";
       for (var k = 0; k < 5; k++) cm.appendChild(k < board.length ? mcEl(board[k], false, "cm") : el("span", "mc cm empty")); felt.appendChild(cm);
       felt.appendChild(el("div", "mx-pot", "Piatto " + A.fmt(pot * u) + " $SDG"));
       P.forEach(function (p, i) {
@@ -494,8 +535,9 @@
       else { while (board.length < 5) board.push(deck.pop()); var bv = -1; L.forEach(function (p) { p.v = best7(p.hole.concat(board)); if (p.v > bv) { bv = p.v; win = [p]; } else if (p.v === bv) win.push(p); }); }
       win.forEach(function (p) { p.win = true; p.stack += Math.floor(pot / win.length); }); dealer = (dealer + 1) % P.length;
       paint(true); var mw = win.indexOf(P[0]) >= 0;
+      banner(felt, mw ? "HAI VINTO!" : (win[0].name.replace("🤖 ", "") + " VINCE"), "Piatto " + A.fmt(pot * u) + " $SDG" + (L.length > 1 && win[0].v != null ? " · " + CATN[catOf(win[0].v)] : " · tutti gli altri hanno foldato"), mw ? "win" : "lose");
       say(msg, mw ? "Hai vinto il piatto di " + A.fmt(pot * u) + " $SDG!" : (P[0].fold ? "Hai foldato — vince " + win[0].name : "Vince " + win[0].name + " (" + A.fmt(pot * u) + " $SDG)"), mw ? "mp-win" : "mp-lose"); A.haptic(mw ? "ok" : "light"); snd(mw ? "win" : "lose");
-      area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); var a1 = el("button", "mp-go", "NUOVA MANO"); a1.type = "button"; a1.addEventListener("click", hand);
+      area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); });
       var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a1); en.appendChild(a2);
     }
     hand();
