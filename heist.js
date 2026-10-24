@@ -42,7 +42,9 @@
   function later(fn, ms) { var t = setTimeout(fn, ms); S.timers.push(t); return t; }
   function setBal(n) { if (n != null) bal.textContent = A.fmt(n); }
   function flash(kind) { var f = document.getElementById("hsFlash"); f.className = "hs-flash " + kind; void f.offsetWidth; f.className = "hs-flash " + kind + " go"; }
-  function say(t, kind) { if (!t) return; var m = el("div", "hs-say " + (kind || ""), t); document.body.appendChild(m); setTimeout(function () { m.remove(); }, 2200); }
+  function say(t, kind) { if (!t) return; var m = el("div", "hs-say " + (kind || ""), t); document.body.appendChild(m); place(m); setTimeout(function () { m.remove(); }, 2200); }
+  // gli avvisi stanno in cima all'area di gioco, nello spazio riservato (padding-top dello stage): non coprono mai il testo né il giochino
+  function place(m) { var r = stage.getBoundingClientRect(); m.style.top = Math.round(r.top + 8) + "px"; m.style.bottom = "auto"; }
 
   // ---------- timer globale ----------
   function startClock(left) {
@@ -178,7 +180,7 @@
   // ---------- livelli ----------
   function showLevel(v, ev) {
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
-    if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); document.body.appendChild(up); setTimeout(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
+    if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); document.body.appendChild(up); place(up); setTimeout(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
     ({ seq: lv1, laser: lvLaser, mgl: mgLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice, logic: mgLogic, dodge: mgDodge, simon: mgSimon })[v.kind === "laser" && v.data ? "mgl" : v.kind](v);
   }
