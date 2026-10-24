@@ -42,7 +42,7 @@
   function later(fn, ms) { var t = setTimeout(fn, ms); S.timers.push(t); return t; }
   function setBal(n) { if (n != null) bal.textContent = A.fmt(n); }
   function flash(kind) { var f = document.getElementById("hsFlash"); f.className = "hs-flash " + kind; void f.offsetWidth; f.className = "hs-flash " + kind + " go"; }
-  function say(t, kind) { if (!t) return; var m = el("div", "hs-say " + (kind || ""), t); stage.appendChild(m); later(function () { m.remove(); }, 2200); }
+  function say(t, kind) { if (!t) return; var m = el("div", "hs-say " + (kind || ""), t); document.body.appendChild(m); setTimeout(function () { m.remove(); }, 2200); }
 
   // ---------- timer globale ----------
   function startClock(left) {
