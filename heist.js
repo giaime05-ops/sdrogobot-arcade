@@ -178,7 +178,7 @@
   // ---------- livelli ----------
   function showLevel(v, ev) {
     clearTimers(); stage.className = "hs-stage lv" + v.level; stage.innerHTML = "";
-    if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); stage.appendChild(up); later(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
+    if (ev && ev.type === "level") { var up = el("div", "hs-up", "LIVELLO " + ev.level + " SUPERATO ✓"); document.body.appendChild(up); setTimeout(function () { up.remove(); }, 1500); if (ev.msg) say(ev.msg, "ok"); }
     else if (ev && ev.msg) say(ev.msg, ev.type === "alarm" ? "bad" : "ok");
     ({ seq: lv1, laser: lvLaser, mgl: mgLaser, hack: lv3, lock: lvLock, vault: lv4, flight: lv5, circuit: lvCircuit, chase: lvChase, face: mgFace, cable: mgCable, print: mgPrint, freq: mgFreq, voice: mgVoice, logic: mgLogic, dodge: mgDodge, simon: mgSimon })[v.kind === "laser" && v.data ? "mgl" : v.kind](v);
   }
