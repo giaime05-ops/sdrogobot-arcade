@@ -1117,3 +1117,10 @@ button,input,select{font-family:inherit}
 .xprog{height:8px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin:6px 0}.xprog i{display:block;height:100%;background:linear-gradient(90deg,#ff3db0,#35e6ff);box-shadow:0 0 8px rgba(255,61,176,.7)}
 .bdg.q0{color:#06210f;background:linear-gradient(180deg,#e4ffc8,#7dff5a 55%,#26b84a);box-shadow:0 0 9px rgba(120,255,90,.8),inset 0 1px 0 rgba(255,255,255,.8)}
 .bdg.q0 svg{fill:#06210f}
+
+.frbtn{position:relative;margin-right:8px}
+.frdot{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;border-radius:99px;background:#2fd36f;color:#04200f;font:700 12px/19px Rajdhani,sans-serif;text-align:center;box-shadow:0 0 8px #2fd36f;font-style:normal;padding:0 4px}
+.q-ban.frban{border-color:#2fd36f;color:#c8ffdc;box-shadow:0 0 18px rgba(47,211,111,.55)}
+.fr-list{display:flex;flex-direction:column;gap:6px;margin:8px 0;max-height:52vh;overflow-y:auto}
+.fr-row .fr-st{font:600 14px Rajdhani,sans-serif;color:#8d8aa6;margin-left:auto}
+.fr-row.on .fr-st{color:#2fd36f;text-shadow:0 0 6px rgba(47,211,111,.6)}
