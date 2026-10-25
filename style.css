@@ -1226,3 +1226,21 @@ button,input,select{font-family:inherit}
 .mx-seat.hl-allin .mx-cs{animation:alpulse .7s ease-in-out infinite alternate}.mx-seat.hl-allin .mx-info{color:#ffe27a;text-shadow:0 0 10px #ffb300;font-weight:700}
 @keyframes alpulse{from{filter:drop-shadow(0 0 4px #ffb300)}to{filter:drop-shadow(0 0 13px #ffd54a)}}
 .mp-rowc{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+
+.pk-mid{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;z-index:1;pointer-events:none}
+.pk-pot{display:flex;align-items:center;gap:6px;font:700 15px Rajdhani,sans-serif;color:#ffe27a;text-shadow:0 1px 3px #000;white-space:nowrap}
+.pk-pot .heap{position:relative;display:inline-block;width:56px;height:20px}
+.pk-pot .heap .ch{position:absolute;width:13px;height:13px;border-radius:50%;border:1.5px solid rgba(0,0,0,.55);box-shadow:0 1px 2px #000}
+.pk-pot .heap .ch.c0{background:#ffe27a}.pk-pot .heap .ch.c1{background:#ff5a7a}.pk-pot .heap .ch.c2{background:#35e6ff}
+.pk-board{min-height:0!important;flex-wrap:nowrap}
+#mpBody.fit .mx-felt.pk .mc.cm{width:30px;height:43px;margin-left:3px;font-size:13px;padding:3px 0 0 3px;border-radius:5px}
+#mpBody.fit .mx-felt.pk .mc.cm:first-child{margin-left:0}
+#mpBody.fit .mx-felt.pk .mc.cm small{font-size:10px}
+#mpBody.fit .mp-area.pkarea{min-height:96px}
+.pkarea .mx-bets button.big{font-size:17px;padding:13px 6px}
+.pkarea .mx-bets button.f.big{background:rgba(255,70,90,.28);border-color:#ff5a6e}
+.pkarea .mx-bets button.ok.big{background:rgba(47,211,111,.26);border-color:#2fd36f;color:#d8ffe6}
+.pkarea .mx-bets.r2 button{padding:6px 4px;font-size:14px}
+.mx-felt.bl{background:radial-gradient(ellipse at 50% 45%,#1f3c78,#14285a 68%,#0b1838);border-color:#3a5aa8;box-shadow:inset 0 0 40px rgba(0,0,0,.5),0 0 14px rgba(60,100,200,.3)}
+.frbub .nm{display:inline-block}.frbub .nm.swap{animation:frname .45s ease both}
+@keyframes frname{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}

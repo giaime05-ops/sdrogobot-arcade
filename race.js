@@ -8,7 +8,7 @@
     { id: "serp", name: "Serpentina", hw: 52, laps: 2, k: 0.9, pts: [[0, 0], [420, -100], [800, -60], [1000, 140], [820, 320], [520, 260], [330, 400], [470, 620], [820, 680], [1060, 860], [880, 1060], [480, 990], [160, 1090], [-220, 940], [-300, 600], [-90, 420], [-260, 200], [-200, 40]] },
     { id: "tornanti", name: "Tornanti", hw: 50, laps: 2, k: 0.85, pts: [[0, 0], [550, 0], [1100, 0], [1380, 130], [1330, 340], [1050, 420], [760, 330], [540, 430], [600, 650], [900, 770], [1120, 980], [870, 1160], [450, 1080], [220, 860], [-120, 760], [-340, 520], [-300, 200]] }
   ];
-  var VMAX = 420, VOFF = 90, DT = 1 / 60, AG = 230, WALL = 30;
+  var VMAX = 520, VOFF = 90, DT = 1 / 60, AG = 230, WALL = 30;
 
   function build(tr) {                      // spline chiusa (Catmull-Rom) campionata + tangenti, normali, curvatura
     if (tr.P) return tr;
@@ -48,9 +48,9 @@
     var vf = car.vx * fx + car.vy * fy, vl = car.vx * sx + car.vy * sy;
     var d = nearest(tr, car), off = d > tr.hw; car.off = off;
     var vmax = off ? VOFF : VMAX;
-    if (inp.brake) vf -= 620 * DT; else vf += 340 * Math.max(-0.8, 1 - vf / vmax) * DT;
+    if (inp.brake) vf -= 620 * DT; else vf += 430 * Math.max(-0.8, 1 - vf / vmax) * DT;
     vf -= vf * (off ? 2.6 : 0.25) * DT; if (vf < 0) vf = 0;
-    var turn = (inp.r ? 1 : 0) - (inp.l ? 1 : 0), om = turn * 2.5 * (1 - 0.2 * Math.min(1, vf / VMAX)) * Math.min(1, vf / 60);
+    var turn = (inp.r ? 1 : 0) - (inp.l ? 1 : 0), om = turn * 2.5 * (1 - 0.55 * Math.min(1, vf / VMAX)) * Math.min(1, vf / 60);
     var dem = vf * Math.abs(om), sl = Math.max(0, Math.min(1.2, (dem - AG) / (AG * 0.5)));      // troppa velocità per la curva: le gomme non tengono e l'auto va larga
     car.slip = sl; if (sl > 0) vf -= 40 * Math.min(1, sl) * DT;
     var wx = fx * vf + sx * vl, wy = fy * vf + sy * vl;                    // velocità reale (nel mondo) prima di girare il muso

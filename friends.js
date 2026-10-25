@@ -29,8 +29,9 @@
   function showName() {
     if (!names.length) { if (bub) { bub.remove(); bub = null; } return; }
     if (!bub) { bub = el("div", "frbub"); bub.addEventListener("click", open); document.body.appendChild(bub); }
-    var t = names[bi % names.length] + " è online"; bi++;
-    bub.textContent = t; bub.classList.remove("swap"); void bub.offsetWidth; bub.classList.add("swap"); placeBub();
+    var nm0 = names[bi % names.length]; bi++;
+    if (!bub._n) { bub.textContent = ""; bub._n = el("span", "nm"); bub.appendChild(bub._n); bub.appendChild(document.createTextNode(" è online")); }
+    bub._n.textContent = nm0; bub._n.classList.remove("swap"); void bub._n.offsetWidth; bub._n.classList.add("swap"); placeBub();
   }
   function setNames(n) {
     var same = n.join("|") === names.join("|"); names = n;

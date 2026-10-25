@@ -475,20 +475,22 @@
     var PS = { b: "left:50%;bottom:8px;transform:translateX(-50%)", t: "left:50%;top:8px;transform:translateX(-50%)", l: "left:2px;top:36%", r: "right:2px;top:36%" };
     var c = el("div", "mp-card"); body.appendChild(c);
     c.appendChild(el("div", "mp-sec", "POKER TEXAS · ante " + A.fmt(u) + " $SDG (simulato)" + (u >= 50 ? " 💎" : "")));
-    var felt = el("div", "mx-felt pk"), shoe = el("div", "mx-shoe"), msg = el("div", "pg-me", ""), area = el("div", "mp-area");
+    var felt = el("div", "mx-felt pk"), shoe = el("div", "mx-shoe"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea");
     shoe.style.cssText = "right:46%;top:46%;width:1px;height:1px;opacity:0;box-shadow:none"; 
     c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
     var deck, board, pot, cur, dealer = 0;
     function paint(show) {
       felt.innerHTML = ""; felt.appendChild(shoe);
-      var cm = el("div", "mx-cs"); cm.style.cssText = "position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);flex-wrap:wrap;max-width:124px;row-gap:5px";
-      for (var k = 0; k < 5; k++) cm.appendChild(k < board.length ? mcEl(board[k], false, "cm") : el("span", "mc cm empty")); felt.appendChild(cm);
-      var pt = el("div", "mx-pot", "Piatto " + A.fmt(pot * u) + " $SDG "), chs = el("span", "chs"); for (var q = 0; q < Math.min(16, 1 + Math.floor(pot / 2)); q++) chs.appendChild(el("i", "ch c" + (q % 3))); pt.appendChild(chs); felt.appendChild(pt);
+      var mid = el("div", "pk-mid"), prow = el("div", "pk-pot"), heap = el("span", "heap"), cm = el("div", "mx-cs pk-board");
+      prow.appendChild(el("span", "", "Piatto " + A.fmt(pot * u) + " $SDG"));
+      for (var q = 0; q < Math.min(14, 1 + Math.floor(pot / 2)); q++) { var ch = el("i", "ch c" + (q % 3)); ch.style.left = (6 + ((q * 37) % 31)) + "px"; ch.style.top = (6 - ((q * 53) % 9) - (q > 8 ? 4 : 0)) + "px"; heap.appendChild(ch); }
+      prow.appendChild(heap); mid.appendChild(prow);
+      for (var k = 0; k < 5; k++) cm.appendChild(k < board.length ? mcEl(board[k], false, "cm") : el("span", "mc cm empty")); mid.appendChild(cm); felt.appendChild(mid);
       P.forEach(function (p, i) {
         var s = el("div", "mx-seat" + (p.me ? " me" : "") + (i === cur ? " turn" : "") + (p.fold ? " fold" : "") + (p.hl ? " hl-" + p.hl : "")); s.style.cssText = PS[POS[i]];
         var cs = el("div", "mx-cs"); if (p.hole) p.hole.forEach(function (x) { cs.appendChild(mcEl(x, !(p.me || (show && !p.fold)), p.me ? "" : "")); }); s.appendChild(cs);
         s.appendChild(el("div", "mx-tag", p.name + " · " + A.fmt(p.stack * u) + (i === dealer ? " Ⓓ" : "")));
-        var inf = (p.fold ? "fold" : (p.act || "")) + (show && !p.fold && p.hole ? (p.act ? " · " : "") + CATN[catOf(best7(p.hole.concat(board)))] : "");
+        var act0 = show && !p.fold ? "" : (p.fold ? "fold" : (p.act || "")), inf = act0 + (show && !p.fold && p.hole ? (act0 ? " · " : "") + CATN[catOf(best7(p.hole.concat(board)))] : "");
         if (!p.fold && p.me && p.hole && board.length >= 3 && !show) inf += (inf ? " · " : "") + CATN[catOf(best7(p.hole.concat(board)))];
         if (inf) s.appendChild(el("div", "mx-info", inf)); if (p.win) s.appendChild(el("div", "mx-res win", "🏆 VINCE"));
         felt.appendChild(s);
@@ -546,9 +548,9 @@
           area.innerHTML = ""; var bx = el("div", "mx-bets"), bx2 = el("div", "mx-bets r2"); area.appendChild(bx); area.appendChild(bx2);       // due righe compatte: FOLD · CHECK/CALL, poi i rilanci
           function add(label, cls, f, row) { var b = el("button", cls || "", label); b.type = "button"; b.addEventListener("click", function () { A.haptic("medium"); area.innerHTML = ""; f(); }); (row || bx).appendChild(b); }
           var room = p.stack - owe;
-          add("🏳️ FOLD", "f", function () { apply("fold"); });
-          if (owe) { say(msg, "Devi pagare " + A.fmt(owe * u) + " $SDG"); add("✅ CALL " + A.fmt(Math.min(owe, p.stack) * u), "", function () { apply("call"); }); }
-          else { say(msg, "Tocca a te: CHECK o PUNTA"); add("✔️ CHECK", "", function () { apply("check"); }); }
+          add("🏳️ FOLD", "f big", function () { apply("fold"); });
+          if (owe) { say(msg, "Devi pagare " + A.fmt(owe * u) + " $SDG"); add("✅ CALL " + A.fmt(Math.min(owe, p.stack) * u), "ok big", function () { apply("call"); }); }
+          else { say(msg, "Tocca a te: CHECK o PUNTA"); add("✔️ CHECK", "ok big", function () { apply("check"); }); }
           var opts = [base, base * 2, base * 4].filter(function (m) { return room > m; });
           opts.forEach(function (m) { add((owe ? "+" : "") + A.fmt(m * u), "r", function () { apply("raise", m); }, bx2); });
           if (room > 0) add("ALL-IN " + A.fmt(room * u), "r allin", function () { apply("raise", room); }, bx2);
