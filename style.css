@@ -1366,3 +1366,14 @@ button,input,select{font-family:inherit}
 /* v67: seme visibile anche con le carte sovrapposte (sotto il numero, nella parte sinistra che resta scoperta) */
 #mpBody.fit .mx-felt.pk .mx-seat.me .mc small,#mpBody.fit .mx-felt.bj .mc small{left:4px;right:auto;top:25px;bottom:auto;text-align:left;font-size:21px;line-height:1}
 #mpBody.fit .mx-felt.pk .mx-seat.me .mc,#mpBody.fit .mx-felt.bj .mc{font-size:21px;line-height:1}
+
+/* v69 corsa: pausa, settori, giri */
+.rc2-x{left:50%!important;top:8px!important;transform:translateX(-50%);width:40px;height:30px;border-radius:12px;font-size:14px}
+.rc2-sec{position:absolute;left:50%;top:44px;transform:translateX(-50%);display:flex;gap:5px;pointer-events:none}
+.rc2-sec:empty{display:none}
+.rc2-sec .sc{min-width:68px;padding:2px 8px;border-radius:8px;background:rgba(0,0,0,.5);color:#fff;font:700 13px Rajdhani,sans-serif;text-align:center;border:1.5px solid rgba(255,255,255,.3)}
+.rc2-sec .sc.g{background:rgba(47,211,111,.85);border-color:#2fd36f}.rc2-sec .sc.y{background:rgba(255,200,0,.9);color:#222;border-color:#ffd23b}.rc2-sec .sc.f{background:rgba(255,61,176,.92);border-color:#ff3db0}
+.rc-laps{display:flex;align-items:center;gap:8px;margin:0 0 8px}.rc-laps span{font:700 14px Rajdhani,sans-serif;color:#cdbfe6}
+.rc-laps .mp-gt{min-width:46px;padding:6px 0}
+
+.rc2-x{font-size:17px!important;line-height:1;padding:0}

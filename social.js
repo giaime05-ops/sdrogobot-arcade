@@ -441,6 +441,7 @@
     function openGame() { var r = null; Object.keys(GB).forEach(function (id) { var n = $(id); if (n && !n.hidden) r = id; }); return r; }
     function settingsOpen() { return !!(window.ArcadeSettingsUI && window.ArcadeSettingsUI.isOpen()); }
     function onBack() {
+      if (window.ArcadeBackHook && window.ArcadeBackHook()) return;
       var pv = $("profile"); if (pv && !pv.hidden) { closeProfile(); return; }
       if (settingsOpen()) { window.ArcadeSettingsUI.close(); return; }
       var g = openGame();
@@ -448,9 +449,10 @@
       if (cur !== "hub") show("hub", true);
     }
     function update() {
-      try { var pv = $("profile"); if (openGame() || cur !== "hub" || settingsOpen() || (pv && !pv.hidden)) tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {}
+      try { var pv = $("profile"); if (window.ArcadeBackHook) { tg.BackButton.show(); return; } if (openGame() || cur !== "hub" || settingsOpen() || (pv && !pv.hidden)) tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {}
     }
     try { tg.BackButton.onClick(onBack); } catch (e) { return; }
+    window.ArcadeBackSync = update;
     var mo = new MutationObserver(update);
     Object.keys(GB).forEach(function (id) { var n = $(id); if (n) mo.observe(n, { attributes: true, attributeFilter: ["hidden"] }); });
     mo.observe(document.body, { attributes: true, attributeFilter: ["data-tab"] });
