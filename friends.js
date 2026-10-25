@@ -19,16 +19,16 @@
   var bub = null, bi = 0, bt = 0, names = [];
   function placeBub() {
     if (!bub) return;
-    var gameOpen = ["avi", "gm", "g4", "heist"].some(function (id) { var n = $(id); return n && !n.hidden; });
+    var gameOpen = ["avi", "gm", "g4", "heist"].some(function (id) { var n = $(id); return n && !n.hidden; }) || !!document.querySelector(".set-ov:not([hidden]),#sheet:not([hidden]),.rc2");
     if (gameOpen || document.body.getAttribute("data-tab") !== "hub" || !btn.getClientRects().length || btn.getBoundingClientRect().width < 10 || !document.getElementById("top") || document.getElementById("top").offsetParent === null) { bub.style.display = "none"; return; }
     bub.style.display = ""; var r = btn.getBoundingClientRect(), hr = hb.getBoundingClientRect(), W = window.innerWidth;
     bub.style.top = Math.round(hr.bottom + 10) + "px";
     var w = bub.offsetWidth || 150, left = Math.max(8, Math.min(W - w - 8, r.left + r.width / 2 - w / 2));
-    bub.style.left = left + "px"; bub.style.setProperty("--cx", Math.round(r.left + r.width / 2 - left) + "px");
+    bub.style.left = left + "px"; bub.style.setProperty("--cx", Math.round(r.left + r.width / 2 - left) + "px"); if (bub._n && bub._n.textContent) bub.style.visibility = "";
   }
   function showName() {
     if (!names.length) { if (bub) { bub.remove(); bub = null; } return; }
-    if (!bub) { bub = el("div", "frbub"); bub.addEventListener("click", open); document.body.appendChild(bub); }
+    if (!bub) { bub = el("div", "frbub"); bub.style.visibility = "hidden"; bub.addEventListener("click", open); document.body.appendChild(bub); }
     var nm0 = names[bi % names.length]; bi++;
     if (!bub._n) { bub.textContent = ""; bub._n = el("span", "nm"); bub.appendChild(bub._n); bub.appendChild(document.createTextNode(" è online")); }
     bub._n.textContent = nm0; bub._n.classList.remove("swap"); void bub._n.offsetWidth; bub._n.classList.add("swap"); placeBub();
@@ -73,7 +73,7 @@
     }
     paint(); box.hidden = false; A.haptic("light"); poll();
   }
-  btn.addEventListener("click", open);
-  poll(); timer = setInterval(poll, 25000); setInterval(placeBub, 700);
+  btn.addEventListener("click", function () { if (bub) bub.style.display = "none"; open(); });
+  poll(); timer = setInterval(poll, 25000); setInterval(placeBub, 300);
   setInterval(function () { if (A.isSandbox() === btn.hidden) poll(); }, 1500);
 })();
