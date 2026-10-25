@@ -66,8 +66,12 @@
     A.api("/api/extra/loan", "POST", {}).then(function (l) {
       if (!l || !l.eligible || lsGet("arc_l_ban") === dayKey()) return;
       lsSet("arc_l_ban", dayKey());
-      var b = document.createElement("div"); b.className = "q-ban warn"; b.textContent = "⚠️ Stai finendo i soldi: chiedi un prestito al Banco (Extra)";
-      b.addEventListener("click", function () { b.remove(); show("act", true); });
+      var b = document.createElement("div"); b.className = "q-ban warn"; b.textContent = "⚠️ Stai finendo i soldi · tocca per chiedere un prestito";
+      var tp = document.getElementById("top"), tb = tp ? tp.getBoundingClientRect().bottom : 90; b.style.top = Math.round(tb + 12) + "px"; b.classList.add("flat");
+      b.addEventListener("click", function () {
+        b.remove(); show("act", true); var n = 0;
+        (function go() { var x = document.querySelector(".xloan"); if (x) { x.scrollIntoView({ block: "center", behavior: "smooth" }); x.classList.add("flash"); setTimeout(function () { x.classList.remove("flash"); }, 2200); } else if (n++ < 12) setTimeout(go, 150); })();
+      });
       document.body.appendChild(b);
       setTimeout(function () { b.classList.add("off"); setTimeout(function () { b.remove(); }, 400); }, 6000);
     }).catch(function () {});
