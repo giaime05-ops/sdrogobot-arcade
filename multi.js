@@ -6,8 +6,8 @@
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
   var st = { opp: null, game: "srf", bet: 50, rounds: 3, players: [] };
   var GAMES = [["srf", "✊ Sasso-Carta-Forbici", true], ["dadi", "🎲 Dadi", true], ["hl", "⬆️ Alto/Basso", true], ["tris", "❌ Tris", true],
-    ["quiz", "🧠 Quiz 1v1", false], ["ghig", "🪓 Ghigliottina", false], ["rou", "🎡 Roulette 1v1", true]];
-  var GNAME = { srf: "SASSO-CARTA-FORBICI", dadi: "DADI", hl: "ALTO/BASSO", tris: "TRIS", rou: "ROULETTE 1v1" };
+    ["ghig", "🪓 Ghigliottina", true], ["rr", "🔫 Roulette russa", true]];
+  var GNAME = { srf: "SASSO-CARTA-FORBICI", dadi: "DADI", hl: "ALTO/BASSO", tris: "TRIS", rou: "ROULETTE 1v1", rr: "ROULETTE RUSSA", ghig: "GHIGLIOTTINA" };
   var BOT = { id: "bot", name: "🤖 Bot" };
   var epoch = 0;                                              // cambia a ogni schermata: i timer vecchi si fermano
   function wait(ms) { var e = epoch; return new Promise(function (res) { setTimeout(function () { if (e === epoch) res(); }, ms); }); }
@@ -49,7 +49,7 @@
   // ---- tavoli
   function tables() {
     fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI");
-    [["Poker Texas", "🂡", "pk"], ["Blackjack insieme", "🃏", "bj"]].forEach(function (t) {
+    [["Poker Texas", "🂡", "pk"], ["Blackjack insieme", "🃏", "bj"], ["Scopa (2 o 4)", "🎴", "sc"]].forEach(function (t) {
       var tc = el("div", "mp-card tbl"); tc.appendChild(el("div", "mp-ttl", t[1] + " " + t[0]));
       var seats = el("div", "mp-seats"); tc.appendChild(seats); var n = 1;
       function paintSeats() {
@@ -61,12 +61,12 @@
       var j = el("button", "mp-go", "+ BOT"); j.type = "button";
       j.addEventListener("click", function () { if (n < 4) { n++; paintSeats(); A.haptic("light"); } else A.toast("Tavolo pieno"); });
       var gt = el("button", "mp-go mp-alt", "▶ GIOCA"); gt.type = "button";
-      gt.addEventListener("click", function () { var bots = Math.max(1, n - 1); if (t[2] === "bj") bjTable(bots); else pkSetup(bots); });
+      gt.addEventListener("click", function () { var bots = Math.max(1, n - 1); if (t[2] === "sc") { if (n === 3) { A.toast("Scopa: servono 2 o 4 giocatori"); return; } scopaTable(n === 1 ? 2 : n); } else if (t[2] === "bj") bjTable(bots); else pkSetup(bots); });
       rw.appendChild(j); rw.appendChild(gt); tc.appendChild(rw); body.appendChild(tc);
     });
   }
   // ---- sfide 1v1, tutto in una schermata
-  var ICON = { srf: "✊", dadi: "🎲", hl: "⬆️", tris: "❌", quiz: "🧠", ghig: "🪓", rou: "🎡" };
+  var ICON = { srf: "✊", dadi: "🎲", hl: "⬆️", tris: "❌", quiz: "🧠", ghig: "🪓", rou: "🎡", rr: "🔫" };
   function duels() {
     fit(true); epoch++; body.innerHTML = ""; backBar("SFIDE 1v1");
     var c = el("div", "mp-card mp-duel"); body.appendChild(c);
@@ -153,6 +153,18 @@
   var HANDS = [["✊", "Sasso"], ["✋", "Carta"], ["✌️", "Forbici"]];
   var DIE = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
   var RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+
+  // ---------- Ghigliottina: 5 indizi, una parola in comune ----------
+  var GHIG = [["LUNA", "Miele Piena Chiaro Mezza Nuova"], ["PORTA", "Finestra Foglio Chiavi Bagagli Ombrelli"], ["CANE", "Pastore Guardia Lupo Randagio Fedele"], ["CAPO", "Tavola Lavoro Stazione Squadra Classe"],
+    ["FUOCO", "Amico Armi Cessate Fatuo Greco"], ["MARE", "Alto Oltre Moto Aperto Mosso"], ["TESTA", "Croce Dura Calda Mal Quadrata"], ["FILO", "Spinato Rosso Interdentale Conduttore Ferro"],
+    ["CARTA", "Credito Identità Igienica Geografica Bianca"], ["PALLA", "Canestro Volo Mano Nuoto Neve"], ["CIELO", "Gratta Stellato Azzurro Settimo Terra"], ["LATTE", "Caffè Scremato Condensato Intero Cioccolato"],
+    ["BANCO", "Prova Nebbia Sabbia Scuola Corallo"], ["GIOCO", "Azzardo Fuori Squadra Prestigio Tavolo"], ["VENTO", "Contro Mulino Buon Colpo Raffica"], ["SALE", "Pepe Grosso Fino Miniera Marino"],
+    ["PANE", "Burro Integrale Tostato Grattugiato Raffermo"], ["OCCHIO", "Colpo Bue Nero Lince Mira"], ["NOTTE", "Buona Bianca Fonda Mezza Magica"], ["STELLA", "Cadente Polare Marina Alpina Filante"],
+    ["PESCE", "Rosso Spada Palla Cane Aprile"], ["VOLO", "Palla Libero Pindarico Charter Planare"], ["MANO", "Palla Stretta Seconda Fatta Mezza"], ["CUORE", "Batti Crepa Buon Trapianto Spezza"],
+    ["DENTE", "Mal Latte Giudizio Leone Aglio"], ["CAMPO", "Minato Santo Profughi Base Visivo"], ["PIATTO", "Forte Fondo Unico Doccia Piano"], ["SCALA", "Mobile Reale Musicale Mercalli Antincendio"],
+    ["LETTO", "Matrimoniale Castello Fiume Divano Singolo"], ["TEMPO", "Libero Pieno Perso Primo Brutto"]];
+  var ghUsed = [];
+  function norm(x) { return String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z]/g, "").toUpperCase(); }
   var GAME = {
     srf: function (area, msg, E) {
       say(msg, "Scegli la tua mossa");
@@ -279,6 +291,47 @@
           });
           grid.appendChild(c);
         })(i);
+      });
+    },
+    ghig: function (area, msg, E) {
+      var pool = GHIG.map(function (_, i) { return i; }).filter(function (i) { return ghUsed.indexOf(i) < 0; }); if (!pool.length) { ghUsed = []; pool = GHIG.map(function (_, i) { return i; }); }
+      var pi = pool[rnd(pool.length)]; ghUsed.push(pi); var sol = GHIG[pi][0], cl = GHIG[pi][1].split(" "), shown = 0, lock = 0, over = false;
+      var botAt = 2 + rnd(3), botOk = Math.random() < 0.72;                     // il bot risponde dopo N indizi (e ci azzecca 7 volte su 10)
+      return new Promise(function (res) {
+        area.innerHTML = ""; var box = el("div", "gh-box"), list = el("div", "gh-list"), row = el("div", "gh-row"), inp = el("input", "gh-in"), ok = el("button", "mp-go", "INVIA"), tm = el("div", "gh-t");
+        inp.type = "text"; inp.placeholder = "La parola in comune…"; inp.autocomplete = "off"; inp.setAttribute("autocapitalize", "characters"); ok.type = "button";
+        row.appendChild(inp); row.appendChild(ok); box.appendChild(tm); box.appendChild(list); box.appendChild(row); area.appendChild(box);
+        say(msg, "5 parole, una in comune: indovina prima di " + st.opp.name + " (meno indizi = vittoria)");
+        function finish(r, txt) { if (over) return; over = true; inp.disabled = ok.disabled = true; say(msg, txt, r > 0 ? "mp-win" : (r < 0 ? "mp-lose" : "")); list.appendChild(el("div", "gh-sol", "🔑 " + sol)); wait(1500).then(function () { res(r); }); }
+        function reveal() { if (over || !alive(E)) return; shown++; var c = el("div", "gh-c", cl[shown - 1].toUpperCase()); list.appendChild(c); snd("chip");
+          if (shown === botAt && botOk) return wait(1200 + rnd(1800)).then(function () { if (!over && alive(E)) finish(-1, st.opp.name + " ha indovinato: " + sol); });
+          if (shown >= 5) { tm.textContent = "ultimo indizio: 12 secondi…"; return wait(12000).then(function () { if (!over && alive(E)) finish(0, "Nessuno ha indovinato: nuova parola"); }); }
+          tm.textContent = "indizio " + shown + "/5"; wait(5200).then(reveal); }
+        function send() { if (over || Date.now() < lock || !inp.value.trim()) return; if (norm(inp.value) === sol) { A.haptic("ok"); finish(1, "Giusto! Era " + sol); } else { A.haptic("bad"); lock = Date.now() + 2500; inp.value = ""; inp.placeholder = "Sbagliato! attendi 2,5 s"; setTimeout(function () { inp.placeholder = "La parola in comune…"; }, 2500); } }
+        ok.addEventListener("click", send); inp.addEventListener("keydown", function (e) { if (e.key === "Enter") send(); });
+        reveal();
+      });
+    },
+    rr: function (area, msg, E) {
+      var bullet = rnd(6), shot = 0, turn = rnd(2), opn = st.opp.name;
+      return new Promise(function (res) {
+        area.innerHTML = ""; var box = el("div", "rr-box"), cyl = el("div", "rr-cyl"), chs = [], btn = el("button", "mp-go rr-go", "🔫 SPARA"), fl = el("div", "rr-flash");
+        for (var i = 0; i < 6; i++) { var ch = el("i", "rr-ch"); ch.style.transform = "rotate(" + i * 60 + "deg) translateY(-50px)"; cyl.appendChild(ch); chs.push(ch); }
+        cyl.appendChild(el("div", "rr-mid", "🔫")); box.appendChild(cyl); box.appendChild(btn); box.appendChild(fl); area.appendChild(box); btn.type = "button"; btn.hidden = true;
+        say(msg, "Un solo proiettile. Si sorteggia chi inizia…"); cyl.classList.add("spin");
+        wait(1500).then(function () { cyl.classList.remove("spin"); say(msg, (turn === 0 ? "Inizi TU" : "Inizia " + opn)); return wait(900); }).then(next);
+        function next() {
+          if (!alive(E)) return; chs.forEach(function (c) { c.classList.remove("on"); }); chs[shot].classList.add("on");
+          if (turn === 0) { say(msg, "Tocca a te: premi il grilletto…"); btn.hidden = false; btn.onclick = function () { btn.hidden = true; A.haptic("heavy"); fire(); }; }
+          else { say(msg, opn + " prende la pistola…"); wait(1100 + rnd(900)).then(fire); }
+        }
+        function fire() {
+          if (!alive(E)) return; say(msg, turn === 0 ? "…" : opn + " preme il grilletto…"); wait(1000).then(function () {
+            if (!alive(E)) return;
+            if (shot === bullet) { chs[shot].classList.add("bang"); fl.className = "rr-flash on"; snd("lose"); A.haptic("bad"); say(msg, "💥 BANG! " + (turn === 0 ? "Sei morto." : opn + " è morto!"), turn === 0 ? "mp-lose" : "mp-win"); wait(1700).then(function () { res(turn === 0 ? -1 : 1); }); }
+            else { chs[shot].classList.add("em"); snd("chip"); say(msg, "*click* — vuoto. " + (turn === 0 ? "Sei salvo… per ora." : opn + " è salvo.")); shot++; turn = 1 - turn; wait(1200).then(next); }
+          });
+        }
       });
     },
     rou: function (area, msg, E) {
@@ -465,6 +518,87 @@
       go.innerHTML = ""; var a = el("button", "mp-go", "SIEDITI CON " + A.fmt(buy)); a.type = "button"; a.addEventListener("click", function () { pkTable(bots, { buy: buy, wallet: wallet - buy, u: rich ? 50 : 5 }); }); go.appendChild(a);
     }
     paintSetup();
+  }
+
+  // ====================================================================== SCOPA (2 giocatori, oppure 4 a coppie: tu + Bot 2 contro Bot 1 + Bot 3)
+  var SSU = ["🟡", "🍷", "🗡️", "🪵"], SNM = ["denari", "coppe", "spade", "bastoni"], PRIM = { 7: 21, 6: 18, 1: 16, 5: 15, 4: 14, 3: 13, 2: 12, 8: 10, 9: 10, 10: 10 };
+  function scEl(c, cls) { var e = el("span", "sc-c s" + c.s + (cls ? " " + cls : "")); e.appendChild(el("b", "", c.v <= 7 ? String(c.v) : (c.v === 8 ? "F" : c.v === 9 ? "C" : "R"))); e.appendChild(el("small", "", SSU[c.s])); e._card = c; return e; }
+  function scopaTable(N) {
+    fit(true); epoch++; var E = epoch; body.innerHTML = "";
+    var c = el("div", "mp-card"); body.appendChild(c);
+    c.appendChild(el("div", "mp-sec", "SCOPA · " + (N === 4 ? "2 contro 2 · " : "") + A.fmt(st.bet) + " $SDG"));
+    var felt = el("div", "mx-felt bl sc-felt"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea"); c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
+    var names = N === 4 ? ["Tu", "🤖 Bot 1", "🤖 Bot 2 (socio)", "🤖 Bot 3"] : ["Tu", "🤖 Bot"], P = names.map(function (n, i) { return { name: n, me: i === 0, team: N === 4 ? i % 2 : i, hand: [], cap: [] }; });
+    var deck = [], table = [], turn = 0, lastCap = 0, scope = [0, 0], T = N === 4 ? 2 : N;
+    for (var s2 = 0; s2 < 4; s2++) for (var v = 1; v <= 10; v++) deck.push({ s: s2, v: v });
+    for (var i = deck.length - 1; i > 0; i--) { var j = rnd(i + 1), tmp = deck[i]; deck[i] = deck[j]; deck[j] = tmp; }
+    for (var k = 0; k < 4; k++) table.push(deck.pop());
+    function deal() { P.forEach(function (p) { for (var q = 0; q < 3; q++) p.hand.push(deck.pop()); }); }
+    deal();
+    function opts(card) {                                        // prese possibili: prima la carta uguale, altrimenti le somme
+      var eq = []; table.forEach(function (t, i) { if (t.v === card.v) eq.push([i]); }); if (eq.length) return eq;
+      var out = [], n = table.length; for (var m = 1; m < (1 << n); m++) { var sum = 0, ids = []; for (var b = 0; b < n; b++) if (m & (1 << b)) { sum += table[b].v; ids.push(b); } if (sum === card.v) out.push(ids); }
+      return out;
+    }
+    function paint() {
+      felt.innerHTML = "";
+      var top = el("div", "sc-top"); P.forEach(function (p, i) { if (p.me) return; var o = el("div", "sc-opp" + (i === turn ? " turn" : "")); var bk = el("div", "sc-bk"); for (var q = 0; q < p.hand.length; q++) bk.appendChild(el("span", "sc-c back")); o.appendChild(bk); o.appendChild(el("div", "mx-tag", p.name)); top.appendChild(o); }); felt.appendChild(top);
+      var tb = el("div", "sc-table"); table.forEach(function (t, i) { var e = scEl(t, (tb._hl && tb._hl.indexOf(i) >= 0) ? "hl" : ""); tb.appendChild(e); }); if (!table.length) tb.appendChild(el("div", "sc-empty", "tavolo vuoto")); felt.appendChild(tb);
+      var info = el("div", "sc-info", "Mazzo " + deck.length + " · Scope: " + (N === 4 ? "noi " + scope[0] + " – loro " + scope[1] : "tu " + scope[0] + " – bot " + scope[1])); felt.appendChild(info);
+      var me = el("div", "sc-me"); P[0].hand.forEach(function (cd) { var e = scEl(cd, turn === 0 ? "pl" : "dis"); if (turn === 0) e.addEventListener("click", function () { play(0, cd); }); me.appendChild(e); }); felt.appendChild(me);
+    }
+    function doPlay(pi, cd, take) {                               // take: array di indici sul tavolo, oppure null (butta la carta)
+      var p = P[pi]; p.hand.splice(p.hand.indexOf(cd), 1);
+      if (take && take.length) {
+        var got = [cd]; take.slice().sort(function (a, b) { return b - a; }).forEach(function (ix) { got.push(table.splice(ix, 1)[0]); }); p.cap = p.cap.concat(got); lastCap = pi;
+        var last = !deck.length && P.every(function (q) { return !q.hand.length; });
+        if (!table.length && !last) { scope[p.team]++; say(msg, p.name + " fa SCOPA! 🧹", p.me ? "mp-win" : ""); snd("win"); } else say(msg, p.name + " prende " + got.map(function (g) { return g.v + SSU[g.s]; }).join(" "));
+        snd("chip");
+      } else { table.push(cd); say(msg, p.name + " butta " + cd.v + SSU[cd.s]); }
+    }
+    function advance() {
+      if (!alive(E)) return;
+      if (P.every(function (q) { return !q.hand.length; })) { if (deck.length) deal(); else return finish(); }
+      turn = (turn + 1) % N; if (P[turn].hand.length === 0) { turn = (turn + 1) % N; }
+      paint(); next();
+    }
+    function play(pi, cd) {
+      var o = opts(cd);
+      if (pi !== 0 || o.length <= 1) { var tk = o.length ? o[0] : null; if (pi === 0 && tk) {} area.innerHTML = ""; doPlay(pi, cd, tk); paint(); return wait(900).then(advance); }
+      area.innerHTML = ""; say(msg, "Quale presa vuoi fare?"); var bx = el("div", "mx-bets"); area.appendChild(bx);
+      o.forEach(function (ids) { var b = el("button", "r", ids.map(function (ix) { return table[ix].v + SSU[table[ix].s]; }).join(" + ")); b.type = "button"; b.addEventListener("click", function () { area.innerHTML = ""; doPlay(0, cd, ids); paint(); wait(900).then(advance); }); b.addEventListener("pointerenter", function () {}); bx.appendChild(b); });
+      var cn = el("button", "f", "↩︎ annulla"); cn.type = "button"; cn.addEventListener("click", function () { area.innerHTML = ""; say(msg, "Tocca a te: scegli una carta"); }); bx.appendChild(cn);
+    }
+    function botMove(pi) {
+      var p = P[pi], best = null, bs = -1e9;
+      p.hand.forEach(function (cd) { opts(cd).forEach(function (ids) { var got = ids.map(function (ix) { return table[ix]; }).concat([cd]), sc = got.length + got.filter(function (g) { return g.s === 0; }).length * 2 + got.filter(function (g) { return g.s === 0 && g.v === 7; }).length * 12 + got.filter(function (g) { return g.v === 7; }).length * 2 + (ids.length === table.length ? 10 : 0); if (sc > bs) { bs = sc; best = [cd, ids]; } }); });
+      if (best) return best;
+      var low = p.hand.slice().sort(function (a, b) { return ((a.s === 0 ? 8 : 0) + (a.v === 7 ? 12 : 0) + a.v) - ((b.s === 0 ? 8 : 0) + (b.v === 7 ? 12 : 0) + b.v); })[0]; return [low, null];
+    }
+    function next() {
+      if (!alive(E)) return;
+      if (turn === 0) { say(msg, "Tocca a te: scegli una carta"); area.innerHTML = ""; return; }
+      say(msg, P[turn].name + " pensa…"); var pi = turn; wait(1000 + rnd(500)).then(function () { if (!alive(E)) return; var m = botMove(pi); doPlay(pi, m[0], m[1]); paint(); wait(900).then(advance); });
+    }
+    function finish() {
+      if (table.length) { P[lastCap].cap = P[lastCap].cap.concat(table); table = []; }
+      var tm = [{ c: [], s: 0 }, { c: [], s: 0 }]; P.forEach(function (p) { tm[p.team].c = tm[p.team].c.concat(p.cap); });
+      var pts = [0, 0], det = [];
+      function cmp(a, b, lab) { if (a > b) { pts[0]++; det.push(lab + " ✓"); } else if (b > a) { pts[1]++; det.push(lab + " ✗"); } else det.push(lab + " ="); }
+      cmp(tm[0].c.length, tm[1].c.length, "Carte " + tm[0].c.length + "-" + tm[1].c.length);
+      var d0 = tm[0].c.filter(function (x) { return x.s === 0; }).length, d1 = tm[1].c.filter(function (x) { return x.s === 0; }).length; cmp(d0, d1, "Denari " + d0 + "-" + d1);
+      var sb0 = tm[0].c.some(function (x) { return x.s === 0 && x.v === 7; }); pts[sb0 ? 0 : 1]++; det.push("Settebello " + (sb0 ? "✓" : "✗"));
+      function prim(cs) { var t = 0; for (var s3 = 0; s3 < 4; s3++) { var b = 0; cs.forEach(function (x) { if (x.s === s3) b = Math.max(b, PRIM[x.v]); }); t += b; } return t; }
+      var p0 = prim(tm[0].c), p1 = prim(tm[1].c); cmp(p0, p1, "Primiera " + p0 + "-" + p1);
+      pts[0] += scope[0]; pts[1] += scope[1]; det.push("Scope " + scope[0] + "-" + scope[1]);
+      var won = pts[0] > pts[1], tie = pts[0] === pts[1];
+      felt.innerHTML = ""; var rs = el("div", "sc-res"); rs.appendChild(el("b", "", tie ? "PAREGGIO" : (won ? "HAI VINTO!" : "HAI PERSO")));
+      rs.appendChild(el("div", "sc-pt", (N === 4 ? "Noi " : "Tu ") + pts[0] + " – " + pts[1] + (N === 4 ? " Loro" : " Bot"))); det.forEach(function (d) { rs.appendChild(el("div", "sc-d", d)); }); felt.appendChild(rs);
+      say(msg, tie ? "Pari: nessuno vince" : (won ? "Hai vinto " + A.fmt(st.bet) + " $SDG (simulato)" : "Hai perso " + A.fmt(st.bet) + " $SDG (simulato)"), won ? "mp-win" : (tie ? "" : "mp-lose")); A.haptic(won ? "ok" : "light"); snd(won ? "win" : "lose");
+      area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { scopaTable(N); });
+      var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a1); en.appendChild(a2);
+    }
+    paint(); next();
   }
   function pkTable(bots, cfg) {
     cfg = cfg || { buy: 100, wallet: 0, u: 5 };
