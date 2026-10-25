@@ -398,7 +398,7 @@
   function W() { return app.clientWidth || innerWidth; }
   app.addEventListener("touchstart", function (e) {
     if (gameOpen() || e.touches.length !== 1) { g = null; return; }
-    if (e.target.closest && e.target.closest(".pg-cats,.scroll,input,.rc2")) { g = null; return; }   // le categorie scorrono da sole
+    if (e.target.closest && e.target.closest(".pg-cats,.scroll,input,.rc2,.rc-root")) { g = null; return; }   // le categorie scorrono da sole
     g = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), lock: 0, base: ORDER.indexOf(cur) };
   }, { passive: true });
   app.addEventListener("touchmove", function (e) {

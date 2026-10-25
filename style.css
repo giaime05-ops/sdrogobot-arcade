@@ -1346,3 +1346,23 @@ button,input,select{font-family:inherit}
 .rc2-rev i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3ad0ff,#ffd23b,#ff4a4a)}
 .rc2-boost{right:auto!important;left:50%;bottom:10px!important;transform:translateX(-50%);width:170px!important}
 .rc-lb{display:flex;flex-direction:column;gap:2px;margin:6px 0;opacity:.85}.rc-lbr{display:flex;justify-content:space-between;font:700 15px Rajdhani,sans-serif;color:#cfe0ff;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.05)}.rc-lbr.me{background:rgba(255,61,176,.25);color:#fff}.rc-lbr b{color:#ffe27a}
+
+/* v67 corsa: pedale, boost automatico, menu scorrevole */
+.rc2-pad.r{display:block;bottom:10px;right:18px}
+.rc2-b.pedal{display:block;width:104px;height:150px;padding:0;border-radius:22px 22px 30px 30px;border:2px solid #7b7f8e;background:repeating-linear-gradient(180deg,#2a2d38 0 9px,#14161d 9px 14px);box-shadow:0 6px 0 #0a0b10,0 0 0 3px rgba(255,255,255,.12);transform:perspective(300px) rotateX(14deg);transition:transform .06s,box-shadow .06s}
+.rc2-b.pedal::after{content:"GAS";position:absolute;left:0;right:0;top:8px;font:400 15px Bungee,Rajdhani,sans-serif;color:#2fd36f;text-shadow:0 0 8px rgba(47,211,111,.6)}
+.rc2-b.pedal{position:relative}
+.rc2-b.pedal.on{transform:perspective(300px) rotateX(34deg) translateY(8px);box-shadow:0 1px 0 #0a0b10,0 0 14px rgba(47,211,111,.7);border-color:#2fd36f;background:repeating-linear-gradient(180deg,#244a35 0 9px,#10261b 9px 14px)}
+.rc2-boost::after{content:"BOOST";position:absolute;left:0;right:0;top:-1px;text-align:center;font:700 10px Rajdhani,sans-serif;color:#fff;letter-spacing:.2em;text-shadow:0 0 3px #000}
+.rc2-boost.hot{box-shadow:0 0 14px #ffb300,0 0 26px #ff3db0;border-color:#fff}
+.rc2-boost.hot i{background:linear-gradient(90deg,#ff3db0,#ffd23b)}
+.rc-root{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:12px}
+#mpBody.fit .rc-root{overflow-y:auto}
+.rc-root>*{flex-shrink:0}
+
+.sc-fig{top:3px;bottom:3px;transform:none;display:block}
+.sc-fig svg{width:100%;height:100%;display:block}
+.sc-pips i.sm{left:auto;right:0;top:auto;bottom:0;width:20px;height:20px;filter:drop-shadow(0 0 2px #fff)}
+/* v67: seme visibile anche con le carte sovrapposte (sotto il numero, nella parte sinistra che resta scoperta) */
+#mpBody.fit .mx-felt.pk .mx-seat.me .mc small,#mpBody.fit .mx-felt.bj .mc small{left:4px;right:auto;top:25px;bottom:auto;text-align:left;font-size:21px;line-height:1}
+#mpBody.fit .mx-felt.pk .mx-seat.me .mc,#mpBody.fit .mx-felt.bj .mc{font-size:21px;line-height:1}
