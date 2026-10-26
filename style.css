@@ -1377,3 +1377,24 @@ button,input,select{font-family:inherit}
 .rc-laps .mp-gt{min-width:46px;padding:6px 0}
 
 .rc2-x{font-size:17px!important;line-height:1;padding:0}
+
+/* v70 corsa stile Boom Karts: solo ◀ ▶, boost a livelli, margini di sicurezza di Telegram, classifica con giri */
+.rc2-pad.l{left:calc(16px + var(--sl,0px));bottom:14px}.rc2-pad.r{right:16px;bottom:14px;display:block}
+.rc2-b.dir{width:150px;height:118px;font-size:44px;border-radius:26px;background:rgba(10,6,30,.4)}
+.rc2-b.dir.on{background:rgba(255,61,176,.7);box-shadow:0 0 18px rgba(255,61,176,.7)}
+.rc2-hud{left:calc(12px + var(--sl,0px))!important;top:calc(8px + var(--st,0px))!important}
+.rc2-x{top:calc(8px + var(--st,0px))!important}
+.rc2-sec{top:calc(44px + var(--st,0px))}
+.rc2-sec .sc.cur{background:rgba(0,0,0,.65);border-color:#fff}
+.rc2-sec .sc.dim{opacity:.5}
+.rc2-boost{width:210px!important;height:16px!important;border-color:#fff!important;background:linear-gradient(90deg,transparent 21%,rgba(255,255,255,.7) 21%,rgba(255,255,255,.7) 22%,transparent 22%,transparent 49%,rgba(255,255,255,.7) 49%,rgba(255,255,255,.7) 50%,transparent 50%,transparent 79%,rgba(255,255,255,.7) 79%,rgba(255,255,255,.7) 80%,transparent 80%),rgba(0,0,0,.55)!important}
+.rc2-boost i{background:#9fb0c8}.rc2-boost.lv1 i{background:#4fc3ff}.rc2-boost.lv2 i{background:#ff9f1c}.rc2-boost.lv3 i{background:#d94bff}
+.rc2-boost.drift{box-shadow:0 0 10px rgba(255,255,255,.5)}.rc2-boost.hot{box-shadow:0 0 16px #ffb300,0 0 28px #ff3db0}.rc2-boost.hot i{background:linear-gradient(90deg,#ff3db0,#ffd23b)}
+.rc2-end.res{min-width:420px;max-height:calc(100% - 20px);overflow:auto;padding:10px 16px}
+.rc2-tbl{margin:6px 0;text-align:left}
+.rc2-tbl .rr{display:grid;grid-template-columns:26px 74px 86px 1fr;gap:6px;align-items:center;padding:3px 6px;border-radius:8px;font:700 15px Rajdhani,sans-serif;color:#e6dcff}
+.rc2-tbl .rr:nth-child(odd){background:rgba(255,255,255,.07)}.rc2-tbl .rr.me{background:rgba(255,210,59,.18);color:#ffe27a}
+.rc2-tbl .pn{font:400 15px Bungee,Rajdhani,sans-serif;color:#ffd23b}.rc2-tbl .tt{color:#ffd23b}
+.rc2-tbl .lp{display:flex;gap:8px;flex-wrap:wrap;color:#9fe3ff;font-size:13px}.rc2-tbl .lp i{font-style:normal}.rc2-tbl .lp i.fl{color:#ff5ad0;text-shadow:0 0 6px #ff3db0}
+
+.rc2-tip{white-space:normal!important;max-width:62%;text-align:center}
