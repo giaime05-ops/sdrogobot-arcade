@@ -229,7 +229,7 @@
     var W = 330, H = 360, cv = el("canvas", "hs-lz"); cv.width = W * 2; cv.height = H * 2; cv.style.width = W + "px"; cv.style.height = H + "px"; stage.appendChild(cv);
     var c = cv.getContext("2d"); c.scale(2, 2);
     var pad = el("button", "avi-go hs-go hs-hold", "TIENI PREMUTO PER AVANZARE"); pad.type = "button"; stage.appendChild(pad);
-    var t0 = performance.now() + (v.delay || 0) * 1000, ev = [], down = -1, closed = 0, done = false, hitSent = false;
+    var t0 = performance.now() + (v.delay || 0) * 1000, ev = [], down = -1, closed = 0, done = false, hitSent = false, prevT = 0;
     function X(tms) { return v.speed * (closed + (down >= 0 ? (tms - down) / 1000 : 0)); }
     function on(l, t) { return ((t + l.ph) % l.p) < l.p * l.duty; }
     function press(e) { e.preventDefault(); if (done || down >= 0) return; var tm = performance.now() - t0; if (tm < 0) return; down = tm; pad.classList.add("on"); A.haptic("light"); }
@@ -240,6 +240,19 @@
     (function loop(now) {
       if (done || root.hidden || S.view !== (key || v)) { done = true; return; }
       var t = (now - t0) / 1000, x = Math.min(100, X(now - t0));
+      // collisione: controllo continuo ogni 5 ms tra un fotogramma e l'altro (come il server), con tolleranza leggermente piu' larga del server
+      if (!hitSent) {
+        var from = Math.max(0, prevT), hz = Math.min(v.zone || 2.6, 2.2);
+        for (var ts = from; ts <= now - t0 + 0.001 && !hitSent; ts += 5) {
+          var xs = X(ts), tt = ts / 1000;
+          for (var q = 0; q < v.lasers.length; q++) {
+            var L = v.lasers[q]; if (Math.abs(xs - L.x) >= hz) continue;
+            if (L.g ? Math.abs(L.amp * Math.sin(2 * Math.PI * (tt + L.ph) / L.p)) < L.hw - 0.02 : on(L, tt)) { hitSent = true; break; }
+          }
+        }
+        prevT = now - t0;
+        if (hitSent) { release(); done = true; A.haptic("bad"); act("lz", { hit: true }); return; }
+      }
       c.clearRect(0, 0, W, H);
       // corridoio
       var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0b1424"); g.addColorStop(1, "#060a14"); c.fillStyle = g; c.fillRect(0, 0, W, H);
@@ -253,7 +266,6 @@
           c.strokeStyle = "rgba(47,211,111,.22)"; c.lineWidth = 1; c.setLineDash([3, 5]); c.beginPath(); c.moveTo(48 + cw * (0.5 - l.amp), gy); c.lineTo(48 + cw * (0.5 + l.amp), gy); c.stroke(); c.setLineDash([]);
           c.save(); c.shadowColor = "#2fd36f"; c.shadowBlur = 16; c.strokeStyle = "#58ffa8"; c.lineWidth = 5; c.lineCap = "round"; c.beginPath(); c.moveTo(mx - hw, gy); c.lineTo(mx + hw, gy); c.stroke(); c.restore();
           c.fillStyle = "#555e78"; c.fillRect(mx - 5, gy - 5, 10, 10);
-          if (t >= 0 && Math.abs(gx - 0.5) < l.hw + 0.03 && Math.abs(x - l.x) < v.zone && !hitSent) { hitSent = true; release(); done = true; A.haptic("bad"); act("lz", { hit: true }); }
           return;
         }
         var y = yOf(l.x), isOn = t >= 0 && on(l, t), warn = t >= 0 && !isOn && ((t + l.ph) % l.p) > l.p - 0.22;
@@ -261,7 +273,6 @@
         if (isOn) { c.save(); c.shadowColor = "#ff2a4a"; c.shadowBlur = 16; c.strokeStyle = "#ff4d68"; c.lineWidth = 4; c.beginPath(); c.moveTo(48, y); c.lineTo(W - 48, y); c.stroke(); c.restore(); }
         else if (warn && Math.floor(now / 50) % 2) { c.strokeStyle = "#ffb347"; c.lineWidth = 2; c.beginPath(); c.moveTo(48, y); c.lineTo(W - 48, y); c.stroke(); }
         else { c.strokeStyle = "rgba(255,80,110,.25)"; c.lineWidth = 1; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(48, y); c.lineTo(W - 48, y); c.stroke(); c.setLineDash([]); }
-        if (isOn && Math.abs(x - l.x) < v.zone && !hitSent) { hitSent = true; release(); done = true; A.haptic("bad"); act("lz", { hit: true }); }
       });
       // ladro
       var py = yOf(x); c.save(); c.shadowColor = "#35e6ff"; c.shadowBlur = 14; c.fillStyle = "#8ff3ff"; c.beginPath(); c.arc(W / 2, py, 8, 0, 7); c.fill(); c.restore();
