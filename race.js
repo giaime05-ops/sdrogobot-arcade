@@ -13,6 +13,7 @@
     { id: "zigzag", name: "Zig Zag", hw: 98, laps: 3, k: 1.4, pud: "water", night: 1, pal: { g1: "#2a5a52", g2: "#2f645b", sky: "#1c2a5a", tree: ["#2c8a6a", "#1f6a58", "#4fb089"], road: ["#55526a", "#5e5b76"] }, pts: [[-200, 0], [50, 0], [300, 0], [388, 24], [450, 90], [513, 209], [577, 329], [639, 394], [727, 419], [815, 394], [877, 329], [940, 209], [1004, 90], [1066, 24], [1154, 0], [1241, 24], [1304, 90], [1367, 209], [1431, 329], [1493, 394], [1581, 419], [1668, 394], [1731, 329], [1794, 209], [1858, 90], [1920, 24], [2008, 0], [2095, 24], [2158, 90], [2221, 209], [2285, 329], [2347, 394], [2435, 419], [2522, 394], [2585, 329], [2648, 209], [2712, 90], [2774, 24], [2862, 0], [2987, 0], [3112, 0], [3409, 123], [3532, 420], [3409, 717], [3112, 840], [2857, 840], [2602, 840], [2348, 840], [2093, 840], [1838, 840], [1583, 840], [1329, 840], [1074, 840], [819, 840], [564, 840], [310, 840], [55, 840], [-200, 840], [-497, 717], [-620, 420], [-497, 123]] },
     { id: "gp", name: "Gran Premio", hw: 118, laps: 3, k: 1.7, pud: "oil", pal: { g1: "#7aa83a", g2: "#82b244", sky: "#8fd8ff", tree: ["#5fa03a", "#3c7a2a", "#9acb4a"], road: ["#66647a", "#6f6d86"] }, pts: [[-300, 0], [-100, 0], [100, 0], [300, 0], [500, 0], [700, 0], [900, 0], [1100, 0], [1300, 20], [1450, 100], [1530, 240], [1520, 400], [1440, 530], [1330, 640], [1330, 780], [1450, 880], [1450, 1020], [1330, 1120], [1130, 1160], [930, 1160], [780, 1230], [740, 1380], [860, 1480], [1060, 1500], [1260, 1480], [1400, 1560], [1440, 1700], [1330, 1820], [1130, 1830], [900, 1830], [700, 1830], [500, 1830], [300, 1780], [220, 1640], [260, 1500], [200, 1380], [40, 1330], [-140, 1370], [-240, 1500], [-350, 1610], [-510, 1580], [-540, 1400], [-500, 1220], [-540, 1040], [-620, 880], [-600, 700], [-500, 560], [-540, 400], [-560, 240], [-500, 100]] }
   ];
+  try { if (!localStorage.getItem("arc_race_reset73")) { Object.keys(localStorage).forEach(function (k) { if (/^arc_race4[gs]?_(?!laps$|diff$)/.test(k)) localStorage.removeItem(k); }); localStorage.setItem("arc_race_reset73", "1"); } } catch (e) {}   // azzera i tempi del vecchio formato (una volta sola)
   var VMAX = 520, VOFF = 270, DT = 1 / 60, AG = 340, WALL = 38, KERB = 14;
   var COLS = ["#ff2fa8", "#35e6ff", "#ffd23b", "#a855f7", "#ff8a3b", "#4ade80", "#f87171", "#60a5fa"], NAMES = ["Tu", "Turbo", "Zap", "Rex", "Nova", "Blitz", "Fox", "Ace"];
 
@@ -127,7 +128,7 @@
       if (turn && vf > 220 && !off && car.bm) car.meter = Math.min(1, car.meter + DT / 3.2 * car.bm); else if (!turn && car.bm && car.str > 0.45 && car.meter >= 0.22) fireBoost(car, 0.8);
     }
     var brk = !air && (inp.brake || (human && !off && needBrake(tr, car, vf, (car.dd ? 1.2 : 0.9) * (bst ? 1.25 : 1)))); car.brk = brk;
-    var vmax = off ? (bst ? VOFF * 1.9 : VOFF) : (car.boostT > 0 ? 570 : VMAX) * (car.vm || 1) * (1 + (car.tw || 0) * 0.06 + (car.rb || 0));
+    var vmax = off ? (bst ? VOFF * 1.9 : VOFF) : (car.boostT > 0 ? 570 : VMAX) * (car.vm || 1) * (1 + (car.tw || 0) * 0.13 + (car.rb || 0));
     if (air) { /* niente accelerazione in volo */ } else if (brk) vf -= (human ? 330 : 640) * DT; else if (inp.gas) vf += 430 * Math.max(-0.8, 1 - vf / vmax) * DT; else vf -= 70 * DT;
     if (car.boostT > 0) { if (vf < vmax && !air) vf += 230 * DT; car.boostT -= DT; }
     if (!air) vf -= vf * (off ? (bst ? 0.4 : 1.1) : 0.25) * DT; if (vf < 0) vf = 0;
@@ -231,11 +232,11 @@
     var lead = -1e9, k; cars.forEach(function (c) { if (!c.fin && c.prog > lead) lead = c.prog; });
     cars.forEach(function (c) {
       if (c.fin) { c.tw = 0; c.rb = 0; return; }
-      var ca2 = Math.cos(c.a), sa2 = Math.sin(c.a), inw = false, tg = null;
-      if (o.slip) for (k = 0; k < cars.length; k++) { var q = cars[k]; if (q === c || q.fin) continue; var dx = q.x - c.x, dy = q.y - c.y, f = dx * ca2 + dy * sa2, l = -dx * sa2 + dy * ca2; if (f > 24 && f < 160 && Math.abs(l) < 24 && Math.hypot(q.vx, q.vy) > 200) { inw = true; tg = q; break; } }
-      c.tgt = tg; c.tq = (inw && !c.dd && !(c.spin > 0)) ? (c.tq || 0) + DT : Math.max(0, (c.tq || 0) - DT * 1.5);
-      c.tw = c.tq > 1.5 ? Math.min(1, (c.tq - 1.5) / 0.6) : 0; if (c.dd) c.tw = 0;
-      c.rb = o.assist && c.prog < lead ? Math.min(0.035, Math.max(0, lead - c.prog - 25) / (tr.N * 0.18) * 0.035) : 0;
+      var inw = false, tg = null, tgd = 1e9, lc = (c.x - tr.P[c.idx][0]) * tr.nx[c.idx] + (c.y - tr.P[c.idx][1]) * tr.ny[c.idx];
+      if (o.slip) for (k = 0; k < cars.length; k++) { var q = cars[k]; if (q === c || q.fin) continue; var dp = (q.prog - c.prog) * tr.sp; if (dp < 18 || dp > 760 || Math.hypot(q.vx, q.vy) < 180) continue; var lq = (q.x - tr.P[q.idx][0]) * tr.nx[q.idx] + (q.y - tr.P[q.idx][1]) * tr.ny[q.idx]; if (Math.abs(lq - lc) < 22 + dp * 0.05 && dp < tgd) { tgd = dp; tg = q; inw = true; } }
+      c.tgt = tg; c.tq = (inw && !(c.spin > 0)) ? (c.tq || 0) + DT : Math.max(0, (c.tq || 0) - DT * 0.8);
+      c.tw = c.tq > 0.45 ? Math.min(1, (c.tq - 0.45) / 0.5) : 0; if (c.dd) c.tw *= 0.65;
+      c.rb = o.assist && c.prog < lead ? Math.min(0.09, Math.max(0, lead - c.prog - 15) / (tr.N * 0.12) * 0.09) : 0;
     });
   }
   function qualSim(tr, m, vm, off) {                                            // giro di qualifica lanciato, pulito (niente pozze né pedane): tempo e traiettoria
@@ -367,8 +368,8 @@
       var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); tr = Object.assign({}, tr, { items: itl });
       var solo = mode === "single", laps = qual ? 1 : (solo ? 3 : (opts.laps || RL)), full = el("div", "rc2"), cv = el("canvas", "rc2-cv"), hud = el("div", "rc2-hud"), cd = el("div", "rc2-cd"), tip = el("div", "rc2-tip");
       var left = el("div", "rc2-pad l"), right = el("div", "rc2-pad r"), rev = el("div", "rc2-rev"), rfill = el("i"), bbar = el("div", "rc2-boost"), bfill = el("i"); rev.appendChild(rfill); bbar.appendChild(bfill);
-      var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : (qual ? 2.6 : 4.6);
-      gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small>CIRCUITO</small><b></b><span></span>"; intro.children[1].textContent = tr.name; intro.children[2].textContent = (qual ? "QUALIFICA · 1 GIRO LANCIATO" : (solo ? "CONTRO IL TEMPO" : "GARA")) + (qual ? "" : " · " + laps + " GIRI");
+      var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : 4.4;
+      gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small></small><b></b><span></span>"; intro.children[0].textContent = qual ? "🏁 SESSIONE UFFICIALE 🏁" : "CIRCUITO"; intro.children[1].textContent = qual ? "QUALIFICA" : tr.name; intro.children[2].textContent = qual ? "⏱ " + tr.name.toUpperCase() + " · 1 GIRO LANCIATO · DECIDE LA GRIGLIA" : (solo ? "CONTRO IL TEMPO" : "GARA") + " · " + laps + " GIRI"; if (qual) intro.classList.add("qual");
       var tower = el("div", "rc2-tower"), twc = 0, xb = el("button", "rc2-x", "⏸"); xb.type = "button"; var sec = el("div", "rc2-sec"), lapb = el("div", "rc2-lapb");
       full.appendChild(cv); full.appendChild(hud); full.appendChild(cd); full.appendChild(tip); full.appendChild(left); full.appendChild(right); full.appendChild(bbar); full.appendChild(xb); full.appendChild(sec); full.appendChild(lapb); full.appendChild(gasb); full.appendChild(lch); full.appendChild(intro); if (!solo && !qual) full.appendChild(tower); document.body.appendChild(full);
       var TGW = window.Telegram && window.Telegram.WebApp;
@@ -405,10 +406,12 @@
       cars.forEach(function (c) { c.hist = new Float32Array(tr.N * laps + 160); c.hist.fill(-1); c.hp = Math.floor(c.prog) - 1; });
       var best = (lsGet("arc_race4_" + tr.id) || {}).t || 0, state = opts.noIntro ? "count" : "intro", cT = 0, t = 0, acc = 0, last = performance.now(), raf = 0, done = false, camA = me.a, camx = me.x, camy = me.y, revv = 0, botDelay = [0, 0.12, 0.2, 0.3, 0.38, 0.46, 0.54, 0.62], lapT = [], lapStart = qual ? 1e9 : 0, msgT = 0, lapB = null, lapS = null, prevAt = -99, mmK = "", wrongT = 0;
       var qgh = [], qres = [], qT0 = -1;
-      if (qual) { var k0 = tr.N - 14; me.x = tr.P[k0][0]; me.y = tr.P[k0][1]; me.a = tr.ta[k0]; me.vx = Math.cos(me.a) * 380; me.vy = Math.sin(me.a) * 380; me.idx = k0; me.prog = -14; me.slot = 0;
+      if (qual) { var k0 = tr.N - 14; me.x = tr.P[k0][0]; me.y = tr.P[k0][1]; me.a = tr.ta[k0]; me.vx = 0; me.vy = 0; me.idx = k0; me.prog = -14; me.slot = 0;
         for (var qk = 1; qk < nCar; qk++) { var rs0 = opts.roster && opts.roster[qk], qs = qualSim(tr, sk[qk], vmv ? vmv[qk] : 1, offs[qk] * 0.5); qres.push({ id: qk, name: rs0 ? rs0.name : NAMES[qk % NAMES.length], t: qs.t }); qgh.push({ x: qs.path[0], y: qs.path[1], a: qs.path[2], col: rs0 ? rs0.col : COLS[qk % COLS.length], name: rs0 ? rs0.name : NAMES[qk % NAMES.length], ghost: true, hit: 0, path: qs.path }); } }
       var gh = solo ? (lsGet("arc_race4g_" + tr.id) || {}).g : null, ghost = gh && gh.length > 6 ? { x: 0, y: 0, a: 0, col: "#cfe6ff", name: "Il tuo record", ghost: true, hit: 0 } : null, grec = [], gtick = 0;
       var sbest = (solo && lsGet("arc_race4s_" + tr.id)) || [0, 0, 0], secNo = 0, secStart = 0, secPrev = [], secLast = [], secCols = [];
+      var shots = (function () { var N = tr.N, sm = [], i, q, o = [], ch = []; for (i = 0; i < N; i++) { var k = 0; for (q = -7; q <= 7; q++) k += tr.kap[(i + q + N) % N]; sm.push([k, i]); } sm.sort(function (a, b) { return b[0] - a[0]; });
+        sm.forEach(function (c) { if (ch.length >= 3) return; var i2 = c[1]; if (Math.min(i2, N - i2) < 60) return; if (ch.every(function (x) { var d = Math.abs(x - i2); return Math.min(d, N - d) > N / 6; })) ch.push(i2); }); ch.sort(function (a, b) { return a - b; }); while (ch.length < 3) ch.push(Math.floor(N * (ch.length + 1) / 4)); ch.push(N - 40); return ch; })();
       function allG() { return (ghost ? [ghost] : []).concat(qgh); }
       function ghostAt(tt) {
         var f = tt * 20, i = Math.min(Math.floor(f), gh.length / 3 - 2), u = Math.max(0, Math.min(1, f - i)); if (i < 0) i = 0;
@@ -519,7 +522,8 @@
           if (c.dd) rw.forEach(function (w) { var q = pr(w[0], w[1], 3 + ZO); if (!q) return; var sz = 5 + lv * 3.2; ctx.fillStyle = LC[lv]; for (var z = 0; z < 4 + lv * 2; z++) { ctx.globalAlpha = 0.35 + Math.random() * 0.5; ctx.beginPath(); ctx.arc(q[0] + (Math.random() - 0.5) * sz * 2.2, q[1] + (Math.random() - 0.5) * sz * 1.2, 1.5 + Math.random() * sz * 0.5, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; });
           if (c.boostT > 0) { var ex = at(-18, 0), q0 = pr(ex[0], ex[1], 6 + ZO), q1 = pr(ex[0] - co * (22 + Math.random() * 14) * SC, ex[1] - si * (22 + Math.random() * 14) * SC, 6 + ZO); if (q0 && q1) { ctx.strokeStyle = "#ff9a2e"; ctx.lineWidth = Math.max(4, 9 * FF / q0[2] * 0.8); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.stroke(); ctx.strokeStyle = "#fff3a0"; ctx.lineWidth = Math.max(2, 4 * FF / q0[2] * 0.8); ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo((q0[0] + q1[0]) / 2, (q0[1] + q1[1]) / 2); ctx.stroke(); ctx.lineCap = "butt"; } }
         }
-        if (me.tgt === c && me.tq > 0.35 && state === "run") { var ga = Math.min(1, me.tq / 1.5), ra = at(-17, -5), rb2 = at(-17, 5); [ra, rb2].forEach(function (rp) { var q0 = pr(rp[0], rp[1], 5), q1 = pr(rp[0] - co * 70 * SC, rp[1] - si * 70 * SC, 5); if (q0 && q1) { ctx.strokeStyle = "rgba(255,255,255," + (0.35 + 0.5 * ga) + ")"; ctx.lineWidth = Math.max(2, 3 * FF / q0[2]); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.stroke(); ctx.lineCap = "butt"; } }); }
+        if (me.tgt === c && me.tq > 0.05 && state === "run" && c.tr2 && c.tr2.length > 2) { var on = me.tw > 0, ga = Math.min(1, 0.35 + me.tq / 1.2); [-6, 6].forEach(function (off2) { ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = on ? "rgba(120,235,255," + (0.45 + 0.4 * ga) + ")" : "rgba(255,255,255," + (0.2 + 0.3 * ga) + ")"; ctx.lineWidth = Math.max(2, 3.4 * FF / Math.max(60, cm(c.x, c.y, 5)[2])); ctx.beginPath(); var st1 = false; c.tr2.forEach(function (tp) { var q = pr(tp[0] - Math.sin(tp[2]) * off2, tp[1] + Math.cos(tp[2]) * off2, 5); if (!q) return; if (!st1) { ctx.moveTo(q[0], q[1]); st1 = true; } else ctx.lineTo(q[0], q[1]); }); ctx.stroke(); ctx.lineCap = "butt"; }); }
+        if (false) { var ga = Math.min(1, me.tq / 1.5), ra = at(-17, -5), rb2 = at(-17, 5); [ra, rb2].forEach(function (rp) { var q0 = pr(rp[0], rp[1], 5), q1 = pr(rp[0] - co * 70 * SC, rp[1] - si * 70 * SC, 5); if (q0 && q1) { ctx.strokeStyle = "rgba(255,255,255," + (0.35 + 0.5 * ga) + ")"; ctx.lineWidth = Math.max(2, 3 * FF / q0[2]); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.stroke(); ctx.lineCap = "butt"; } }); }
         ZO = 0; ctx.globalAlpha = 1;
       }
       function shade(hex, k) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; r = Math.max(0, Math.min(255, Math.round(r * (1 + k)))); g = Math.max(0, Math.min(255, Math.round(g * (1 + k)))); b = Math.max(0, Math.min(255, Math.round(b * (1 + k)))); return "rgb(" + r + "," + g + "," + b + ")"; }
@@ -543,7 +547,7 @@
       }
       function draw() {
         var va = Math.atan2(me.vy, me.vx), tgtA = Math.hypot(me.vx, me.vy) > 50 ? Math.atan2(Math.sin(me.a) + Math.sin(va), Math.cos(me.a) + Math.cos(va)) : me.a, da = tgtA - camA; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; camA += da * 0.09;
-        if (state === "intro") { var u = Math.min(1, introT / INTRO), e0 = u * u * (3 - 2 * u), fi = tr.N * (0.52 + 0.48 * e0), j0 = Math.floor(fi) % tr.N, j1 = (j0 + 1) % tr.N, fu = fi - Math.floor(fi), d1 = tr.ta[j1] - tr.ta[j0]; while (d1 > Math.PI) d1 -= 2 * Math.PI; while (d1 < -Math.PI) d1 += 2 * Math.PI; camx = tr.P[j0][0] + (tr.P[j1][0] - tr.P[j0][0]) * fu; camy = tr.P[j0][1] + (tr.P[j1][1] - tr.P[j0][1]) * fu; camA = tr.ta[j0] + d1 * fu; }
+        if (state === "intro") { var u = Math.min(0.9999, introT / INTRO), sn4 = Math.floor(u * 4), lv4 = u * 4 - sn4, fi = shots[sn4] - 12 + (sn4 === 3 ? 34 : 38) * lv4, j0 = Math.floor(fi + tr.N) % tr.N, j1 = (j0 + 1) % tr.N, fu = fi - Math.floor(fi), d1 = tr.ta[j1] - tr.ta[j0]; while (d1 > Math.PI) d1 -= 2 * Math.PI; while (d1 < -Math.PI) d1 += 2 * Math.PI; camx = tr.P[j0][0] + (tr.P[j1][0] - tr.P[j0][0]) * fu; camy = tr.P[j0][1] + (tr.P[j1][1] - tr.P[j0][1]) * fu; camA = tr.ta[j0] + d1 * fu; cv.style.opacity = lv4 < 0.12 ? 0.2 + lv4 * 6.5 : 1; } else if (cv.style.opacity !== "1") cv.style.opacity = "1";
         ca = Math.cos(camA); sa = Math.sin(camA); if (state !== "intro") { camx += (me.x - camx) * 0.25; camy += (me.y - camy) * 0.25; } var spd = state === "intro" ? 0.3 : Math.min(1, Math.hypot(me.vx, me.vy) / 600); cax = camx - ca * (DB + 40 * spd); cay = camy - sa * (DB + 40 * spd); FF = H * (FOC - 0.06 * spd + (me.boostT > 0 ? 0.05 : 0));
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = tr.pal.sky; ctx.fillRect(0, 0, W, H); ctx.fillStyle = tr.pal.g1; ctx.fillRect(0, H * 0.02, W, H);
         var N = tr.N, hw = tr.hw, wl = hw + WALL, lim = wl + 300;
@@ -639,7 +643,7 @@
         cars.slice().reverse().forEach(function (c) { var mc = mp([c.x, c.y]); ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(mc[0], mc[1], c === me ? 5.5 : 4.2, 0, 7); ctx.fill(); ctx.fillStyle = c.col; ctx.beginPath(); ctx.arc(mc[0], mc[1], c === me ? 4 : 3, 0, 7); ctx.fill(); });
       }
       function hudDraw() {
-        full.className = "rc2" + (state === "intro" ? " intro" : "") + (state === "count" ? " cnt" : "") + (paused ? " paus" : "") + (me.tw > 0 ? " slip" : ""); if (state === "count") { lchF.style.width = Math.min(100, rev2 * 100) + "%"; lchF.className = rev2 > 1 ? "bad" : (rev2 >= 0.72 ? "ok" : ""); } if (state === "intro") intro.style.display = ""; else if (intro.style.display !== "none") intro.style.display = "none";
+        full.className = "rc2" + (state === "intro" ? " intro" : "") + (state === "count" ? " cnt" : "") + (paused ? " paus" : "") + (me.tw > 0 ? " slip" : "") + (qual ? " qual" : ""); if (state === "count") { lchF.style.width = Math.min(100, rev2 * 100) + "%"; lchF.className = rev2 > 1 ? "bad" : (rev2 >= 0.72 ? "ok" : ""); } if (state === "intro") intro.style.display = ""; else if (intro.style.display !== "none") intro.style.display = "none";
         var pos = rank().indexOf(me), v = Math.round(Math.hypot(me.vx, me.vy) * 0.5), curLap = Math.min(me.lap, laps);
         hud.innerHTML = (solo || qual ? "" : "<b class='p'>" + ORD[pos] + "</b>") + "<span>GIRO " + curLap + "/" + laps + "</span><span>" + v + " km/h</span>" + "";
         bfill.style.width = Math.round(me.meter * 100) + "%"; var lvB = me.meter < 0.22 ? 0 : (me.meter < 0.5 ? 1 : (me.meter < 0.8 ? 2 : 3)); bbar.className = "rc2-boost lv" + lvB + (me.boostT > 0 ? " hot" : "") + (me.dd ? " drift" : "");
@@ -648,7 +652,7 @@
         if (state === "run" || state === "end") {                                                                                   // tempo del giro in corso, giro precedente e differenza
           var cl = Math.max(0, t - lapStart), pl = lapT.length ? lapT[lapT.length - 1] : 0, ppl = lapT.length > 1 ? lapT[lapT.length - 2] : 0, dl = pl && ppl ? pl - ppl : 0, bl = lapT.length ? Math.min.apply(null, lapT) : 0;
           if (!lapB) { lapb.innerHTML = "<b></b><span></span>"; lapB = lapb.firstChild; lapS = lapb.lastChild; }
-          lapB.textContent = fmt(cl); if (pl && t - prevAt < 5) { lapS.innerHTML = "PREC " + fmt(pl) + (dl ? " <i class='" + (dl < 0 ? "g" : "r") + "'>" + (dl < 0 ? "−" : "+") + Math.abs(dl).toFixed(2) + "</i>" : ""); lapS.style.opacity = Math.min(1, (5 - (t - prevAt)) / 1.2); } else lapS.style.opacity = 0;
+          lapB.textContent = fmt(cl); var showP = pl && t - prevAt < 5; lapb.classList.toggle("prev", !!showP); if (showP) { lapS.innerHTML = "PREC " + fmt(pl) + (dl ? " <i class='" + (dl < 0 ? "g" : "r") + "'>" + (dl < 0 ? "−" : "+") + Math.abs(dl).toFixed(2) + "</i>" : ""); lapS.style.opacity = Math.min(1, (5 - (t - prevAt)) / 1.2); } else lapS.style.opacity = 0;
         }
         if (!solo && (twc++ % 5 === 0)) {                                                                                       // classifica live stile F1: nome corto e distacco dall'auto davanti (in secondi, tre decimali)
           var rk = rank(), rows = "";
@@ -672,13 +676,13 @@
         acc += Math.min(0.1, (now - last) / 1000); last = now;
         while (acc >= DT) {
           acc -= DT;
-          if (state === "intro") { introT += DT; if (introT >= INTRO) { state = qual ? "run" : "count"; cT = 0; t = 0; } continue; }
+          if (state === "intro") { introT += DT; if (introT >= INTRO) { state = "count"; cT = 0; t = 0; } continue; }
           if (state === "count") {
             cT += DT; var nl = cT < 0.8 ? 0 : Math.min(3, Math.floor((cT - 0.8) / 0.8) + 1);
-            rev2 = holdG ? Math.min(1.3, rev2 + 0.55 * DT) : Math.max(0, rev2 - 0.9 * DT); if (rev2 > 1.1) flooded = true;
-            cd.textContent = cT >= GO ? "🟢" : (nl ? "🔴".repeat(nl) : ""); if (cT < GO) { tip.textContent = window.innerHeight > window.innerWidth ? "↻ Gira il telefono (rotazione automatica attiva, o tocca l'icona di rotazione in basso)" : "Tieni premuto ACCELERA dal 2° semaforo: barra nella zona verde al VIA = partenza perfetta"; msgT = 9; }
+            if (!qual) rev2 = holdG ? Math.min(1.3, rev2 + 0.55 * DT) : Math.max(0, rev2 - 0.9 * DT); if (rev2 > 1.1) flooded = true;
+            cd.textContent = cT >= GO ? "🟢" : (nl ? "🔴".repeat(nl) : ""); if (cT < GO) { tip.textContent = window.innerHeight > window.innerWidth ? "↻ Gira il telefono (rotazione automatica attiva, o tocca l'icona di rotazione in basso)" : (qual ? "QUALIFICA · al VIA partirai già lanciato: un solo giro, senza pozze né pedane" : "Tieni premuto ACCELERA dal 2° semaforo: barra nella zona verde al VIA = partenza perfetta"); msgT = 9; }
             if (cT >= GO) { state = "run"; t = 0; setTimeout(function () { cd.textContent = ""; }, 700); var r2 = rev2, lm = "VIA!";
-              if (flooded || r2 > 1.0) { me.stall = 0.5; lm = "TROPPO GAS! Partenza persa"; A.haptic("bad"); } else if (r2 >= 0.72) { me.boostT = 1.0; me.vx = Math.cos(me.a) * 140; me.vy = Math.sin(me.a) * 140; lm = "PARTENZA PERFETTA!"; A.haptic("ok"); } else if (r2 >= 0.45) { me.boostT = 0.45; me.vx = Math.cos(me.a) * 70; me.vy = Math.sin(me.a) * 70; lm = "Buona partenza"; }
+              if (qual) { me.vx = Math.cos(me.a) * 380; me.vy = Math.sin(me.a) * 380; lm = "VIA! Giro di qualifica"; } else if (flooded || r2 > 1.0) { me.stall = 0.5; lm = "TROPPO GAS! Partenza persa"; A.haptic("bad"); } else if (r2 >= 0.72) { me.boostT = 1.0; me.vx = Math.cos(me.a) * 140; me.vy = Math.sin(me.a) * 140; lm = "PARTENZA PERFETTA!"; A.haptic("ok"); } else if (r2 >= 0.45) { me.boostT = 0.45; me.vx = Math.cos(me.a) * 70; me.vy = Math.sin(me.a) * 70; lm = "Buona partenza"; }
               say2(lm, 1.4); }
             continue;
           }
@@ -693,6 +697,7 @@
           });
           cars.forEach(function (c) { var pp = Math.floor(c.prog); while (c.hp < pp) { c.hp++; if (c.hp + 60 >= 0 && c.hp + 60 < c.hist.length) c.hist[c.hp + 60] = t; } });      // quando ogni auto è passata da ogni punto: serve per i distacchi in secondi
           if (me.dd) { var co2 = Math.cos(me.a), si2 = Math.sin(me.a); if (!curSeg) { curSeg = []; trail.push(curSeg); if (trail.length > 5) trail.shift(); } curSeg.push([me.x - co2 * 12 + si2 * 13, me.y - si2 * 12 - co2 * 13, me.x - co2 * 12 - si2 * 13, me.y - si2 * 12 + co2 * 13]); if (curSeg.length > 240) curSeg.shift(); } else curSeg = null;
+          if (!solo && !qual && (Math.round(t * 60) & 1) === 0) cars.forEach(function (c) { var ar = c.tr2 || (c.tr2 = []); ar.unshift([c.x - Math.cos(c.a) * 16, c.y - Math.sin(c.a) * 16, c.a]); if (ar.length > 18) ar.pop(); });
           if (qual) { var qi = Math.min(Math.floor(t * 60), 1e9); qgh.forEach(function (g) { var ii = Math.min(qi, g.path.length / 3 - 1); g.x = g.path[ii * 3]; g.y = g.path[ii * 3 + 1]; g.a = g.path[ii * 3 + 2]; }); if (qT0 < 0 && me.prog >= 0) { qT0 = t; lapStart = t; } }
           if (solo) { if ((gtick++ % 3) === 0) grec.push(Math.round(me.x), Math.round(me.y), Math.round(me.a * 100)); if (ghost) ghostAt(t); }
           var sn = Math.min(3 * laps, Math.floor(Math.max(0, me.prog) / (tr.N / 3)));

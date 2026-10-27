@@ -1551,3 +1551,8 @@ body.sbx .pg-head{padding-top:22px}
 .sc-cl.hi{background:rgba(255,255,255,.07)!important;box-shadow:none!important;color:#ffd23b!important;text-shadow:0 0 8px rgba(255,210,59,.55);font-weight:800}
 .sc-cl.tot.hi{color:#ffd23b!important}
 .dl-set{justify-content:space-evenly}.dl-o i{width:44px;height:44px}.dl-seg button{padding:15px 2px}
+/* ===== v74 ===== */
+.rc2-lapb{transition:transform .3s}.rc2-lapb.prev{transform:translateX(calc(-50% - 76px))}
+.rc2.qual .rc2-gas,.rc2.qual .rc2-lch{display:none!important}
+.rc2-intro.qual small{color:#ffd23b;letter-spacing:.3em}.rc2-intro.qual b{font-size:50px;color:#ffd23b;text-shadow:0 4px 0 #6b3a00,0 0 24px #ff9f1c}
+.rc2-intro.qual{background:linear-gradient(180deg,rgba(8,4,20,.6),rgba(8,4,20,.1) 40%,rgba(8,4,20,.1) 60%,rgba(8,4,20,.65))}
