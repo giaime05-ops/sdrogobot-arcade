@@ -68,32 +68,28 @@
   // ---- sfide 1v1, tutto in una schermata
 var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGradient id="rvg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9cfdb"/><stop offset=".5" stop-color="#7b8394"/><stop offset="1" stop-color="#3a3f4c"/></linearGradient><linearGradient id="rvw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a2c"/><stop offset="1" stop-color="#4a2a12"/></linearGradient></defs><rect x="70" y="21" width="106" height="12" rx="2" fill="url(#rvg)"/><rect x="70" y="18" width="106" height="3.5" fill="#dfe4ee"/><rect x="168" y="14" width="6" height="6" fill="#aab1c0"/><path d="M28 20H72V47H46L28 38Z" fill="url(#rvg)"/><rect x="50" y="15" width="28" height="31" rx="4" fill="#5b6272" stroke="#2b2f3a" stroke-width="1.5"/><g stroke="#2b2f3a" stroke-width="1.5"><path d="M58 17V44M66 17V44M74 17V44"/></g><path d="M28 20L19 10H31L36 20Z" fill="#3a3f4c"/><path d="M30 37L50 46L45 87H20Z" fill="url(#rvw)" stroke="#2a1608" stroke-width="1.5"/><path d="M48 47Q62 68 80 47" fill="none" stroke="#7b8394" stroke-width="3.5"/><path d="M62 48L66 58" stroke="#c9cfdb" stroke-width="3"/></svg>';
   var ICON = { srf: "✊", dadi: "🎲", hl: "⬆️", tris: "❌", quiz: "🧠", ghig: "🪓", rou: "🎡", rr: REV };
-  function duels() {
+  var GMETA = { srf: ["✊", "Sasso Carta Forbici", "Al meglio dei round"], dadi: ["🎲", "Dadi", "Agita e lancia il bussolotto"], hl: ["⬆️", "Alto / Basso", "La prossima carta è più alta?"], tris: ["❌", "Tris", "Tre in fila vince"], ghig: ["🪓", "Ghigliottina", "Indovina la parola"], rr: ["🔫", "Roulette Russa", "Un colpo solo nel tamburo"] };
+  function duels() {                                                                                            // 1) si sceglie il gioco: schede grandi e colorate
     fit(true); epoch++; body.innerHTML = ""; backBar("SFIDE 1v1");
-    var c = el("div", "mp-card mp-duel"); body.appendChild(c);
+    body.appendChild(el("div", "dl-hint", "Scegli il gioco"));
+    var g = el("div", "dl-grid"); body.appendChild(g);
+    GAMES.forEach(function (it) { var m = GMETA[it[0]], c = el("button", "dl-card g-" + it[0]); c.type = "button";
+      var ic = el("i", "", m[0]); if (it[0] === "rr" && ICON.rr && ICON.rr.indexOf("<svg") === 0) { ic.textContent = ""; ic.innerHTML = ICON.rr; ic.className = "svgic"; } c.appendChild(ic); c.appendChild(el("b", "", m[1])); c.appendChild(el("span", "", m[2]));
+      c.addEventListener("click", function () { A.haptic("light"); st.game = it[0]; duelSetup(); }); g.appendChild(c); });
+  }
+  function duelSetup() {                                                                                        // 2) avversario, puntata e round: tutto in una schermata
+    fit(true); epoch++; body.innerHTML = ""; backBar(GMETA[st.game][1].toUpperCase(), duels);
     if (!st.opp) st.opp = BOT;
-    c.appendChild(el("div", "mp-lab", "Avversario"));
-    var rp = el("div", "mp-row scroll"); c.appendChild(rp);
-    function pPlayers() { chips(rp, names().slice(0, 12).map(function (p) { return [p.id, p.name]; }), st.opp.id, function (it) { st.opp = { id: it[0], name: it[1] }; pPlayers(); }); } pPlayers();
-    c.appendChild(el("div", "mp-lab", "Gioco"));
-    var rg = el("div", "mp-games"); c.appendChild(rg);
-    function pG() {
-      rg.innerHTML = "";
-      GAMES.forEach(function (it) {
-        var b = el("button", "mp-gt" + (it[0] === st.game ? " on" : "") + (it[2] === false ? " off" : "")); b.type = "button";
-        var ic = el("i", "", ICON[it[0]] && ICON[it[0]].indexOf("<svg") === 0 ? "" : (ICON[it[0]] || "🎮")); if (ICON[it[0]] && ICON[it[0]].indexOf("<svg") === 0) { ic.innerHTML = ICON[it[0]]; ic.className = "svgic"; } b.appendChild(ic); b.appendChild(el("span", "", it[1].replace(/^\S+\s/, "")));
-        b.addEventListener("click", function () { if (it[2] === false) { A.toast(it[1] + ": presto"); return; } A.haptic("light"); st.game = it[0]; pG(); }); rg.appendChild(b);
-      });
-    } pG();
-    var two = el("div", "mp-two"); c.appendChild(two);
-    var cb = el("div"); cb.appendChild(el("div", "mp-lab", "Puntata")); var rb = el("div", "mp-row scroll"); cb.appendChild(rb); two.appendChild(cb);
-    function pB() { chips(rb, [10, 50, 100, 500, 1000].map(function (n) { return [n, A.fmt(n)]; }), st.bet, function (it) { st.bet = it[0]; pB(); }); } pB();
-    var cr = el("div"); cr.appendChild(el("div", "mp-lab", "Round")); var rr = el("div", "mp-row"); cr.appendChild(rr); two.appendChild(cr);
-    function pR() { chips(rr, [1, 3, 5].map(function (n) { return [n, String(n)]; }), st.rounds, function (it) { st.rounds = it[0]; pR(); }); } pR();
-    var rw = el("div", "mp-end");
-    var go = el("button", "mp-go", "INVIA SFIDA"); go.type = "button"; go.addEventListener("click", send);
-    var gb = el("button", "mp-go mp-alt", "🤖 PROVA COL BOT"); gb.type = "button"; gb.addEventListener("click", function () { st.opp = BOT; duel(); });
-    rw.appendChild(go); rw.appendChild(gb); c.appendChild(rw);
+    var m = GMETA[st.game], hero = el("div", "dl-hero g-" + st.game); hero.appendChild(el("i", "", m[0])); var hx = el("div"); hx.appendChild(el("b", "", m[1])); hx.appendChild(el("span", "", m[2])); hero.appendChild(hx); body.appendChild(hero);
+    var c = el("div", "dl-set"); body.appendChild(c);
+    c.appendChild(el("div", "mp-lab", "Avversario")); var og = el("div", "dl-opp"); c.appendChild(og);
+    function pO() { og.innerHTML = ""; names().slice(0, 8).forEach(function (p) { var b = el("button", "dl-o" + (p.id === st.opp.id ? " on" : "")); b.type = "button"; var av = el("i", "", p.id === "bot" ? "🤖" : p.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 1).toUpperCase()); b.appendChild(av); b.appendChild(el("span", "", p.name.replace("🤖 ", ""))); b.addEventListener("click", function () { st.opp = p; pO(); }); og.appendChild(b); }); } pO();
+    c.appendChild(el("div", "mp-lab", "Puntata $SDG")); var bg = el("div", "dl-seg"); c.appendChild(bg);
+    function pB() { bg.innerHTML = ""; [10, 50, 100, 500, 1000].forEach(function (n) { var b = el("button", st.bet === n ? "on" : "", A.fmt(n)); b.type = "button"; b.addEventListener("click", function () { st.bet = n; pB(); }); bg.appendChild(b); }); } pB();
+    c.appendChild(el("div", "mp-lab", "Round (al meglio di)")); var rg = el("div", "dl-seg r3"); c.appendChild(rg);
+    function pR() { rg.innerHTML = ""; [1, 3, 5].forEach(function (n) { var b = el("button", st.rounds === n ? "on" : "", String(n)); b.type = "button"; b.addEventListener("click", function () { st.rounds = n; pR(); }); rg.appendChild(b); }); } pR();
+    var rw = el("div", "mp-end dl-go"); var go = el("button", "mp-go", "INVIA SFIDA"); go.type = "button"; go.addEventListener("click", send);
+    var gb = el("button", "mp-go mp-alt", "🤖 PROVA COL BOT"); gb.type = "button"; gb.addEventListener("click", function () { st.opp = BOT; duel(); }); rw.appendChild(go); rw.appendChild(gb); c.appendChild(rw);
   }
   function send() {
     fit(false); epoch++; body.innerHTML = ""; var c = el("div", "mp-card"); c.appendChild(el("div", "mp-sec", "SFIDA INVIATA A " + st.opp.name.toUpperCase()));
@@ -204,8 +200,8 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       var split = el("div", "mx-split"), O = panel("opp", st.opp.name), M = panel("me", "Tu"), hint = el("div", "mx-hint", "");
       split.appendChild(O.p); split.appendChild(M.p); area.appendChild(split); area.appendChild(hint);
       O.cup.classList.add("auto"); O.cup.style.animation = "none";
-      say(msg, "Prendi il bussolotto: tieni premuto per agitare, rilascia per lanciare");
-      hint.textContent = "👇 tieni premuto il tuo bussolotto";
+      say(msg, "Tocca il bussolotto per lanciare (o tienilo premuto per agitarlo di più)");
+      hint.textContent = "👇 tocca o tieni premuto il tuo bussolotto";
       return new Promise(function (res) {
         var t0 = 0, iv = 0, done = false;
         function stop() { clearInterval(iv); iv = 0; }
@@ -213,10 +209,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
           if (done || t0) return; ev.preventDefault(); t0 = Date.now(); M.cup.classList.add("hold"); hint.textContent = "Agita… rilascia per lanciare";
           snd("tick"); iv = setInterval(function () { if (!alive(E)) return stop(); snd("creak", Math.random()); A.haptic("light"); }, 140);
         }
-        function up() {
-          if (!t0 || done) return; stop(); var held = Date.now() - t0; t0 = 0; M.cup.classList.remove("hold");
-          if (held < 600) { hint.textContent = "Agita di più! Tieni premuto almeno un secondo"; return; }
-          done = true; hint.textContent = ""; M.p.classList.add("act");
+        function up() { if (!t0 || done) return; var held = Date.now() - t0; t0 = 0; done = true; hint.textContent = "Agito…"; setTimeout(function () { if (!alive(E)) return; stop(); M.cup.classList.remove("hold"); go(); }, Math.max(0, 700 - held)); }
+        function go() {
+          hint.textContent = ""; M.p.classList.add("act");
           var mv = [1 + rnd(6), 1 + rnd(6)], ov = [1 + rnd(6), 1 + rnd(6)];
           throwDice(M, mv).then(function () {
             if (!alive(E)) return; var a = mv[0] + mv[1]; M.tot.textContent = a; M.p.classList.remove("act"); O.p.classList.add("act");
@@ -230,7 +225,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
             });
           });
         }
-        M.cup.addEventListener("pointerdown", down); M.cup.addEventListener("pointerup", up); M.cup.addEventListener("pointercancel", up); M.cup.addEventListener("pointerleave", up);
+        M.cup.style.touchAction = "none"; M.cup.addEventListener("contextmenu", function (e) { e.preventDefault(); }); M.cup.addEventListener("pointerdown", function (e) { try { M.cup.setPointerCapture(e.pointerId); } catch (x) {} down(e); }); M.cup.addEventListener("pointerup", up); M.cup.addEventListener("pointercancel", up);
       });
     },
     hl: function (area, msg, E) {

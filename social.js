@@ -449,7 +449,7 @@
       if (cur !== "hub") show("hub", true);
     }
     function update() {
-      try { var pv = $("profile"); if (window.ArcadeBackHook) { tg.BackButton.show(); return; } if (openGame() || cur !== "hub" || settingsOpen() || (pv && !pv.hidden)) tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {}
+      try { var pv = $("profile"); if (window.ArcadeBackHide) { tg.BackButton.hide(); return; } if (window.ArcadeBackHook) { tg.BackButton.show(); return; } if (openGame() || cur !== "hub" || settingsOpen() || (pv && !pv.hidden)) tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {}
     }
     try { tg.BackButton.onClick(onBack); } catch (e) { return; }
     window.ArcadeBackSync = update;
