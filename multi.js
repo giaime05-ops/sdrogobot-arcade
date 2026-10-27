@@ -50,7 +50,7 @@
   function tables() {
     fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI");
     [["Poker Texas", "🂡", "pk"], ["Blackjack insieme", "🃏", "bj"], ["Scopa (2 o 4)", "🎴", "sc"]].forEach(function (t) {
-      var tc = el("div", "mp-card tbl"); tc.appendChild(el("div", "mp-ttl", t[1] + " " + t[0]));
+      var tc = el("div", "mp-card tbl " + t[2]); tc.appendChild(el("div", "mp-ttl", t[1] + " " + t[0]));
       var seats = el("div", "mp-seats"); tc.appendChild(seats); var n = 1;
       function paintSeats() {
         seats.innerHTML = "";

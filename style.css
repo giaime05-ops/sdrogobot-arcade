@@ -1413,3 +1413,38 @@ button,input,select{font-family:inherit}
 .rc-art-card .mp-ttl{text-shadow:0 2px 6px #000}
 .rc-art-card .rc-t{text-shadow:0 1px 4px #000;color:#e8dcff}
 .mp-gt.wide{padding-left:8px;padding-right:8px;font-size:12px}
+/* ===== corsa v72: HUD pulito, tasti piccoli, classifica live, schede staccate, classifica leggibile ===== */
+.rc2-b.dir{width:108px!important;height:84px!important;font-size:32px!important;border-radius:22px!important}
+.rc2-pad.l{left:calc(14px + var(--sl,0px))!important;bottom:12px!important}.rc2-pad.r{right:14px!important;bottom:12px!important}
+.rc2-lapb{flex-direction:row!important;align-items:center;gap:8px;top:calc(4px + var(--st,0px))!important}
+.rc2-lapb b{font-size:26px!important}
+.rc2-lapb span{margin-top:0!important}
+.rc2-sec{top:calc(40px + var(--st,0px))!important;gap:4px}
+.rc2-sec .sc{min-width:62px!important;padding:1px 6px!important;font-size:12px!important}
+.rc2-hud{gap:10px!important;font-size:16px!important}
+.rc2-tower{position:absolute;right:calc(10px + var(--sr,0px));top:calc(100px + var(--st,0px));width:132px;display:flex;flex-direction:column;gap:2px;pointer-events:none}
+.rc2-tower .tr{display:grid;grid-template-columns:14px 6px 34px 1fr;align-items:center;gap:5px;padding:1px 6px;border-radius:7px;background:rgba(8,4,20,.58);color:#fff;font:700 13px Rajdhani,sans-serif;line-height:1.25}
+.rc2-tower .tr b{font:400 12px Bungee,Rajdhani,sans-serif;color:#ffd23b}
+.rc2-tower .tr i{display:block;width:6px;height:14px;border-radius:2px}
+.rc2-tower .tr em{font-style:normal;text-align:right;color:#cfe0ff;font-variant-numeric:tabular-nums}
+.rc2-tower .tr.me{background:rgba(255,61,176,.45);box-shadow:0 0 0 1px rgba(255,255,255,.5) inset}
+.rc2-end .mp-end{gap:8px;flex-wrap:wrap;justify-content:center}
+.mp-go.mp-alt2{background:linear-gradient(180deg,#ffc94a,#e08a00);color:#2a1600}
+.rc-art-card{margin:0 0 16px!important;border:2px solid rgba(255,150,230,.55)!important;box-shadow:0 8px 20px rgba(0,0,0,.5),0 0 0 3px rgba(8,4,20,.6)!important;border-radius:18px!important}
+.rc-lbr{align-items:center;padding:3px 8px!important;background:rgba(8,4,20,.42)!important;backdrop-filter:blur(1.5px)}
+.rc-lbr .nm{display:flex;align-items:center;gap:9px;color:#fff;text-shadow:0 1px 3px #000}
+.rc-lbr .n{font-style:normal;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.45);font:700 13px Rajdhani,sans-serif;color:#fff}
+.rc-lbr .n.p1{background:linear-gradient(180deg,#ffe27a,#f0a500);border-color:#fff3b0;color:#3a2400;box-shadow:0 0 8px rgba(255,210,74,.7)}
+.rc-lbr .n.p2{background:linear-gradient(180deg,#f3f6fb,#aab4c6);border-color:#fff;color:#1d2433}
+.rc-lbr .n.p3{background:linear-gradient(180deg,#f2b27a,#b8692e);border-color:#ffd9b8;color:#2a1200}
+.rc-lbr.me{background:rgba(255,61,176,.42)!important}
+body.sbx .pg-head{padding-top:22px}
+/* tavoli colorati (prototipo) */
+.mp-card.tbl{position:relative;overflow:hidden;margin:0 0 14px!important;border:2px solid rgba(255,255,255,.3)!important;border-radius:18px!important;box-shadow:0 8px 20px rgba(0,0,0,.45),0 0 0 3px rgba(8,4,20,.55)}
+.mp-card.tbl>*{position:relative;z-index:1}
+.mp-card.tbl::before{content:"";position:absolute;right:-6px;top:-14px;font-size:132px;line-height:1;opacity:.16;color:#fff;z-index:0;pointer-events:none}
+.mp-card.tbl .mp-ttl{font-size:19px;text-shadow:0 2px 6px #000;margin-top:0}
+.mp-card.tbl.pk{background:linear-gradient(135deg,rgba(24,140,70,.82),rgba(7,64,36,.9))}.mp-card.tbl.pk::before{content:"♠♥"}
+.mp-card.tbl.bj{background:linear-gradient(135deg,rgba(138,18,50,.86),rgba(58,6,24,.92))}.mp-card.tbl.bj::before{content:"21"}
+.mp-card.tbl.sc{background:linear-gradient(135deg,rgba(32,92,205,.86),rgba(10,28,96,.92))}.mp-card.tbl.sc::before{content:"🎴"}
+.mp-card.tbl .mp-seat{background:rgba(0,0,0,.35)}
