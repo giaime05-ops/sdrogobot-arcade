@@ -71,7 +71,7 @@
   };
   // ---- home del multiplayer: grandi riquadri, uno per sezione
   function lobby() {
-    fit(true); epoch++; body.innerHTML = "";
+    dropTl(); netClose(); fit(true); epoch++; body.innerHTML = "";
     if (A.isSandbox && A.isSandbox()) body.appendChild(el("div", "pg-me", "🛠️ Prototipo (solo admin): gli avversari sono simulati"));
     body.appendChild(invBox());
     var g = el("div", "mp-hub"); body.appendChild(g);
@@ -90,8 +90,9 @@
     bj: { name: "Blackjack insieme", sub: "Tutti contro il banco · fino a 4", max: 4, art: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><text x="62" y="104" font-size="96" font-weight="900" fill="#ffd23b" font-family="Bungee,sans-serif" opacity=".95">21</text><g transform="translate(150 60) rotate(14)"><rect x="-22" y="-32" width="44" height="64" rx="6" fill="#fff"/><text x="-16" y="-14" font-size="14" font-weight="900" fill="#111" font-family="Bungee,sans-serif">A</text><text x="-11" y="16" font-size="32" fill="#111">♠</text></g></svg>' },
     sc: { name: "Scopa", sub: "In 2 o in 4 · a 11 o 21 punti", max: 4, art: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(78 60)"><circle r="40" fill="#ffd23b" stroke="#b8860b" stroke-width="5"/><circle r="30" fill="none" stroke="#b8860b" stroke-width="3" stroke-dasharray="4 5"/><text x="-14" y="14" font-size="40" font-weight="900" fill="#8a5a00" font-family="Bungee,sans-serif">7</text></g><g transform="translate(150 62) rotate(10)"><rect x="-24" y="-36" width="48" height="72" rx="6" fill="#fdf3d8"/><path d="M0 -20 L12 0 L0 20 L-12 0Z" fill="#c0182f"/></g></svg>' }
   };
+  function dropTl() { var L = st.tl; if (L && L.rm && !L.started) { A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); } if (L && L._pt) { clearInterval(L._pt); L._pt = 0; } st.tl = null; }
   function tables() {
-    fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI"); body.appendChild(invBox());
+    if (st.tl && st.tl.rm && !st.tl.started) dropTl(); netClose(); fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI"); body.appendChild(invBox());
     var g = el("div", "mp-hub tbl-list"); body.appendChild(g);
     ["pk", "bj", "sc"].forEach(function (k) {
       var t = TBL[k], b = el("button", "mp-tile tb-" + k); b.type = "button"; var art = el("div", "mp-art"); art.innerHTML = t.art; b.appendChild(art);
@@ -103,13 +104,35 @@
   function tableLobby(k) {
     fit(true); epoch++; body.innerHTML = ""; var T = TBL[k]; backBar(T.name.toUpperCase(), tables);
     var L = st.tl && st.tl.k === k ? st.tl : (st.tl = { k: k, hands: 0, seats: [{ t: "me" }, null, null, null], buy: 0, rich: false, mode: "4s", target: st.scTarget == null ? 11 : st.scTarget });
-    var wallet = walletNow();
+    var wallet = walletNow(), TE = epoch, GK = { pk: "poker", bj: "bj", sc: "scopa" }[k];
+    L.started = false; if (L.rm && !L._pt) tlWatch();
     var seatsE = el("div", "tl-seats"); body.appendChild(seatsE);
     var rules = el("div", "mp-card tl-rules"); body.appendChild(rules);
     var go = el("div", "mp-end dl-go"); body.appendChild(go);
     function count() { return L.seats.filter(Boolean).length; }
     function addBot(i) { var n = L.seats.filter(function (x) { return x && x.t === "bot"; }).length + 1; L.seats[i] = { t: "bot", name: "Bot " + n }; A.haptic("light"); paint(); }
-    function invite(i) { friendSheet(L.seats.filter(Boolean).map(function (x) { return x.pid; }), function (f) { var sl = { t: "wait", name: f.name, style: f.style, pid: f.pid }; L.seats[i] = sl; paint(); wait(1400).then(function () { if (L.seats[i] === sl) { sl.t = "friend"; if (st.tl === L) paint(); } }); }); }
+    function tlCfg() {
+      if (k === "pk") return { stake: L.buy, hands: L.hands || 10, max: T.max, x: { u: L.rich ? 50 : 5 } };
+      if (k === "bj") return { stake: (L.bet || 50) * 20, hands: L.hands || 10, max: T.max, x: { bet: L.bet || 50 } };
+      return { stake: L.pot || 50, max: 4, x: { tgt: L.target || 0, m4: L.mode === "4c" ? 1 : 0 } };
+    }
+    function tlWatch() {
+      if (L._pt) return; L._pt = setInterval(function () {
+        if (st.tl !== L || !L.rm) { clearInterval(L._pt); L._pt = 0; return; }
+        A.api("/api/room/sync", "POST", { id: L.rm, since: 1e9 }).then(function (j) {
+          if (!j || !j.room) return; L.view = j.room; var pl = j.room.players, ch = false;
+          L.seats.forEach(function (sl) { if (sl && sl.human && sl.t === "wait") { var f = pl.filter(function (p) { return p.pid === sl.pid; })[0]; if (f) { sl.t = "friend"; sl.uid = f.uid; ch = true; } } });
+          if (ch && epoch === TE) paint();
+        }).catch(function () {});
+      }, 1500);
+    }
+    function invite(i) { friendSheet(L.seats.filter(Boolean).map(function (x) { return x.pid; }), function (f) {
+      if (f.real && isReal()) {                                       // amico vero: stanza sul server, puntata trattenuta, invito su Telegram
+        var go2 = function () { A.api("/api/room/invite", "POST", { id: L.rm, pid: f.pid }).then(function (j) { L.seats[i] = { t: "wait", name: f.name, style: f.style, pid: f.pid, human: true }; if (j && j.offline) A.toast(f.name + " è offline: l'ho taggato nel gruppo"); tlWatch(); paint(); }).catch(function (x) { A.toast((x && x.message) || "Invito non riuscito"); }); };
+        if (L.rm) return go2();
+        A.api("/api/room/create", "POST", { game: GK, cfg: tlCfg() }).then(function (j) { L.rm = j.room.id; L.view = j.room; go2(); }).catch(function (x) { A.toast((x && x.message) || "Server non raggiungibile"); }); return;
+      }
+      var sl = { t: "wait", name: f.name, style: f.style, pid: f.pid }; L.seats[i] = sl; paint(); wait(1400).then(function () { if (L.seats[i] === sl) { sl.t = "friend"; if (st.tl === L) paint(); } }); }); }
     function paintSeats() {
       seatsE.innerHTML = "";
       for (var i = 0; i < T.max; i++) (function (i) {
@@ -121,7 +144,7 @@
           var av = el("div", "avatar rav"); if (x.t === "bot") av.textContent = "🤖"; else A.styleAvatar(av, x.t === "me" ? ((A.me && A.me().style) || {}) : (x.style || {}), (x.t === "me" ? myName().charAt(0).toUpperCase() : (x.name || "?").charAt(0).toUpperCase())); c.appendChild(av);
           var nm = el("div", "tl-nm"); if (x.t === "me") nm.appendChild(A.nameEl(myName(), (A.me && A.me().style) || {})); else if (x.t === "bot") nm.appendChild(el("span", "", x.name)); else nm.appendChild(A.nameEl(x.name, x.style || {}));
           nm.appendChild(el("small", "", x.t === "me" ? "HOST" : x.t === "bot" ? "bot" : x.t === "wait" ? "invitato…" : "pronto ✓")); c.appendChild(nm);
-          if (x.t !== "me") { var rm = el("button", "tl-x", "✕"); rm.type = "button"; rm.addEventListener("click", function () { L.seats[i] = null; paint(); }); c.appendChild(rm); }
+          if (x.t !== "me" && !(x.human && x.t === "friend")) { var rm = el("button", "tl-x", "✕"); rm.type = "button"; rm.addEventListener("click", function () { L.seats[i] = null; paint(); }); c.appendChild(rm); }
         }
         seatsE.appendChild(c);
       })(i);
@@ -133,31 +156,51 @@
         var steps = L.rich ? [1000, 2000, 5000] : [100, 200, 500], opts = steps.filter(function (v) { return v <= wallet; }); if (!opts.length && wallet > 0 && !L.rich) opts = [wallet];
         if (opts.indexOf(L.buy) < 0) L.buy = opts[0] || 0;
         function row(lab) { var r = el("div", "tl-row"); r.appendChild(el("span", "", lab)); var c = el("div", "mp-rowc"); r.appendChild(c); rules.appendChild(r); return c; }
-        var r1 = row("Buy-in"), r2 = row("Tavolo"), r5 = row("Mani");
+        var r1 = row("Buy-in"), r2 = row("Tavolo"), r5 = row("Mani"); r1.classList.add("mlock"); r2.classList.add("mlock");
         if (opts.length) chips(r1, opts.map(function (v) { return [v, A.fmt(v)]; }), L.buy, function (it) { L.buy = it[0]; paintRules(); paintGo(); }); else r1.appendChild(el("span", "tl-warn", L.rich ? "Servono 1.000 $SDG" : "Nessun $SDG"));
         chips(r2, [[0, "Normale"], [1, "💎 Ricco ×10"]], L.rich ? 1 : 0, function (it) { L.rich = !!it[0]; L.buy = 0; paintRules(); paintGo(); });
-        chips(r5, [[0, "∞"], [5, "5"], [10, "10"], [20, "20"]], L.hands, function (it) { L.hands = it[0]; paintRules(); });
+        chips(r5, (L.rm ? [[5, "5"], [10, "10"], [20, "20"]] : [[0, "∞"], [5, "5"], [10, "10"], [20, "20"]]), L.rm && !L.hands ? 10 : L.hands, function (it) { L.hands = it[0]; paintRules(); });
         rules.appendChild(el("div", "tl-info", "Saldo " + A.fmt(wallet) + " $SDG · ante " + A.fmt(L.rich ? 50 : 5) + " a mano"));
       } else if (k === "bj") {
         rules.appendChild(el("div", "mp-sec", "REGOLE"));
         rules.appendChild(el("div", "pg-me", "Ognuno punta a ogni mano e gioca contro il banco. Vince chi si avvicina di più a 21 senza sballare."));
+        if (!L.bet) L.bet = 50;
+        var rb = el("div", "tl-row"); rb.appendChild(el("span", "", "Puntata a mano")); var rbc = el("div", "mp-rowc mlock"); rb.appendChild(rbc); rules.appendChild(rb); chips(rbc, [10, 25, 50, 100, 250].map(function (v) { return [v, A.fmt(v)]; }), L.bet, function (it) { L.bet = it[0]; st.bet = L.bet; paintRules(); });
+        var hasH = L.rm || L.seats.some(function (x) { return x && x.human; });
+        if (hasH) { var rh = el("div", "tl-row"); rh.appendChild(el("span", "", "Mani")); var rhc = el("div", "mp-rowc"); rh.appendChild(rhc); rules.appendChild(rh); chips(rhc, [[5, "5"], [10, "10"], [20, "20"]], !L.hands ? 10 : L.hands, function (it) { L.hands = it[0]; paintRules(); });
+        rules.appendChild(el("div", "tl-info", "Online: buy-in " + A.fmt(L.bet * 20) + " $SDG (20 puntate) · a fine tavolo si incassa in base alle fiches")); }
       } else {
         rules.appendChild(el("div", "mp-sec", "REGOLE · SCOPA"));
         if (n > 2) { var r3 = el("div", "mp-rowc"); rules.appendChild(r3); chips(r3, [["4s", "Ognuno per sé"], ["4c", "A coppie"]], L.mode, function (it) { L.mode = it[0]; paintRules(); }); }
         else rules.appendChild(el("div", "pg-me", "2 giocatori. Con 3 o 4 posti si gioca in 4."));
         rules.appendChild(el("div", "mp-lab", "Punteggio finale")); var r4 = el("div", "mp-rowc"); rules.appendChild(r4);
         chips(r4, [[0, "Una mano"], [11, "A 11"], [21, "A 21"]], L.target, function (it) { L.target = it[0]; st.scTarget = L.target; paintRules(); });
-        rules.appendChild(el("div", "pg-me", "Posta " + A.fmt(st.bet) + " $SDG"));
+        if (!L.pot) L.pot = 50;
+        var rp = el("div", "tl-row"); rp.appendChild(el("span", "", "Posta a testa")); var rpc = el("div", "mp-rowc mlock"); rp.appendChild(rpc); rules.appendChild(rp); chips(rpc, [10, 50, 100, 500, 1000].map(function (v) { return [v, A.fmt(v)]; }), L.pot, function (it) { L.pot = it[0]; st.bet = L.pot; paintRules(); });
+        rules.appendChild(el("div", "tl-info", "Il piatto (posta × giocatori veri) va a chi vince la partita"));
       }
     }
+    function lockMoney() { if (!L.rm) return; rules.querySelectorAll(".mlock button").forEach(function (b) { b.disabled = true; b.style.opacity = ".55"; }); if (!rules.querySelector(".tl-lock")) rules.appendChild(el("div", "tl-info tl-lock", "🔒 Puntata bloccata: è già stata trattenuta a chi è entrato")); }
     function paintGo() {
       go.innerHTML = ""; var n = count(), ok = n >= 2 && !(k === "pk" && !L.buy), b = el("button", "mp-go", n < 2 ? "AGGIUNGI UN GIOCATORE" : "▶ AVVIA"); b.type = "button"; b.disabled = !ok;
+      var waitingH = L.seats.some(function (x) { return x && x.human && x.t === "wait"; }), joined = L.seats.filter(function (x) { return x && x.human && x.t === "friend"; }).length;
+      if (L.rm) { b.disabled = !joined || waitingH || (k === "pk" && !L.buy); if (waitingH || !joined) b.textContent = "IN ATTESA DEGLI AMICI…"; }
       b.addEventListener("click", function () {
+        if (L.rm) return tlStart();
         var bots = Math.max(1, count() - 1);
         if (k === "pk") pkTable(bots, { buy: L.buy, wallet: wallet - L.buy, u: L.rich ? 50 : 5, hands: L.hands }); else if (k === "bj") bjTable(bots); else scopaTable(count() > 2 ? L.mode : "2", L.target);
       }); go.appendChild(b);
     }
-    function paint() { paintSeats(); paintRules(); paintGo(); }
+    function tlStart() {                                              // host: manda le regole finali, poi il via: tutti i telefoni partono insieme
+      var botsN = L.seats.filter(function (x) { return x && x.t === "bot"; }).length, c0 = tlCfg(); c0.x.bots = botsN;
+      if (k === "sc") c0.x.n4 = (botsN + 1 + L.seats.filter(function (x) { return x && x.human; }).length) > 2 ? 1 : 0;
+      L.started = true; clearInterval(L._pt); L._pt = 0;
+      A.api("/api/room/cfg", "POST", { id: L.rm, cfg: { hands: c0.hands || 0, x: c0.x } }).then(function () {
+        var N0 = netOpen(L.view || { id: L.rm, me: null, players: [] }, function () { runTable(GK); });
+        return A.api("/api/room/start", "POST", { id: L.rm });
+      }).catch(function (x) { L.started = false; A.toast((x && x.message) || "Non riesco ad avviare"); tlWatch(); });
+    }
+    function paint() { paintSeats(); paintRules(); lockMoney(); paintGo(); }
     paint();
   }
   // ---- sfide 1v1, tutto in una schermata
@@ -165,7 +208,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   var ICON = { srf: "✊", dadi: "🎲", hl: "⬆️", tris: "❌", quiz: "🧠", ghig: "🪓", rou: "🎡", rr: REV };
   var GMETA = { srf: ["✊", "Sasso Carta Forbici", "Al meglio dei round"], dadi: ["🎲", "Dadi", "Agita e lancia il bussolotto"], hl: ["⬆️", "Alto / Basso", "La prossima carta è più alta?"], tris: ["❌", "Tris", "Tre in fila vince"], ghig: ["🪓", "Ghigliottina", "Indovina la parola"], rr: ["🔫", "Roulette Russa", "Un colpo solo nel tamburo"] };
   function duels() {                                                                                            // 1) si sceglie il gioco: schede grandi e colorate
-    fit(true); epoch++; body.innerHTML = ""; backBar("SFIDE 1v1");
+    netClose(); fit(true); epoch++; body.innerHTML = ""; backBar("SFIDE 1v1");
     body.appendChild(el("div", "dl-hint", "Scegli il gioco"));
     var g = el("div", "dl-grid"); body.appendChild(g);
     GAMES.forEach(function (it) { var m = GMETA[it[0]], c = el("button", "dl-card g-" + it[0]); c.type = "button";
@@ -231,15 +274,46 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     return N;
   }
   function netSend(ev) { if (!NET) return; ev.s = ++NET.seq; NET.out.push(ev); clearTimeout(NET.t); NET.t = setTimeout(NET.pump, 0); }
-  function oppOffline() { var N = NET; if (!N || !N.view) return false; var p = (N.view.players || []).filter(function (q) { return q.uid === N.opp; })[0]; return !p || N.left === N.opp || (p && p.online === false); }
-  function netTake(pred) {                                       // aspetta un evento dell'avversario; se sparisce per più di 25 s → abbandono
+  function oppOffline(who) { var N = NET; if (!N || !N.view) return false; who = who || N.opp; var p = (N.view.players || []).filter(function (q) { return q.uid === who; })[0]; return !p || N.left === who || (p && p.online === false); }
+  function netTake(pred, who) {                                       // aspetta un evento dell'avversario; se sparisce per più di 25 s → abbandono
     var N = NET;
     return new Promise(function (res, rej) {
       for (var i = 0; i < N.inbox.length; i++) if (pred(N.inbox[i])) return res(N.inbox.splice(i, 1)[0]);
       var w = { pred: pred, res: res }, off = 0;
-      w.iv = setInterval(function () { if (N.dead) { clearInterval(w.iv); return; } if (oppOffline()) { off += 1; if (off >= 25) { clearInterval(w.iv); rej({ forfeit: true }); } } else off = 0; }, 1000);
+      w.iv = setInterval(function () { if (N.dead) { clearInterval(w.iv); return; } if (oppOffline(who)) { off += 1; if (off >= 25) { clearInterval(w.iv); rej({ forfeit: true }); } } else off = 0; }, 1000);
       N.waiters.push(w);
     });
+  }
+
+  // ---- tavoli online: tutti i telefoni eseguono lo stesso gioco con gli stessi dadi/mazzi (seme del server); si scambiano solo le scelte
+  function gf() { return NET ? NET.R() : Math.random(); }
+  function remoteAct(p, d) {
+    if (p.gone) return Promise.resolve(null);
+    return netTake(function (e) { return e.k === "m" && e.d === d && e.u === p.net; }, p.net).catch(function (x) { if (x && x.forfeit) { p.gone = true; return null; } throw x; });
+  }
+  function tblBarrier(P, tag) {
+    netSend({ k: "b", t: tag });
+    return Promise.all(P.filter(function (p) { return p.net && !p.gone; }).map(function (p) { return netTake(function (e) { return e.k === "b" && e.t === tag && e.u === p.net; }, p.net).catch(function (x) { if (x && x.forfeit) { p.gone = true; return null; } throw x; }); }));
+  }
+  // fine tavolo: invio le fiches finali; il server paga in proporzione se la maggioranza concorda (o se chi manca è sparito)
+  function tblFinish(P, net, box, en, label) {
+    var N = NET, ch = {}, any = 0; P.forEach(function (p) { if (p.uid) { ch[p.uid] = Math.max(0, Math.round(p.stack != null ? p.stack : p.chips)); any += ch[p.uid]; } });
+    if (!any) P.forEach(function (p) { if (p.uid) ch[p.uid] = 1; });
+    var order = Object.keys(ch).sort(function (a, b) { return ch[b] - ch[a]; }), done = false, tries = 0, me = N.me;
+    var out = el("div", "pg-me", "⏳ Conferma dell'esito…"); en.appendChild(out);
+    var bk = el("button", "mp-go mp-alt", "TORNA AI TAVOLI"); bk.type = "button"; bk.addEventListener("click", function () { netClose(); tables(); }); en.appendChild(bk);
+    (function post() {
+      if (done || tries++ > 30) return;
+      A.api("/api/room/result", "POST", { id: N.id, order: order, chips: ch }).then(function (j) {
+        if (j && j.settled && j.result) {
+          done = true; var r = j.result, py = (r.pay || {})[me] || 0, put = (N.view.cfg && N.view.cfg.stake) || 0;
+          if (r.refund) out.textContent = "↩️ Esito non concordante: puntate restituite";
+          else if (r.sim) out.textContent = "🏁 Tavolo finito (prova, soldi finti)";
+          else { var d = py - put; out.textContent = "🏁 Tavolo finito: incassi " + A.fmt(py) + " $SDG (" + (d >= 0 ? "+" : "−") + A.fmt(Math.abs(d)) + ")"; out.className = "pg-me " + (d > 0 ? "mp-win" : (d < 0 ? "mp-lose" : "")); }
+          try { A.refreshMe(); } catch (e) {}
+        } else setTimeout(post, tries < 4 ? 1200 : 3000);
+      }).catch(function () { setTimeout(post, 3000); });
+    })();
   }
   function mvf(c) { return function (e) { return e.k === "m" && e.c === c && NET && e.u === NET.opp; }; }
   // ---- inviti ricevuti (non Grand Prix): in alto nella lobby e nelle schermate Sfide/Tavoli
@@ -257,8 +331,34 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       });
     }).catch(function () {});
   }
-  function invBox() { var b = el("div", "gl-inv"); invites(b); return b; }
-  function tableGuest(room) { A.toast("Tavoli online in arrivo"); }
+  function invBox() { var b = el("div", "gl-inv"); invites(b); var iv = setInterval(function () { if (!b.isConnected && b._seen) return clearInterval(iv); if (b.isConnected) { b._seen = 1; invites(b); } }, 4000); return b; }
+  // avvio di un tavolo online (uguale per tutti): stesso seme, stessi giocatori nello stesso ordine
+  function runTable(game) {
+    var N = NET, v = N.view || {}, cfg = v.cfg || {}, x = cfg.x || {}; N.R = mulberry(N.seed | 0); N.d = 0;
+    var roster = N.order.map(function (uid) { var p = (v.players || []).filter(function (q) { return q.uid === uid; })[0] || {}; return { uid: uid, name: p.name || "Amico", style: p.style, me: uid === N.me }; });
+    var bots = x.bots | 0; st.bet = x.bet || cfg.stake || st.bet;
+    if (game === "poker") pkTable(bots, { buy: cfg.stake, wallet: walletNow(), u: x.u || 5, hands: cfg.hands || 10 }, { roster: roster });
+    else if (game === "bj") bjTable(bots, { roster: roster, bet: x.bet || 50, buy: cfg.stake, hands: cfg.hands || 10 });
+    else { var n4 = x.n4 ? 4 : 2; scopaTable(n4 === 2 ? "2" : (x.m4 ? "4c" : "4s"), x.tgt || 0, null, 1, { roster: roster, stake: cfg.stake }); }
+  }
+  // l'invitato aspetta in una piccola sala: vede chi è seduto e le regole, poi parte tutto insieme
+  function tableGuest(room) {
+    fit(true); epoch++; var E = epoch; body.innerHTML = ""; var game = room.game, cfg = room.cfg || {}, x = cfg.x || {}, h = room.players.filter(function (p) { return p.uid === room.host; })[0] || room.players[0] || {};
+    var nm = { poker: "POKER TEXAS", bj: "BLACKJACK", scopa: "SCOPA" }[game];
+    var c = el("div", "mp-card"); body.appendChild(c); c.appendChild(el("div", "mp-sec", nm + " · TAVOLO DI " + String(h.name || "").toUpperCase()));
+    var info = el("div", "pg-me", ""); c.appendChild(info); var seats = el("div", "pg-me", ""); c.appendChild(seats);
+    info.textContent = (game === "poker" ? "Buy-in " + A.fmt(cfg.stake) + " $SDG · ante " + A.fmt(x.u || 5) + " · " + (cfg.hands || 10) + " mani" : game === "bj" ? "Puntata " + A.fmt(x.bet || 50) + " a mano · buy-in " + A.fmt(cfg.stake) + " $SDG · " + (cfg.hands || 10) + " mani" : "Posta " + A.fmt(cfg.stake) + " $SDG a testa" + (x.tgt ? " · a " + x.tgt + " punti" : " · una mano")) + " — già trattenuti dal tuo saldo";
+    var rw = el("div", "mp-end"), cn = el("button", "mp-go mp-alt", "ESCI (puntata restituita)"); cn.type = "button"; rw.appendChild(cn); c.appendChild(rw);
+    var N = netOpen(room, function () { if (alive(E)) runTable(game); }), host0 = room.host;
+    function leave(msg) { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); netClose(); if (msg) A.toast(msg); tables(); }
+    cn.addEventListener("click", function () { leave(); });
+    var iv = setInterval(function () {
+      if (!alive(E) || NET !== N) return clearInterval(iv);
+      if (N.gone) { clearInterval(iv); return leave("Il tavolo è stato chiuso"); }
+      var v = N.view || room; seats.textContent = "Seduti: " + (v.players || []).map(function (p) { return p.name; }).join(", ") + " — attendi che l'host avvii";
+      if (v.host && v.host !== host0 && !N.started) { clearInterval(iv); leave("L'host ha lasciato il tavolo: puntata restituita"); }
+    }, 800);
+  }
   function guestJoin(room) {
     if (DUELS[room.game]) {
       st.game = room.game; st.bet = room.cfg.stake; st.rounds = (room.cfg.x && room.cfg.x.rounds) || 3; var h = room.players.filter(function (p) { return p.uid === room.host; })[0] || room.players[0];
@@ -294,7 +394,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     var N = NET; if (!N) return; var ord = won ? [N.me, N.opp] : [N.opp, N.me], tries = 0, done = false;
     box.textContent = "⏳ Conferma dell'esito…"; box.className = "pg-me";
     (function post() {
-      if (done || tries++ > 30 || !NET || NET !== N) return;
+      if (done || tries++ > 30) return;
       A.api("/api/room/result", "POST", { id: N.id, order: ord }).then(function (j) {
         if (j && j.settled && j.result) {
           done = true; var r = j.result, py = (r.pay || {})[N.me] || 0;
@@ -622,7 +722,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
 
   // ====================================================================== carte
   var SU = ["♠", "♥", "♦", "♣"], RK = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
-  function newDeck() { var d = []; for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) d.push({ r: r, s: s }); for (var i = d.length - 1; i > 0; i--) { var j = rnd(i + 1), t = d[i]; d[i] = d[j]; d[j] = t; } return d; }
+  function newDeck() { var d = []; for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) d.push({ r: r, s: s }); for (var i = d.length - 1; i > 0; i--) { var j = gr(i + 1), t = d[i]; d[i] = d[j]; d[j] = t; } return d; }
   function cardEl(c, hidden) { var e = el("span", "pc" + (hidden ? " back" : (c.s === 1 || c.s === 2 ? " red" : "")), hidden ? "" : RK[c.r] + SU[c.s]); return e; }
   function cardsRow(cards, hideFrom) { var r = el("span", "pcs"); cards.forEach(function (c, i) { r.appendChild(cardEl(c, hideFrom !== undefined && i >= hideFrom)); }); return r; }
   function snd(n, a) { try { window.ArcadeAudio && window.ArcadeAudio.sfx && window.ArcadeAudio.sfx(n, a); } catch (e) {} }
@@ -651,13 +751,16 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   function bjSoft(cs) { var t = 0, a = 0; cs.forEach(function (c) { if (c.r === 12) { a++; t += 11; } else t += c.r >= 8 ? 10 : c.r + 2; }); while (t > 21 && a > 0) { t -= 10; a--; } return a > 0; }
   function bjTxt(cs) { return (bjSoft(cs) ? "soft " : "") + bjVal(cs); }
   function bjVal(cs) { var t = 0, a = 0; cs.forEach(function (c) { if (c.r === 12) { a++; t += 11; } else t += c.r >= 8 ? 10 : c.r + 2; }); while (t > 21 && a > 0) { t -= 10; a--; } return t; }
-  function bjTable(bots) {
+  function bjTable(bots, net) {
     fit(true); epoch++; var E = epoch; body.innerHTML = "";
-    var deck = newDeck(), profit = 0, c = el("div", "mp-card"); body.appendChild(c);
-    c.appendChild(el("div", "mp-sec", "BLACKJACK · " + A.fmt(st.bet) + " $SDG a mano"));
+    var deck = newDeck(), profit = 0, bet = net ? net.bet : st.bet, hn = 0, hands = net ? net.hands : 0, c = el("div", "mp-card"); body.appendChild(c);
+    c.appendChild(el("div", "mp-sec", "BLACKJACK · " + A.fmt(bet) + " $SDG a mano" + (net ? " · mano 1/" + hands : "")));
     var felt = el("div", "mx-felt bj"), shoe = el("div", "mx-shoe"), msg = el("div", "pg-me", ""), area = el("div", "mp-area"), tot = el("div", "pg-me", "");
     c.appendChild(felt); c.appendChild(msg); c.appendChild(area); c.appendChild(tot);
-    var P = [{ name: "Tu", me: true }]; for (var i = 1; i <= bots; i++) P.push({ name: "🤖 Bot " + i });
+    var P = [];
+    if (net) { net.roster.forEach(function (r) { P.push({ name: r.me ? "Tu" : r.name, me: r.me, net: r.me ? null : r.uid, uid: r.uid, chips: net.buy }); }); for (var i = 1; i <= bots; i++) P.push({ name: "🤖 Bot " + i, bot: 1 }); }
+    else { P.push({ name: "Tu", me: true }); for (var i = 1; i <= bots; i++) P.push({ name: "🤖 Bot " + i }); }
+    var ME = 0; P.forEach(function (p, i) { if (p.me) ME = i; });
     var order = P.length === 1 ? [0] : P.length === 2 ? [1, 0] : P.length === 3 ? [1, 0, 2] : [1, 0, 2, 3];       // io al centro, gli altri accanto (stesso lato)
     var dealer, cur = -1, lead = -1;
     function draw() { return deck.length < 12 ? (deck = newDeck()).pop() : deck.pop(); }
@@ -671,12 +774,12 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         var s = el("div", "mx-seat" + (p.me ? " me" : "") + (pi === cur ? " turn" : ""));
         if (p.res) s.appendChild(el("div", "mx-res " + p.res[0], p.res[1]));
         var cs = el("div", "mx-cs"); p.cards.forEach(function (x) { cs.appendChild(mcEl(x, false)); }); s.appendChild(cs);
-        s.appendChild(el("div", "mx-info", bjTxt(p.cards) + (p.st === "bust" ? " 💥" : (p.st === "stand" ? " ✋" : "")))); s.appendChild(el("div", "mx-tag", p.name + (pi === lead ? " ▶" : ""))); (p.me ? mro : bro).appendChild(s);
+        s.appendChild(el("div", "mx-info", bjTxt(p.cards) + (p.st === "bust" ? " 💥" : (p.st === "stand" ? " ✋" : "")) + (p.chips != null ? " · 🪙" + A.fmt(p.chips) : ""))); s.appendChild(el("div", "mx-tag", p.name + (pi === lead ? " ▶" : ""))); (p.me ? mro : bro).appendChild(s);
       });
       return settle(felt, shoe);
     }
     function hand() {
-      area.innerHTML = ""; tot.textContent = ""; lead = (lead + 1) % P.length; dealer = [draw(), draw()]; P.forEach(function (p) { p.cards = [draw(), draw()]; p.st = bjVal(p.cards) === 21 ? "stand" : "play"; p.res = null; });
+      area.innerHTML = ""; tot.textContent = ""; lead = (lead + 1) % P.length; dealer = [draw(), draw()]; P.forEach(function (p) { if (p.chips != null && p.chips <= 0) { p.cards = []; p.st = "out"; p.res = null; return; } p.cards = [draw(), draw()]; p.st = bjVal(p.cards) === 21 ? "stand" : "play"; p.res = null; });
       cur = -1; say(msg, "Si distribuiscono le carte…"); var n = paint(true);
       wait(300 + n * 120).then(round);
     }
@@ -691,15 +794,18 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         var p = ord[k++]; cur = P.indexOf(p); paint(true);
         function took() { if (bjVal(p.cards) > 21) { p.st = "bust"; snd("lose"); } else if (bjVal(p.cards) === 21) p.st = "stand"; }
         if (p.me) {
-          say(msg, "Tocca a te: CARTA o STAI?"); area.innerHTML = "";
+          say(msg, "Tocca a te: CARTA o STAI?"); area.innerHTML = ""; var dn = net ? ++NET.d : 0;
           btnRow(area, [["➕ CARTA", ""], ["✋ STAI", ""]]).then(function (i) {
-            area.innerHTML = "";
+            area.innerHTML = ""; if (net) netSend({ k: "m", d: dn, a: i });
             if (i === 0) { var nc = draw(); p.cards.push(nc); say(msg, "Hai pescato " + RK[nc.r] + SU[nc.s] + (nc.r === 12 ? " (l'asso vale 1 o 11)" : "") + " → " + bjTxt(p.cards)); took(); } else p.st = "stand";
             paint(true); wait(700).then(step);
           });
+        } else if (p.net) {
+          say(msg, "⏳ " + p.name + " decide…"); var dr = ++NET.d;
+          remoteAct(p, dr).then(function (e) { if (!alive(E)) return; if (e && e.a === 0) { p.cards.push(draw()); took(); } else p.st = "stand"; paint(true); wait(700).then(step); });
         } else {
           say(msg, p.name + " decide…"); wait(900).then(function () {
-            if (bjVal(p.cards) < 17 && (bjVal(p.cards) < 12 || Math.random() < 0.8)) { p.cards.push(draw()); took(); } else p.st = "stand";
+            if (bjVal(p.cards) < 17 && (bjVal(p.cards) < 12 || gf() < 0.8)) { p.cards.push(draw()); took(); } else p.st = "stand";
             paint(true); wait(700).then(step);
           });
         }
@@ -709,20 +815,30 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       cur = -1; say(msg, "Il banco scopre la carta…"); paint(false);
       (function go() {
         if (!alive(E)) return;
-        if (bjVal(dealer) < 17 && P.some(function (p) { return p.st !== "bust"; })) { wait(1000).then(function () { dealer.push(draw()); paint(false); go(); }); return; }
+        if (bjVal(dealer) < 17 && P.some(function (p) { return p.st !== "bust" && p.st !== "out"; })) { wait(1000).then(function () { dealer.push(draw()); paint(false); go(); }); return; }
         wait(600).then(function () {
           if (!alive(E)) return; var dv = bjVal(dealer);
           P.forEach(function (p) {
+            if (p.st === "out") { p.res = ["push", "fuori"]; return; }
             var v = bjVal(p.cards), nat = p.cards.length === 2 && v === 21;
             if (p.st === "bust") p.res = ["lose", "perde"]; else if (dv > 21 || v > dv) p.res = ["win", nat ? "BLACKJACK!" : "vince"]; else if (v === dv) p.res = ["push", "pari"]; else p.res = ["lose", "perde"];
-            if (p.me) profit += p.res[0] === "win" ? Math.round(st.bet * (nat ? 1.5 : 1)) : (p.res[0] === "lose" ? -st.bet : 0);
+            var bb = p.chips != null ? Math.min(bet, p.chips) : bet, dl = p.res[0] === "win" ? Math.round(bb * (nat ? 1.5 : 1)) : (p.res[0] === "lose" ? -bb : 0);
+            if (p.chips != null) p.chips = Math.max(0, p.chips + dl); p.dl = dl;
+            if (p.me) profit += dl;
           });
-          paint(false); var me = P[0].res; var dme = me[0] === "win" ? Math.round(st.bet * (P[0].cards.length === 2 && bjVal(P[0].cards) === 21 ? 1.5 : 1)) : (me[0] === "lose" ? -st.bet : 0);
-          banner(felt, me[0] === "win" ? (me[1] === "BLACKJACK!" ? "BLACKJACK!" : "HAI VINTO!") : (me[0] === "push" ? "PAREGGIO" : "VINCE IL BANCO"), (dme >= 0 ? "+" : "−") + A.fmt(Math.abs(dme)) + " $SDG · tu " + bjVal(P[0].cards) + " vs banco " + bjVal(dealer), me[0]);
+          paint(false); var me = P[ME].res; if (P[ME].st === "out") me = ["lose", "fuori"]; var dme = P[ME].dl || 0;
+          banner(felt, me[0] === "win" ? (me[1] === "BLACKJACK!" ? "BLACKJACK!" : "HAI VINTO!") : (me[0] === "push" ? "PAREGGIO" : "VINCE IL BANCO"), (dme >= 0 ? "+" : "−") + A.fmt(Math.abs(dme)) + " $SDG · tu " + bjVal(P[ME].cards) + " vs banco " + bjVal(dealer), me[0]);
           snd(me[0] === "win" ? "win" : (me[0] === "lose" ? "lose" : "click"));
           say(msg, me[0] === "win" ? "Hai vinto la mano!" : (me[0] === "push" ? "Pareggio" : "Il banco batte la tua mano"), me[0] === "win" ? "mp-win" : (me[0] === "lose" ? "mp-lose" : ""));
-          tot.textContent = "Saldo prova: " + (profit >= 0 ? "+" : "−") + A.fmt(Math.abs(profit)) + " $SDG (simulato)"; area.innerHTML = "";
-          var en = el("div", "mp-end"); area.appendChild(en);
+          tot.textContent = net ? "Le tue fiches: " + A.fmt(P[ME].chips) : "Saldo prova: " + (profit >= 0 ? "+" : "−") + A.fmt(Math.abs(profit)) + " $SDG (simulato)"; area.innerHTML = "";
+          var en = el("div", "mp-end"); area.appendChild(en); hn++;
+          if (net) {
+            var live = P.filter(function (p) { return !p.bot && p.chips > 0; }).length, fin = hn >= hands || live < 1 || (net.roster.length > 1 && live < 2);
+            if (fin) { tblFinish(P, net, tot, en); return; }
+            var w = el("div", "mp-wait", "⏳ In attesa degli altri giocatori…"); en.appendChild(w);
+            tblBarrier(P, "h" + hn).then(function () { if (alive(E)) { c.firstChild.textContent = "BLACKJACK · " + A.fmt(bet) + " $SDG a mano · mano " + (hn + 1) + "/" + hands; hand(); } });
+            return;
+          }
           var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); });
           var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a1); en.appendChild(a2);
         });
@@ -804,18 +920,21 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     }
     paintSetup();
   }
-  function scopaTable(mode, target, tot, rn) {
+  function scopaTable(mode, target, tot, rn, net) {
     fit(true); epoch++; var E = epoch; body.innerHTML = ""; target = target || 0; rn = rn || 1;
     var N = mode === "2" ? 2 : 4, c = el("div", "mp-card"); body.appendChild(c); tot = tot || (mode === "4s" ? [0, 0, 0, 0] : [0, 0]);
-    c.appendChild(el("div", "mp-sec", "SCOPA · " + (mode === "2" ? "1 contro 1" : mode === "4s" ? "1v1v1v1" : "2 contro 2") + (target ? " · a " + target + " · mano " + rn : "") + " · " + A.fmt(st.bet) + " $SDG"));
+    c.appendChild(el("div", "mp-sec", "SCOPA · " + (mode === "2" ? "1 contro 1" : mode === "4s" ? "1v1v1v1" : "2 contro 2") + (target ? " · a " + target + " · mano " + rn : "") + " · " + A.fmt(net ? net.stake : st.bet) + " $SDG"));
     var felt = el("div", "mx-felt bl sc-felt"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea"); c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
     var names = N === 2 ? ["Tu", "🤖 Bot"] : ["Tu", "🤖 Bot 1", mode === "4c" ? "🤖 Bot 2 (socio)" : "🤖 Bot 2", "🤖 Bot 3"];
     var P = names.map(function (n, i) { return { name: n, me: i === 0, ent: mode === "4c" ? i % 2 : i, hand: [], cap: [] }; });
+    if (net) { var bn = 0; P = []; for (var pi0 = 0; pi0 < N; pi0++) { var rr = net.roster[pi0]; P.push(rr ? { name: rr.me ? "Tu" : rr.name, me: rr.me, net: rr.me ? null : rr.uid, uid: rr.uid, ent: mode === "4c" ? pi0 % 2 : pi0, hand: [], cap: [] } : { name: "🤖 Bot " + (++bn), bot: 1, ent: mode === "4c" ? pi0 % 2 : pi0, hand: [], cap: [] }); } }
+    var ME = 0; P.forEach(function (p, i) { if (p.me) ME = i; }); var myEnt = P[ME].ent, myD = 0, lockP = false;
     var NE = mode === "4c" ? 2 : N, ENT = mode === "4c" ? ["Noi", "Loro"] : P.map(function (p) { return p.name.replace("🤖 ", ""); });
+    if (mode === "4c") ENT = [myEnt === 0 ? "Noi" : "Loro", myEnt === 0 ? "Loro" : "Noi"];
     var deck = [], table = [], turn = (rn - 1) % N, lastCap = 0, scope = []; for (var q0 = 0; q0 < NE; q0++) scope.push(0);
     var sel = null, picks = [];
     for (var s2 = 0; s2 < 4; s2++) for (var v = 1; v <= 10; v++) deck.push({ s: s2, v: v });
-    for (var i = deck.length - 1; i > 0; i--) { var j = rnd(i + 1), tmp = deck[i]; deck[i] = deck[j]; deck[j] = tmp; }
+    for (var i = deck.length - 1; i > 0; i--) { var j = gr(i + 1), tmp = deck[i]; deck[i] = deck[j]; deck[j] = tmp; }
     for (var k = 0; k < 4; k++) table.push(deck.pop());
     function deal() { P.forEach(function (p) { for (var q = 0; q < 3; q++) p.hand.push(deck.pop()); }); }
     deal();
@@ -832,21 +951,21 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     function paint() {
       felt.innerHTML = "";
       var top = el("div", "sc-top"); P.forEach(function (p, i) { if (p.me) return; var o = el("div", "sc-opp" + (i === turn ? " turn" : "")); var bk = el("div", "sc-bk"); for (var q = 0; q < p.hand.length; q++) bk.appendChild(el("span", "sc-c back")); o.appendChild(bk); o.appendChild(el("div", "mx-tag", p.name + (target ? " · " + (tot[p.ent] + scope[p.ent]) + " pt" : ""))); top.appendChild(o); }); felt.appendChild(top);
-      var tb = el("div", "sc-table"); table.forEach(function (t, i) { var on = picks.indexOf(i) >= 0, e = scEl(t, on ? "pick" : (sel ? "can" : "")); if (sel && turn === 0) e.addEventListener("click", function () { var x = picks.indexOf(i); if (x >= 0) picks.splice(x, 1); else picks.push(i); A.haptic("light"); paint(); upd(); }); tb.appendChild(e); }); if (!table.length) tb.appendChild(el("div", "sc-empty", "tavolo vuoto")); felt.appendChild(tb);
+      var tb = el("div", "sc-table"); table.forEach(function (t, i) { var on = picks.indexOf(i) >= 0, e = scEl(t, on ? "pick" : (sel ? "can" : "")); if (sel && turn === ME && !lockP) e.addEventListener("click", function () { var x = picks.indexOf(i); if (x >= 0) picks.splice(x, 1); else picks.push(i); A.haptic("light"); paint(); upd(); }); tb.appendChild(e); }); if (!table.length) tb.appendChild(el("div", "sc-empty", "tavolo vuoto")); felt.appendChild(tb);
       felt.appendChild(el("div", "sc-info", "Mazzo " + deck.length + (target ? " · Punti: " + ENT.map(function (n, i) { return n + " " + (tot[i] + scope[i]); }).join(" – ") : " · Scope: " + ENT.map(function (n, i) { return n + " " + scope[i]; }).join(" · "))));
-      var me = el("div", "sc-me"); P[0].hand.forEach(function (cd) { var e = scEl(cd, turn === 0 ? (cd === sel ? "sel" : "pl") : "dis"); if (turn === 0) e.addEventListener("click", function () { sel = (sel === cd ? null : cd); picks = []; A.haptic("light"); paint(); upd(); }); me.appendChild(e); }); felt.appendChild(me);
+      var me = el("div", "sc-me"); P[ME].hand.forEach(function (cd) { var e = scEl(cd, turn === ME ? (cd === sel ? "sel" : "pl") : "dis"); if (turn === ME && !lockP) e.addEventListener("click", function () { sel = (sel === cd ? null : cd); picks = []; A.haptic("light"); paint(); upd(); }); me.appendChild(e); }); felt.appendChild(me);
     }
     function upd() {                                                  // pulsanti e testo guida durante la tua mano
-      if (turn !== 0) return; area.innerHTML = "";
+      if (turn !== ME || lockP) return; area.innerHTML = "";
       if (!sel) { say(msg, "Tocca a te: scegli una delle tue carte"); return; }
       var sum = picks.reduce(function (a, ix) { return a + table[ix].v; }, 0), can = opts(sel).length > 0;
       say(msg, "Carta " + sel.v + " (vale " + sel.v + ")" + (picks.length ? " · prendi " + picks.map(function (ix) { return table[ix].v; }).join(" + ") + " = " + sum + (valid() ? " ✓" : "") : (can ? " · tocca le carte del tavolo da prendere" : " · niente da prendere: buttala")));
       var bx = el("div", "mx-bets"); area.appendChild(bx);
-      var tk = el("button", "ok big", "✅ PRENDI"); tk.type = "button"; tk.disabled = !valid(); tk.addEventListener("click", function () { var cd = sel, ids = picks.slice(); sel = null; picks = []; area.innerHTML = ""; doPlay(0, cd, ids); paint(); wait(900).then(advance); }); bx.appendChild(tk);
-      var th = el("button", "f big", "⬇️ BUTTA"); th.type = "button"; th.disabled = can; th.addEventListener("click", function () { var cd = sel; sel = null; picks = []; area.innerHTML = ""; doPlay(0, cd, null); paint(); wait(900).then(advance); }); bx.appendChild(th);
+      var tk = el("button", "ok big", "✅ PRENDI"); tk.type = "button"; tk.disabled = !valid(); tk.addEventListener("click", function () { var cd = sel, ids = picks.slice(); sel = null; picks = []; area.innerHTML = ""; if (net) netSend({ k: "m", d: myD, ci: P[ME].hand.indexOf(cd), ids: ids }); doPlay(ME, cd, ids); paint(); wait(900).then(advance); }); bx.appendChild(tk);
+      var th = el("button", "f big", "⬇️ BUTTA"); th.type = "button"; th.disabled = can; th.addEventListener("click", function () { var cd = sel; sel = null; picks = []; area.innerHTML = ""; if (net) netSend({ k: "m", d: myD, ci: P[ME].hand.indexOf(cd), ids: null }); doPlay(ME, cd, null); paint(); wait(900).then(advance); }); bx.appendChild(th);
     }
     function doPlay(pi, cd, take) {
-      var p = P[pi]; p.hand.splice(p.hand.indexOf(cd), 1);
+      var p = P[pi]; if (pi === ME) lockP = true; p.hand.splice(p.hand.indexOf(cd), 1);
       if (take && take.length) {
         var got = [cd]; take.slice().sort(function (a, b) { return b - a; }).forEach(function (ix) { got.push(table.splice(ix, 1)[0]); }); p.cap = p.cap.concat(got); lastCap = pi;
         var last = !deck.length && P.every(function (q) { return !q.hand.length; });
@@ -867,7 +986,18 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     }
     function next() {
       if (!alive(E)) return;
-      if (turn === 0) { sel = null; picks = []; paint(); upd(); return; }
+      if (turn === ME) { lockP = false; sel = null; picks = []; if (net) myD = ++NET.d; paint(); upd(); return; }
+      if (net && P[turn].net) {
+        var pi2 = turn, dn = ++NET.d; say(msg, "⏳ " + P[pi2].name + " gioca…"); area.innerHTML = "";
+        remoteAct(P[pi2], dn).then(function (e) {
+          if (!alive(E)) return; var m = null, pp = P[pi2];
+          if (e && e.ci >= 0 && pp.hand[e.ci]) { var cd = pp.hand[e.ci], ids = Array.isArray(e.ids) ? e.ids.map(Number).sort() : null, os = opts(cd), key = ids ? ids.join(",") : "";
+            if (ids && ids.length && os.some(function (o) { return o.slice().sort().join(",") === key; })) m = [cd, ids]; else if ((!ids || !ids.length) && !os.length) m = [cd, null]; }
+          if (!m) m = botMove(pi2);
+          doPlay(pi2, m[0], m[1]); paint(); wait(900).then(advance);
+        });
+        return;
+      }
       say(msg, P[turn].name + " pensa…"); area.innerHTML = ""; var pi = turn; wait(1000 + rnd(500)).then(function () { if (!alive(E)) return; var m = botMove(pi); doPlay(pi, m[0], m[1]); paint(); wait(900).then(advance); });
     }
     function finish() {
@@ -879,30 +1009,36 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       E2.forEach(function (e, i) { tot[i] += e.pt; });
       felt.innerHTML = ""; var rs = el("div", "sc-res"), tbl = el("div", "sc-tbl"); tbl.style.gridTemplateColumns = "auto " + E2.map(function () { return "1fr"; }).join(" ");
       function cell(t, cls) { tbl.appendChild(el("div", "sc-cl" + (cls ? " " + cls : ""), t)); }
-      cell(""); E2.forEach(function (e) { cell(e.n, "hd" + (e === E2[0] ? " me" : "")); });
+      cell(""); E2.forEach(function (e, ei) { cell(e.n, "hd" + (ei === myEnt ? " me" : "")); });
       var maxSc = Math.max.apply(null, E2.map(function (e) { return e.sc; }));
       [["Carte", "car", wCar], ["Denari", "den", wDen], ["Settebello", "sb", null], ["Primiera", "pr", wPr], ["Scope", "sc", null]].forEach(function (r) {
         cell(r[0], "lb"); E2.forEach(function (e) { var hi = r[1] === "sb" ? e.sb : (r[1] === "sc" ? (e.sc > 0 && e.sc === maxSc) : e === r[2]); cell(r[1] === "sb" ? (e.sb ? "✓" : "–") : String(e[r[1]]), hi ? "wn" : ""); });
       });
       cell("PUNTI", "lb tot"); var mxp = Math.max.apply(null, E2.map(function (e) { return e.pt; })); E2.forEach(function (e) { cell(String(e.pt), "tot" + (e.pt === mxp ? " wn" : "")); });
-      var winners = E2.filter(function (e) { return e.pt === mxp; }), wonH = winners.length === 1 && winners[0] === E2[0], tieH = winners.length > 1 && winners.indexOf(E2[0]) >= 0;
+      var winners = E2.filter(function (e) { return e.pt === mxp; }), wonH = winners.length === 1 && winners[0] === E2[myEnt], tieH = winners.length > 1 && winners.indexOf(E2[myEnt]) >= 0;
       rs.appendChild(el("b", "", (target ? "MANO " + rn + ": " : "") + (wonH ? "HAI VINTO!" : (tieH ? "PAREGGIO" : (winners.length === 1 ? "VINCE " + winners[0].n.toUpperCase() : "HAI PERSO"))))); rs.appendChild(tbl); felt.appendChild(rs);
       area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en);
-      function gameEnd(won, tie) {
+      function gameEnd(won, tie, winEnts) {
+        if (net) {                                                    // online: vincono tutte le fiches i giocatori della squadra vincente
+          area.innerHTML = ""; var en3 = el("div", "mp-end"); area.appendChild(en3); A.haptic(won ? "ok" : "light"); snd(won ? "win" : "lose");
+          say(msg, tie ? "Pari" : (won ? "Hai vinto la partita!" : "Partita persa"), won ? "mp-win" : (tie ? "" : "mp-lose"));
+          P.forEach(function (p) { p.chips = (winEnts || []).indexOf(p.ent) >= 0 ? 1 : 0; }); tblFinish(P, net, msg, en3); return;
+        }
         say(msg, tie ? "Pari: nessuno vince" : (won ? "Hai vinto " + A.fmt(st.bet) + " $SDG (simulato)" : "Hai perso " + A.fmt(st.bet) + " $SDG (simulato)"), won ? "mp-win" : (tie ? "" : "mp-lose")); A.haptic(won ? "ok" : "light"); snd(won ? "win" : "lose");
         area.innerHTML = ""; var en2 = el("div", "mp-end"); area.appendChild(en2); var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { scopaTable(mode, target); });
         var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en2.appendChild(a1); en2.appendChild(a2);
       }
-      if (!target) { gameEnd(wonH, tieH); return; }
+      if (!target) { gameEnd(wonH, tieH, winners.map(function (w) { return E2.indexOf(w); })); return; }
       var nx = el("button", "mp-go", "AVANTI ▶"); nx.type = "button"; en.appendChild(nx); say(msg, "Tocca AVANTI per vedere la classifica");
       nx.addEventListener("click", function () {
         felt.innerHTML = ""; area.innerHTML = ""; var mx = Math.max.apply(null, tot), lead = tot.filter(function (v) { return v === mx; }).length === 1, over = mx >= target && lead, st2 = el("div", "sc-stand");
-        st2.appendChild(el("b", "", over ? "PARTITA FINITA" : "CLASSIFICA · A " + target)); var ord = E2.map(function (e, i) { return { n: e.n, t: tot[i], d: e.pt, me: i === 0 }; }).sort(function (x, y) { return y.t - x.t; });
+        st2.appendChild(el("b", "", over ? "PARTITA FINITA" : "CLASSIFICA · A " + target)); var ord = E2.map(function (e, i) { return { n: e.n, t: tot[i], d: e.pt, me: i === myEnt }; }).sort(function (x, y) { return y.t - x.t; });
         ord.forEach(function (o, i) { var r = el("div", "sc-sr" + (o.me ? " me" : "") + (i === 0 ? " top" : "")); r.appendChild(el("u", "", String(i + 1))); r.appendChild(el("span", "n", o.n)); r.appendChild(el("em", "", "+" + o.d)); r.appendChild(el("i", "t", String(o.t))); var bar = el("div", "bar"), f = el("s"); f.style.width = Math.min(100, o.t / target * 100) + "%"; bar.appendChild(f); r.appendChild(bar); st2.appendChild(r); });
         st2.appendChild(el("div", "sc-tg", over ? "" : "Primo a " + target + " punti" + (mx >= target ? " (pari in testa: si gioca un'altra mano)" : ""))); felt.appendChild(st2);
-        if (over) { var w0 = tot.indexOf(mx); gameEnd(w0 === 0, false); say(msg, w0 === 0 ? "HAI VINTO LA PARTITA! +" + A.fmt(st.bet) + " $SDG (simulato)" : "Partita persa: " + ENT[w0] + " arriva a " + mx + " (−" + A.fmt(st.bet) + " $SDG simulato)", w0 === 0 ? "mp-win" : "mp-lose"); return; }
+        if (over) { var w0 = tot.indexOf(mx); gameEnd(w0 === myEnt, false, [w0]); if (net) return; say(msg, w0 === 0 ? "HAI VINTO LA PARTITA! +" + A.fmt(st.bet) + " $SDG (simulato)" : "Partita persa: " + ENT[w0] + " arriva a " + mx + " (−" + A.fmt(st.bet) + " $SDG simulato)", w0 === 0 ? "mp-win" : "mp-lose"); return; }
         var cb = el("button", "mp-go", "CONTINUA ▶"); cb.type = "button"; var cw = el("div", "mp-end"); cw.appendChild(cb); area.appendChild(cw); say(msg, "Premi CONTINUA: la prossima mano parte quando sono tutti pronti");
         cb.addEventListener("click", function () {
+          if (net) { area.innerHTML = ""; area.appendChild(el("div", "mp-wait", "⏳ In attesa degli altri giocatori…")); tblBarrier(P, "r" + rn).then(function () { if (alive(E)) scopaTable(mode, target, tot, rn + 1, net); }); return; }
           area.innerHTML = ""; var w = el("div", "mp-wait"), k = 1; area.appendChild(w); function paintW() { w.textContent = "⏳ Continua · " + k + "/" + N + " pronti"; } paintW();
           (function tick() { if (!alive(E)) return; if (k >= N) return scopaTable(mode, target, tot, rn + 1); wait(500 + rnd(500)).then(function () { if (!alive(E)) return; k++; paintW(); tick(); }); })();
         });
@@ -911,15 +1047,17 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     }
     paint(); next();
   }
-  function pkTable(bots, cfg) {
+  function pkTable(bots, cfg, net) {
     cfg = cfg || { buy: 100, wallet: 0, u: 5 };
     fit(true); epoch++; var E = epoch; body.innerHTML = "";
-    var u = cfg.u, S0 = Math.max(4, Math.round(cfg.buy / u)), wallet = cfg.wallet, P = [{ name: "Tu", me: true, stack: S0 }];
-    for (var i = 1; i <= bots; i++) P.push({ name: "🤖 Bot " + i, stack: S0 });
+    var u = cfg.u, S0 = Math.max(4, Math.round(cfg.buy / u)), wallet = cfg.wallet, P = [];
+    if (net) { net.roster.forEach(function (r) { P.push({ name: r.me ? "Tu" : r.name, me: r.me, net: r.me ? null : r.uid, uid: r.uid, stack: S0 }); }); for (var i = 1; i <= bots; i++) P.push({ name: "🤖 Bot " + i, stack: S0, bot: 1 }); }
+    else { P.push({ name: "Tu", me: true, stack: S0 }); for (var i = 1; i <= bots; i++) P.push({ name: "🤖 Bot " + i, stack: S0 }); }
+    var ME = 0; P.forEach(function (p, i) { if (p.me) ME = i; });
     var POS = P.length === 2 ? ["b", "t"] : P.length === 3 ? ["b", "l", "r"] : ["b", "l", "t", "r"];          // io in basso, avversari a sinistra / di fronte / a destra
     var PS = { b: "left:50%;bottom:8px;transform:translateX(-50%)", t: "left:50%;top:8px;transform:translateX(-50%)", l: "left:2px;top:36%", r: "right:2px;top:36%" };
     var c = el("div", "mp-card"); body.appendChild(c);
-    c.appendChild(el("div", "mp-sec", "POKER TEXAS · ante " + A.fmt(u) + " $SDG (simulato)" + (u >= 50 ? " 💎" : "")));
+    c.appendChild(el("div", "mp-sec", "POKER TEXAS · ante " + A.fmt(u) + " $SDG" + (net ? "" : " (simulato)") + (u >= 50 ? " 💎" : "")));
     var felt = el("div", "mx-felt pk"), shoe = el("div", "mx-shoe"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea");
     shoe.style.cssText = "right:46%;top:46%;width:1px;height:1px;opacity:0;box-shadow:none"; 
     c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
@@ -932,9 +1070,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       prow.appendChild(heap); mid.appendChild(prow);
       for (var k = 0; k < 5; k++) cm.appendChild(k < board.length ? mcEl(board[k], false, "cm") : el("span", "mc cm empty")); mid.appendChild(cm); felt.appendChild(mid);
       P.forEach(function (p, i) {
-        var s = el("div", "mx-seat" + (p.me ? " me" : "") + (i === cur ? " turn" : "") + (p.fold ? " fold" : "") + (p.hl ? " hl-" + p.hl : "")); s.style.cssText = PS[POS[i]];
+        var s = el("div", "mx-seat" + (p.me ? " me" : "") + (i === cur ? " turn" : "") + (p.fold ? " fold" : "") + (p.hl ? " hl-" + p.hl : "")); s.style.cssText = PS[POS[(i - ME + P.length) % P.length]];
         var cs = el("div", "mx-cs"); if (p.hole) p.hole.forEach(function (x) { cs.appendChild(mcEl(x, !(p.me || (show && !p.fold)), p.me ? "" : "")); }); s.appendChild(cs);
-        s.appendChild(el("div", "mx-tag", p.name + " · " + A.fmt(p.stack * u) + (i === dealer ? " Ⓓ" : "")));
+        s.appendChild(el("div", "mx-tag", p.name + " · " + A.fmt(p.stack * u) + (i === dealer ? " Ⓓ" : "") + (p.out ? " (fuori)" : "") + (p.gone ? " (disconnesso)" : "")));
         var act0 = show && !p.fold ? "" : (p.fold ? "fold" : (p.act || "")), inf = act0 + (show && !p.fold && p.hole ? (act0 ? " · " : "") + CATN[catOf(best7(p.hole.concat(board)))] : "");
         if (!p.fold && p.me && p.hole && board.length >= 3 && !show) inf += (inf ? " · " : "") + CATN[catOf(best7(p.hole.concat(board)))];
         if (inf) s.appendChild(el("div", "mx-info", inf)); if (p.win) s.appendChild(el("div", "mx-res win", "🏆 VINCE"));
@@ -948,21 +1086,34 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       return [0.15 + rk / 12 * 0.15, 0.35 + rk / 12 * 0.25, 0.65, 0.75, 0.8, 0.85, 0.92, 0.97, 1][cat];
     }
     function live() { return P.filter(function (p) { return !p.fold; }); }
-    function rebuy() {                                         // fiche finite: ricompra dal tuo saldo oppure esci
+    function rebuy(cb) {                                         // fiche finite: ricompra dal tuo saldo oppure esci
       area.innerHTML = ""; var opts = (u >= 50 ? [1000, 2000, 5000] : [50, 100, 200, 500]).filter(function (n) { return n <= wallet; });
       if (!opts.length && wallet > 0) opts = [wallet];
       say(msg, opts.length ? "Fiche finite! Ricompra per restare al tavolo (saldo " + A.fmt(wallet) + ")" : "Fiche finite e saldo insufficiente: non puoi ricomprare.");
       var bx = el("div", "mx-bets"); area.appendChild(bx);
-      opts.forEach(function (n) { var b = el("button", "r", "💰 " + A.fmt(n)); b.type = "button"; b.addEventListener("click", function () { wallet -= n; P[0].stack = Math.max(2, Math.round(n / u)); A.haptic("medium"); hand(); }); bx.appendChild(b); });
-      var ex = el("button", "f", "🚪 ESCI"); ex.type = "button"; ex.addEventListener("click", lobby); bx.appendChild(ex);
+      opts.forEach(function (n) { var b = el("button", "r", "💰 " + A.fmt(n)); b.type = "button"; b.addEventListener("click", function () { A.haptic("medium"); area.innerHTML = ""; if (cb) return cb(n); wallet -= n; P[0].stack = Math.max(2, Math.round(n / u)); hand(); }); bx.appendChild(b); });
+      var ex = el("button", "f", "🚪 ESCI"); ex.type = "button"; ex.addEventListener("click", function () { if (cb) { area.innerHTML = ""; cb(0); } else lobby(); }); bx.appendChild(ex);
     }
     function hand() {
       if (!alive(E)) return; area.innerHTML = ""; deck = newDeck(); board = []; pot = 0;
-      P.forEach(function (p) { if (!p.me && p.stack < 2) p.stack = S0; p.hl = ""; });
-      if (P[0].stack < 2) return rebuy();
-      P.forEach(function (p) { p.fold = false; p.act = ""; p.win = false; p.hole = [deck.pop(), deck.pop()]; p.stack -= 1; pot += 1; });   // ante = 1 unità
+      P.forEach(function (p) { if ((p.bot || (!p.me && !net)) && p.stack < 2) p.stack = S0; p.hl = ""; });
+      if (!net && P[0].stack < 2) return rebuy();
+      if (net) return netRebuys(0);
+      deal();
+    }
+    function deal() {
+      P.forEach(function (p) { p.fold = false; p.act = ""; p.win = false; if (p.out) { p.fold = true; p.hole = []; return; } p.hole = [deck.pop(), deck.pop()]; p.stack -= 1; pot += 1; });   // ante = 1 unità
       cur = -1; say(msg, "Carte distribuite. Ante pagato da tutti."); var n = paint(false);
       wait(500 + n * 110).then(function () { return street(0); });
+    }
+    function netRebuys(i) {                                          // chi ha finito le fiches ricompra (soldi veri dal saldo) oppure esce dal tavolo
+      if (!alive(E)) return;
+      while (i < P.length && (P[i].bot || P[i].out || P[i].stack >= 2)) i++;
+      if (i >= P.length) { if (P.filter(function (p) { return !p.out && !p.gone && p.stack >= 2; }).length < 2) return pkEnd(true); return deal(); }
+      var p = P[i], dn = ++NET.d;
+      function apply2(e) { if (e && e.a === "rebuy" && e.n > 0) { p.stack = Math.max(2, Math.round(e.n / u)); } else { p.out = true; p.fold = true; } netRebuys(i + 1); }
+      if (p.me) { rebuy(function (n) { if (n > 0) { A.api("/api/room/topup", "POST", { id: NET.id, amount: n }).then(function () { wallet -= n; netSend({ k: "m", d: dn, a: "rebuy", n: n }); apply2({ a: "rebuy", n: n }); }).catch(function (x) { A.toast((x && x.message) || "Ricompra non riuscita"); netSend({ k: "m", d: dn, a: "out" }); apply2(null); }); } else { netSend({ k: "m", d: dn, a: "out" }); apply2(null); } }); }
+      else { say(msg, "⏳ " + p.name + " ha finito le fiches…"); remoteAct(p, dn).then(function (e) { if (alive(E)) apply2(e); }); }
     }
     function street(s) {
       if (!alive(E)) return;
@@ -990,19 +1141,28 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
           paint(false); wait(a === "fold" ? 450 : 750).then(step);
         }
         if (p.me) {
+          var dn = net ? ++NET.d : 0; function go(a, amt) { if (net) netSend({ k: "m", d: dn, a: a, n: amt || 0 }); apply(a, amt); }
           area.innerHTML = ""; var bx = el("div", "mx-bets"), bx2 = el("div", "mx-bets r2"); area.appendChild(bx); area.appendChild(bx2);       // due righe compatte: FOLD · CHECK/CALL, poi i rilanci
           function add(label, cls, f, row) { var b = el("button", cls || "", label); b.type = "button"; b.addEventListener("click", function () { A.haptic("medium"); area.innerHTML = ""; f(); }); (row || bx).appendChild(b); }
           var room = p.stack - owe;
-          add("🏳️ FOLD", "f big", function () { apply("fold"); });
-          if (owe) { say(msg, "Devi pagare " + A.fmt(owe * u) + " $SDG"); add("✅ CALL " + A.fmt(Math.min(owe, p.stack) * u), "ok big", function () { apply("call"); }); }
-          else { say(msg, "Tocca a te: CHECK o PUNTA"); add("✔️ CHECK", "ok big", function () { apply("check"); }); }
+          add("🏳️ FOLD", "f big", function () { go("fold"); });
+          if (owe) { say(msg, "Devi pagare " + A.fmt(owe * u) + " $SDG"); add("✅ CALL " + A.fmt(Math.min(owe, p.stack) * u), "ok big", function () { go("call"); }); }
+          else { say(msg, "Tocca a te: CHECK o PUNTA"); add("✔️ CHECK", "ok big", function () { go("check"); }); }
           var opts = [base, base * 2, base * 4].filter(function (m) { return room > m; });
-          opts.forEach(function (m) { add((owe ? "+" : "") + A.fmt(m * u), "r", function () { apply("raise", m); }, bx2); });
-          if (room > 0) add("ALL-IN " + A.fmt(room * u), "r allin", function () { apply("raise", room); }, bx2);
+          opts.forEach(function (m) { add((owe ? "+" : "") + A.fmt(m * u), "r", function () { go("raise", m); }, bx2); });
+          if (room > 0) add("ALL-IN " + A.fmt(room * u), "r allin", function () { go("raise", room); }, bx2);
+        } else if (p.net) {
+          say(msg, "⏳ " + p.name + " decide…"); var dr = ++NET.d;
+          remoteAct(p, dr).then(function (e) {
+            if (!alive(E)) return; var a = e ? String(e.a) : (owe ? "fold" : "check"), amt = e ? Math.max(0, e.n | 0) : 0;
+            if (a === "raise") { amt = Math.min(amt, Math.max(0, p.stack - owe)); if (amt <= 0) a = owe ? "call" : "check"; }
+            if (a === "call" && !owe) a = "check"; if (a === "check" && owe) a = "fold"; if (a !== "fold" && a !== "check" && a !== "call" && a !== "raise") a = owe ? "fold" : "check";
+            wait(600).then(function () { apply(a, amt); });
+          });
         } else {
-          var str = strength(p) + (Math.random() - 0.5) * 0.12; say(msg, p.name + " decide…");
+          var str = strength(p) + (gf() - 0.5) * 0.12; say(msg, p.name + " decide…");
           var thr = 0.33 + Math.min(0.35, owe / Math.max(1, p.stack + owe) * 0.6), amt = str > 0.9 ? base * 2 : base;
-          var a = owe ? (str > 0.78 && Math.random() < 0.35 && !bettor ? "raise" : (str > thr || Math.random() < 0.1 ? "call" : "fold")) : (str > 0.58 || Math.random() < 0.1 ? "raise" : "check");
+          var a = owe ? (str > 0.78 && gf() < 0.35 && !bettor ? "raise" : (str > thr || gf() < 0.1 ? "call" : "fold")) : (str > 0.58 || gf() < 0.1 ? "raise" : "check");
           if (a === "raise" && p.stack < owe + amt) a = owe ? "call" : "check";
           wait(900).then(function () { apply(a, amt); });
         }
@@ -1013,15 +1173,20 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       if (L.length === 1) win = [L[0]];
       else { while (board.length < 5) board.push(deck.pop()); var bv = -1; L.forEach(function (p) { p.v = best7(p.hole.concat(board)); if (p.v > bv) { bv = p.v; win = [p]; } else if (p.v === bv) win.push(p); }); }
       win.forEach(function (p) { p.win = true; p.stack += Math.floor(pot / win.length); }); dealer = (dealer + 1) % P.length;
-      paint(true); var mw = win.indexOf(P[0]) >= 0;
+      paint(true); var mw = win.indexOf(P[ME]) >= 0;
       banner(felt, mw ? "HAI VINTO!" : (win[0].name.replace("🤖 ", "") + " VINCE"), "Piatto " + A.fmt(pot * u) + " $SDG" + (L.length > 1 && win[0].v != null ? " · " + CATN[catOf(win[0].v)] : " · tutti gli altri hanno foldato"), mw ? "win" : "lose");
-      say(msg, mw ? "Hai vinto il piatto di " + A.fmt(pot * u) + " $SDG!" : (P[0].fold ? "Hai foldato — vince " + win[0].name : "Vince " + win[0].name + " (" + A.fmt(pot * u) + " $SDG)"), mw ? "mp-win" : "mp-lose"); A.haptic(mw ? "ok" : "light"); snd(mw ? "win" : "lose");
+      say(msg, mw ? "Hai vinto il piatto di " + A.fmt(pot * u) + " $SDG!" : (P[ME].fold ? "Hai foldato — vince " + win[0].name : "Vince " + win[0].name + " (" + A.fmt(pot * u) + " $SDG)"), mw ? "mp-win" : "mp-lose"); A.haptic(mw ? "ok" : "light"); snd(mw ? "win" : "lose");
       area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); hn++;
       var fin = cfg.hands && hn >= cfg.hands;
+      if (net) {
+        if (fin) return pkEnd();
+        var w = el("div", "mp-wait", "⏳ In attesa degli altri giocatori…"); en.appendChild(w); tblBarrier(P, "h" + hn).then(function () { if (alive(E)) { c.firstChild.textContent = "POKER TEXAS · ante " + A.fmt(u) + " $SDG · mano " + (hn + 1) + "/" + cfg.hands; hand(); } }); return;
+      }
       if (fin) { var diff = P[0].stack * u - cfg.buy; say(msg, "Fine del tavolo dopo " + cfg.hands + " mani: " + (diff > 0 ? "+" : "") + A.fmt(diff) + " $SDG (simulato)", diff > 0 ? "mp-win" : (diff < 0 ? "mp-lose" : "")); }
       else { var a1 = el("button", "mp-go", "RIGIOCA" + (cfg.hands ? " · mano " + (hn + 1) + "/" + cfg.hands : "")); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); }); en.appendChild(a1); }
       var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a2);
     }
+    function pkEnd(early) { area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); say(msg, early ? "Tavolo concluso: restano meno di 2 giocatori con fiches" : "Fine del tavolo dopo " + cfg.hands + " mani"); tblFinish(P, net, msg, en); }
     hand();
   }
 
