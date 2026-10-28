@@ -39,7 +39,7 @@
     clearInterval(bt); if (names.length > 1) bt = setInterval(showName, 3200);
   }
   function poll() {
-    if (!A.isSandbox()) { btn.hidden = true; setNames([]); return; }
+    if (!A.multiOn()) { btn.hidden = true; setNames([]); return; }
     btn.hidden = false;
     A.api("/api/social/friends").then(function (j) {
       list = j.friends || [];
@@ -75,5 +75,5 @@
   }
   btn.addEventListener("click", function () { if (bub) bub.style.display = "none"; open(); });
   poll(); timer = setInterval(poll, 25000); setInterval(placeBub, 300);
-  setInterval(function () { if (A.isSandbox() === btn.hidden) poll(); }, 1500);
+  setInterval(function () { if (A.multiOn() === btn.hidden) poll(); }, 1500);
 })();

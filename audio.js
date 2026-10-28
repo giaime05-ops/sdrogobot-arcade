@@ -340,8 +340,55 @@
     upd();
   }
 
+
+  // ---------- audio della corsa: motore, derapata, pioggia, effetti e musichetta (tutto sintetico, si spegne dal menu pausa) ----------
+  var RC = null;
+  function raceBegin(o) {
+    if (RC || !ctx || !noiseBuf) { if (!ctx) { start(); } if (RC || !ctx || !noiseBuf) return; }
+    o = o || {}; var g = ctx.createGain(); g.gain.value = 1; g.connect(master);
+    var gs = ctx.createGain(), gm = ctx.createGain(); gs.gain.value = o.sfx === false ? 0 : 1; gm.gain.value = o.music === false ? 0 : 0.5; gs.connect(g); gm.connect(g);
+    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), f = ctx.createBiquadFilter(), eg = ctx.createGain(); o1.type = "sawtooth"; o2.type = "square"; f.type = "lowpass"; f.frequency.value = 650; eg.gain.value = 0;
+    o1.frequency.value = 60; o2.frequency.value = 30; o1.connect(f); o2.connect(f); f.connect(eg); eg.connect(gs); o1.start(); o2.start();
+    function loopNoise(type, freq, q) { var s2 = ctx.createBufferSource(); s2.buffer = noiseBuf; s2.loop = true; var fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = freq; fl.Q.value = q; var gg = ctx.createGain(); gg.gain.value = 0; s2.connect(fl); fl.connect(gg); gg.connect(gs); s2.start(0, Math.random()); return { s: s2, g: gg, f: fl }; }
+    var sq = loopNoise("bandpass", 2700, 7), rb = loopNoise("lowpass", 160, 0.7), rn = loopNoise("highpass", 2400, 0.6);
+    if (o.rain) rn.g.gain.value = o.rain > 1 ? 0.07 : 0.04;
+    RC = { g: g, gs: gs, gm: gm, o1: o1, o2: o2, f: f, eg: eg, sq: sq, rb: rb, rn: rn, on: o.sfx !== false, mus: o.music !== false, step: 0, next: ctx.currentTime + 0.2, iv: 0 };
+    var CH = [[45, 52, 57, 60], [41, 48, 53, 57], [48, 55, 60, 64], [43, 50, 55, 59]];                       // La min, Fa, Do, Sol
+    RC.iv = setInterval(function () {
+      if (!RC || !RC.mus) { if (RC) RC.next = ctx.currentTime + 0.2; return; }
+      while (RC.next < ctx.currentTime + 0.35) {
+        var st = RC.step++, ch = CH[(st >> 4) & 3], t = RC.next, sx = st & 15;
+        if (sx % 2 === 0) tone(RC.gm, "sawtooth", mtof(ch[0] - 12 + (sx === 6 || sx === 14 ? 12 : 0)), t, 0.2, 0.2, { lp: 520 });
+        tone(RC.gm, "square", mtof(ch[[1, 2, 3, 2][sx & 3]] + 12), t, 0.11, 0.07, { lp: 1900 });
+        if (sx % 4 === 0) noise(RC.gm, t, 0.05, 0.25, "lowpass", 220, 0.7); if (sx === 4 || sx === 12) noise(RC.gm, t, 0.09, 0.2, "highpass", 2500, 0.8);
+        RC.next += 60 / 122 / 4;
+      }
+    }, 90);
+  }
+  function raceEnd() {
+    if (!RC) return; var R0 = RC; RC = null; clearInterval(R0.iv); var t = ctx.currentTime;
+    R0.g.gain.setTargetAtTime(0, t, 0.15); setTimeout(function () { try { R0.o1.stop(); R0.o2.stop(); R0.sq.s.stop(); R0.rb.s.stop(); R0.rn.s.stop(); R0.g.disconnect(); } catch (e) {} }, 700);
+  }
+  function raceEngine(v, boost, drift, off, still) {                                                          // v = velocità 0..1.1, still = ferma al semaforo (giri a vuoto con ACCELERA)
+    if (!RC) return; var t = ctx.currentTime, fr = 52 + v * 150 + (boost ? 28 : 0);
+    RC.o1.frequency.setTargetAtTime(fr, t, 0.08); RC.o2.frequency.setTargetAtTime(fr * 0.5, t, 0.08); RC.f.frequency.setTargetAtTime(500 + v * 900 + (boost ? 500 : 0), t, 0.1);
+    RC.eg.gain.setTargetAtTime(still ? 0.05 + v * 0.1 : 0.07 + v * 0.06 + (boost ? 0.03 : 0), t, 0.1);
+    RC.sq.g.gain.setTargetAtTime(drift ? 0.05 + v * 0.03 : 0, t, 0.05); RC.rb.g.gain.setTargetAtTime(off ? 0.12 : 0, t, 0.08);
+  }
+  var RSFX = {
+    beep: function (t, hi) { tone(RC.gs, "square", hi ? 880 : 440, t, hi ? 0.45 : 0.16, 0.16, { lp: 3000 }); },
+    boost: function (t) { noise(RC.gs, t, 0.55, 0.16, "bandpass", 500, 1.1, 2600); tone(RC.gs, "sawtooth", 180, t, 0.45, 0.07, { slide: 520, lp: 1500 }); },
+    hit: function (t) { noise(RC.gs, t, 0.22, 0.45, "lowpass", 900, 0.7, 150); tone(RC.gs, "sine", 120, t, 0.2, 0.45, { slide: 45 }); },
+    spin: function (t) { noise(RC.gs, t, 0.7, 0.18, "bandpass", 2400, 4, 1500); },
+    lap: function (t) { [76, 81, 88].forEach(function (m, i) { tone(RC.gs, "triangle", mtof(m), t + i * 0.09, 0.3, 0.14, { a: 0.006 }); }); },
+    fin: function (t) { [67, 72, 76, 79, 84, 88].forEach(function (m, i) { tone(RC.gs, "triangle", mtof(m), t + i * 0.09, 0.5, 0.15, { a: 0.008 }); tone(RC.gs, "sine", mtof(m + 12), t + i * 0.09, 0.4, 0.05); }); },
+    pad: function (t) { tone(RC.gs, "sine", 900, t, 0.1, 0.08, { slide: 1500 }); }
+  };
+  function raceSfx(name, a) { if (!RC || !RC.on || !RSFX[name] || !once("r_" + name, 80)) return; try { RSFX[name](ctx.currentTime + 0.005, a); } catch (e) {} }
+  function raceSet(o) { if (!RC) return; if (o.sfx != null) { RC.on = !!o.sfx; RC.gs.gain.setTargetAtTime(o.sfx ? 1 : 0, ctx.currentTime, 0.05); } if (o.music != null) { RC.mus = !!o.music; RC.gm.gain.setTargetAtTime(o.music ? 0.5 : 0, ctx.currentTime, 0.1); } }
+
   window.ArcadeAudio = {
-    sfx: sfx, start: start, loaded: function () { return Object.keys(B); },
+    sfx: sfx, start: start, race: { begin: raceBegin, end: raceEnd, engine: raceEngine, sfx: raceSfx, set: raceSet }, loaded: function () { return Object.keys(B); },
     set: function (o) { if (o.mHub != null) cfg.mHub = o.mHub; if (o.mGame != null) cfg.mGame = o.mGame; if (o.sfx != null) cfg.sfx = o.sfx; applyVol(); }
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindUI); else bindUI();

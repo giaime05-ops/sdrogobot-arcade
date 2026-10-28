@@ -95,7 +95,7 @@
   document.body.setAttribute("data-tab", "hub");
   Array.prototype.forEach.call(tabs, function (t) { t.addEventListener("click", function () {
     var n = t.getAttribute("data-tab");
-    if (n === "mp" && !(A.isSandbox && A.isSandbox())) A.toast("Multiplayer: in arrivo!");
+    if (n === "mp" && !(A.multiOn && A.multiOn())) A.toast("Multiplayer: in arrivo!");
     show(n, true);
   }); });
 

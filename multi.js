@@ -63,7 +63,7 @@
   // ---- home del multiplayer: grandi riquadri, uno per sezione
   function lobby() {
     fit(true); epoch++; body.innerHTML = "";
-    body.appendChild(el("div", "pg-me", "🛠️ Prototipo (solo admin): gli avversari sono simulati"));
+    if (A.isSandbox && A.isSandbox()) body.appendChild(el("div", "pg-me", "🛠️ Prototipo (solo admin): gli avversari sono simulati"));
     var g = el("div", "mp-hub"); body.appendChild(g);
     [["pk", "TAVOLI", "Poker, Blackjack e Scopa con gli amici", tables, true], ["du", "SFIDE 1v1", "Sasso-carta-forbici, dadi, tris, roulette…", duels, true],
      ["rc", "GRAND PRIX", "Giri a tempo, gare e classifiche", function () { if (window.ArcadeRace) { fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); } }, true],
@@ -869,7 +869,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   }
 
   window.ArcadeMulti = { load: function () {
-    if (!(A.isSandbox && A.isSandbox())) { soon(); return; }
+    if (!(A.multiOn && A.multiOn())) { soon(); return; }
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
   } };
 })();

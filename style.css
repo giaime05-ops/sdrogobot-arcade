@@ -1644,3 +1644,11 @@ body.sbx .pg-head{padding-top:22px}
 .mx-pan{overflow:hidden;padding-top:26px!important}
 .mx-nm{position:absolute;top:6px;left:0;right:0;z-index:0;pointer-events:none}
 .mx-stage{z-index:1}
+
+.rc2.gol .rc2-pad{pointer-events:auto;opacity:1}
+.rc2.gol .rc2-pad.r{pointer-events:none;opacity:.3}
+.rc2-rain.heavy{background:linear-gradient(rgba(6,10,36,.38),rgba(6,10,36,.38)),repeating-linear-gradient(103deg,rgba(190,215,255,0) 0 9px,rgba(190,215,255,.3) 9px 10px,rgba(190,215,255,0) 10px 24px);background-size:auto,90px 90px;animation-duration:.32s}
+.rc-lock{font:700 13px Rajdhani,sans-serif;color:#ffb347;margin:2px 0 4px}.rc-art-card.locked .rc-art{filter:grayscale(.7) brightness(.7)}
+.rc-t.abs{color:#ffe27a}
+.rc2-rain.heavy{animation-name:rcRain2}@keyframes rcRain2{to{background-position:0 0,-30px 90px}}
+.rc2-snd{display:flex;gap:8px;justify-content:center;margin:6px 0}

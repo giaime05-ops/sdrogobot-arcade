@@ -87,6 +87,7 @@
       stars:  +(j && j.stars) || 0,
       stars_old: +(j && j.stars_old) || 0,
       isnew:  !!(j && j.new),
+      multi:  !!(j && j.multi),
       style:  (j && j.style) || {},
       maint:  (j && j.maintenance) || "off"
     };
@@ -171,7 +172,7 @@
 
   function render(me, opts) {
     opts = opts || {};
-    ME.admin = !!me.admin; ME.isnew = !!me.isnew;
+    ME.admin = !!me.admin; ME.isnew = !!me.isnew; ME.multi = !!me.multi;
     try { if (window.Arcade3D && window.Arcade3D.setHeist) window.Arcade3D.setHeist(SBX || ME.isnew); } catch (e) {}
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     ME.style = me.style || {}; maintBanner(me.maint);
@@ -293,7 +294,7 @@
     return refreshMe();
   }
 
-  window.Arcade = { newOn: function () { return !!(SBX || ME.isnew); }, tip: tip, avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  window.Arcade = { multiOn: function () { return !!(SBX || ME.multi); }, newOn: function () { return !!(SBX || ME.isnew); }, tip: tip, avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 
