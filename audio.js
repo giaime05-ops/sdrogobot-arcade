@@ -249,6 +249,11 @@
     },
     tic: function (t) { noise(gSfx, t, 0.012, 0.22, "bandpass", 2600, 6); tone(gSfx, "sine", 1650, t, 0.035, 0.12, { a: 0.001, slide: 1400 }); },
     tac: function (t) { noise(gSfx, t, 0.012, 0.2, "bandpass", 1500, 6); tone(gSfx, "sine", 1050, t, 0.04, 0.12, { a: 0.001, slide: 900 }); },
+    good: function (t) { [79, 84, 88].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.08, 0.35, 0.16, { a: 0.005 }); tone(gSfx, "sine", mtof(m + 12), t + i * 0.08, 0.3, 0.05, { a: 0.005 }); }); },
+    bad: function (t) { tone(gSfx, "sawtooth", 98, t, 0.38, 0.17, { a: 0.004, lp: 700 }); tone(gSfx, "square", 103, t, 0.38, 0.1, { a: 0.004, lp: 600 }); noise(gSfx, t, 0.3, 0.06, "lowpass", 500, 0.7); },
+    pen: function (t) { var i; for (i = 0; i < 5; i++) noise(gSfx, t + i * 0.028, 0.035, 0.1, "bandpass", 2400 + (i % 2) * 900, 3); noise(gSfx, t, 0.15, 0.03, "highpass", 3500, 0.7); },
+    rps: function (t) { tone(gSfx, "sine", 150, t, 0.14, 0.45, { slide: 65, a: 0.003 }); noise(gSfx, t, 0.03, 0.12, "bandpass", 1800, 2); },
+    rpsgo: function (t) { tone(gSfx, "sine", 110, t, 0.22, 0.5, { slide: 50, a: 0.003 }); [72, 76, 79].forEach(function (m) { tone(gSfx, "triangle", mtof(m), t, 0.3, 0.1, { a: 0.004 }); }); },
     beat: function (t) { tone(gSfx, "sine", 62, t, 0.16, 0.5, { slide: 40, a: 0.004 }); tone(gSfx, "sine", 58, t + 0.17, 0.14, 0.38, { slide: 38, a: 0.004 }); },    boom: function (t) { noise(gSfx, t, 0.9, 0.35, "lowpass", 2400, 0.8, 120); tone(gSfx, "sine", 130, t, 0.8, 0.4, { slide: 38 }); tone(gSfx, "sawtooth", 80, t, 0.5, 0.12, { slide: 30, lp: 400 }); }
   };
   var cardBuf = null, cardLoading = false, B = {};          // B: slide (slidecard03), slide2 (card-slide), pick (pickupcard05), ball (roulette)
@@ -392,7 +397,7 @@
     var beat = 60 / 106, sd = beat / 4;
     RC.iv = setInterval(function () {
       if (!RC) return; var now = ctx.currentTime;
-      if (RC.rainLv) while (RC.nextDrop < now + 0.3) {                                                           // gocce: piccoli tic acuti a caso, come sul tetto
+      if (RC.rainLv && !RC.quiet) while (RC.nextDrop < now + 0.3) {                                                           // gocce: piccoli tic acuti a caso, come sul tetto
         var td = Math.max(RC.nextDrop, now); noise(RC.gs, td, 0.012, (RC.rainLv > 1 ? 0.05 : 0.03) * (0.4 + Math.random() * 0.8), "bandpass", 3500 + Math.random() * 4500, 2.5);
         RC.nextDrop = td + (RC.rainLv > 1 ? 0.012 : 0.03) + Math.random() * (RC.rainLv > 1 ? 0.045 : 0.1);
       }
@@ -416,7 +421,10 @@
     R0.g.gain.setTargetAtTime(0, t, 0.15); setTimeout(function () { try { R0.o1.stop(); R0.o2.stop(); R0.lfo.stop(); R0.sqLfo.stop(); R0.sq.s.stop(); R0.rb.s.stop(); R0.gr.s.stop(); if (R0.rn) R0.rn.s.stop(); R0.g.disconnect(); } catch (e) {} }, 700);
   }
   function raceEngine(v, boost, drift, off, still) {                                                          // v = velocità 0..1.1, still = ferma al semaforo
-    if (!RC) return; var t = ctx.currentTime, fr = 72 + v * 190 + (boost ? 26 : 0);
+    if (!RC) return; var t = ctx.currentTime, q = v < 0;                                                    // v<0: pausa/fine gara = motore, stridio e pioggia zitti
+    if (!!RC.quiet !== q) { RC.quiet = q; if (RC.rn) RC.rn.g.gain.setTargetAtTime(q ? 0 : (RC.rainLv > 1 ? 0.14 : 0.07), t, 0.05); }
+    if (q) { RC.eg.gain.setTargetAtTime(0, t, 0.04); RC.sq.g.gain.setTargetAtTime(0, t, 0.04); RC.rb.g.gain.setTargetAtTime(0, t, 0.04); RC.gr.g.gain.setTargetAtTime(0, t, 0.04); return; }
+    var fr = 72 + v * 190 + (boost ? 26 : 0);
     RC.o1.frequency.setTargetAtTime(fr, t, 0.08); RC.o2.frequency.setTargetAtTime(fr * 2.003, t, 0.08); RC.lfo.frequency.setTargetAtTime(24 + v * 46, t, 0.1); RC.f.frequency.setTargetAtTime(750 + v * 1300 + (boost ? 500 : 0), t, 0.1);
     RC.eg.gain.setTargetAtTime(still ? 0.02 + v * 0.036 : 0.034 + v * 0.044 + (boost ? 0.016 : 0), t, 0.1);
     RC.sq.g.gain.setTargetAtTime(drift ? 0.04 + v * 0.025 : 0, t, 0.06); RC.sq.f.frequency.setTargetAtTime(1150 + v * 450, t, 0.1);

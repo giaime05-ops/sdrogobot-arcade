@@ -1699,3 +1699,19 @@ body.sbx .pg-head{padding-top:22px}
 .rc2-vol input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:8px;border-radius:6px;background:linear-gradient(90deg,#ff3db0,#35e6ff);outline:none}
 .rc2-vol input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #ff3db0;box-shadow:0 0 8px rgba(255,61,176,.8)}
 .rc2-vol input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #ff3db0}
+
+.rc2-sl{position:relative;flex:1;height:34px;touch-action:none;cursor:pointer;-webkit-user-select:none;user-select:none}
+.rc2-sl::before{content:"";position:absolute;left:0;right:0;top:13px;height:8px;border-radius:6px;background:rgba(255,255,255,.14)}
+.rc2-sl i{position:absolute;left:0;top:13px;height:8px;border-radius:6px;background:linear-gradient(90deg,#ff3db0,#35e6ff);pointer-events:none}
+.rc2-sl b{position:absolute;top:5px;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:#fff;border:3px solid #ff3db0;box-shadow:0 0 10px rgba(255,61,176,.9);pointer-events:none}
+
+.lb-cols{display:flex;gap:8px;flex-wrap:wrap}.lb-col{width:30px;height:30px;border-radius:50%;border:3px solid rgba(255,255,255,.25);padding:0}.lb-col.on{border-color:#fff;box-shadow:0 0 10px #fff}
+.rc2-pod{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin:6px 0 4px;width:100%}
+.rc2-pod .pdc{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;max-width:30%;position:relative}
+.rc2-pod .cup{font-style:normal;font-size:26px;filter:drop-shadow(0 0 8px #ffd23b)}
+.rc2-pod .pcar{width:34px;height:20px;border-radius:6px 6px 4px 4px;box-shadow:0 0 12px currentColor,inset 0 -5px 0 rgba(0,0,0,.35)}
+.rc2-pod .pnm{font:700 14px Rajdhani,sans-serif;color:#fff;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rc2-pod .pnm.me{color:#ffd23b}
+.rc2-pod .ptm{font:600 12px Rajdhani,sans-serif;color:#cdf0ff}
+.rc2-pod .pst{width:100%;display:flex;align-items:flex-start;justify-content:center;font:900 22px Bungee,Rajdhani,sans-serif;color:#fff;border-radius:8px 8px 0 0;border:2px solid #fff;border-bottom:0;background:linear-gradient(#a855f7,#4b1d8f)}
+.rc2-pod .p1 .pst{height:74px;background:linear-gradient(#ffd23b,#c98a10)}.rc2-pod .p2 .pst{height:54px;background:linear-gradient(#e6eefc,#8d9bb5)}.rc2-pod .p3 .pst{height:40px;background:linear-gradient(#f0a46a,#9a5b2c)}
+.rc2-pg2{width:100%}

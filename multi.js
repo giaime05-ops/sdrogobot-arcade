@@ -268,9 +268,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       say(msg, "Scegli la tua mossa");
       return btnRow(area, HANDS).then(function (i) {
         var o = rnd(3), clash = el("div", "mp-clash"); area.innerHTML = ""; area.appendChild(clash);
-        var L = el("span", "shake", "✊"), R = el("span", "shake r", "✊"); clash.appendChild(L); clash.appendChild(R); say(msg, "Sasso… carta… forbici…");
-        return wait(900).then(function () {
-          L.className = "pop"; R.className = "pop"; L.textContent = HANDS[i][0]; R.textContent = HANDS[o][0];
+        var L = el("span", "shake", "✊"), R = el("span", "shake r", "✊"); clash.appendChild(L); clash.appendChild(R); say(msg, "Sasso…"); snd("rps"); setTimeout(function () { say(msg, "Carta…"); snd("rps"); }, 330); setTimeout(function () { say(msg, "Forbici…"); snd("rps"); }, 660);
+        return wait(1000).then(function () {
+          snd("rpsgo"); L.className = "pop"; R.className = "pop"; L.textContent = HANDS[i][0]; R.textContent = HANDS[o][0];
           var r = (i - o + 3) % 3, res = r === 0 ? 0 : (r === 1 ? 1 : -1);
           say(msg, res === 0 ? "Pari: si rigioca" : (res > 0 ? "Round tuo!" : "Round a " + st.opp.name), res > 0 ? "mp-win" : (res < 0 ? "mp-lose" : "")); return wait(900).then(function () { return res; });
         });
@@ -375,12 +375,12 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         for (var i = 0; i < 9; i++) (function (i) {
           var c = el("button", "mp-cell"); c.type = "button"; cells.push(c);
           c.addEventListener("click", function () {
-            if (b[i] || grid.classList.contains("lock")) return; A.haptic("light"); b[i] = 1; paint();
+            if (b[i] || grid.classList.contains("lock")) return; A.haptic("light"); snd("pen"); b[i] = 1; paint();
             if (win(1)) { grid.classList.add("lock"); return finish(1, "Tris! Round tuo"); }
             if (!free().length) { grid.classList.add("lock"); return finish(0, "Pari: si rigioca"); }
             grid.classList.add("lock"); say(msg, st.opp.name + " pensa…");
             wait(650).then(function () {
-              b[botMove()] = 2; paint();
+              b[botMove()] = 2; snd("pen"); paint();
               if (win(2)) return finish(-1, st.opp.name + " ha fatto tris");
               if (!free().length) return finish(0, "Pari: si rigioca");
               grid.classList.remove("lock"); say(msg, "Tocca una casella");
@@ -404,7 +404,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
           if (shown === botAt && botOk) return wait(1200 + rnd(1800)).then(function () { if (!over && alive(E)) finish(-1, st.opp.name + " ha indovinato: " + sol); });
           if (shown >= 5) { tm.textContent = "ultimo indizio: 12 secondi…"; return wait(12000).then(function () { if (!over && alive(E)) finish(0, "Nessuno ha indovinato: nuova parola"); }); }
           tm.textContent = "indizio " + shown + "/5"; wait(5200).then(reveal); }
-        function send() { if (over || Date.now() < lock || !word) return; if (norm(word) === sol) { A.haptic("ok"); finish(1, "Giusto! Era " + sol); } else { A.haptic("bad"); lock = Date.now() + 2500; word = ""; disp.textContent = "Sbagliato! attendi 2,5 s"; disp.classList.add("ph"); setTimeout(show, 2500); } }
+        function send() { if (over || Date.now() < lock || !word) return; if (norm(word) === sol) { A.haptic("ok"); snd("good"); finish(1, "Giusto! Era " + sol); } else { A.haptic("bad"); snd("bad"); lock = Date.now() + 2500; word = ""; disp.textContent = "Sbagliato! attendi 2,5 s"; disp.classList.add("ph"); setTimeout(show, 2500); } }
         ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"].forEach(function (rw, ri) {
           var r = el("div", "gh-kr"); rw.split("").forEach(function (ch) { var k = el("button", "gh-k", ch); k.type = "button"; k.addEventListener("click", function () { if (over || Date.now() < lock || word.length >= 12) return; word += ch; A.haptic("light"); show(); }); r.appendChild(k); });
           if (ri === 2) { var d = el("button", "gh-k w", "⌫"); d.type = "button"; d.addEventListener("click", function () { word = word.slice(0, -1); show(); }); r.appendChild(d); }
