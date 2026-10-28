@@ -359,7 +359,7 @@
       c.save(); c.shadowColor = "#8ff3ff"; c.shadowBlur = 14; c.fillStyle = "#fff"; c.beginPath(); c.arc(C(vis[0]), C(vis[1]), cs * 0.22, 0, 7); c.fill(); c.restore();
       if (t < 0) { c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, Wd, Wd); c.fillStyle = "#fff"; c.font = "700 30px Bungee,sans-serif"; c.fillText(String(Math.ceil(-t)), Wd / 2, Wd / 2); }
       if (hit && !done) { done = true; document.removeEventListener("keydown", key); A.haptic("bad"); act("ci", { hit: true }); return; }
-      if (got === pins.length && pos[0] === ex[0] && pos[1] === ex[1] && !done) { done = true; document.removeEventListener("keydown", key); act("ci", { mv: mv, fin: Math.round(now - t0) }); return; }
+      if (got === pins.length && pos[0] === ex[0] && pos[1] === ex[1] && !done) { done = true; document.removeEventListener("keydown", key); act("ci", { mv: mv, fin: Math.max(Math.round(performance.now() - t0), mv.length ? mv[mv.length - 1][0] + 1 : 0) }); return; }
       requestAnimationFrame(loop);
     })(performance.now());
   }
