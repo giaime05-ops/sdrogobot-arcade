@@ -1715,3 +1715,10 @@ body.sbx .pg-head{padding-top:22px}
 .rc2-pod .pst{width:100%;display:flex;align-items:flex-start;justify-content:center;font:900 22px Bungee,Rajdhani,sans-serif;color:#fff;border-radius:8px 8px 0 0;border:2px solid #fff;border-bottom:0;background:linear-gradient(#a855f7,#4b1d8f)}
 .rc2-pod .p1 .pst{height:74px;background:linear-gradient(#ffd23b,#c98a10)}.rc2-pod .p2 .pst{height:54px;background:linear-gradient(#e6eefc,#8d9bb5)}.rc2-pod .p3 .pst{height:40px;background:linear-gradient(#f0a46a,#9a5b2c)}
 .rc2-pg2{width:100%}
+
+.tl-rules{margin-top:12px}
+.lb-slot .dot.pick{border:2px solid #fff;width:26px;height:20px;padding:0;cursor:pointer;box-shadow:0 0 8px rgba(255,255,255,.5)}
+.lb-pal-ov{position:fixed;inset:0;z-index:60;background:rgba(5,2,15,.6);display:flex;align-items:center;justify-content:center}
+.lb-pal{background:#1b0f3a;border:2px solid #fff;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center;max-width:86%}
+.lb-pal b{font:700 15px Rajdhani,sans-serif;letter-spacing:.12em;color:#35e6ff}.lb-pal .lb-cols{justify-content:center;gap:12px}.lb-pal .lb-col{width:44px;height:44px;position:relative}
+.lb-col.busy{opacity:.35}.lb-col u{text-decoration:none;color:#fff;font:700 18px Rajdhani,sans-serif}.lb-pal-n{font:600 12px Rajdhani,sans-serif;opacity:.7}

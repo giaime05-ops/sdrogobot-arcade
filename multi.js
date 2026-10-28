@@ -221,7 +221,8 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         if (r > 0) me++; else if (r < 0) op++;
         if (r) rd++;
         draw();
-        if (me >= need || op >= need) return wait(1400).then(end);
+        if (r && (st.game === "srf" || st.game === "tris")) snd(r > 0 ? "win" : "lose");
+        if (me >= need || op >= need) { setTimeout(function () { snd(me >= need ? "matchwin" : "matchlose"); }, 500); return wait(1400).then(end); }
         wait(1500).then(next);
       });
     }

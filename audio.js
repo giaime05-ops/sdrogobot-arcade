@@ -249,6 +249,8 @@
     },
     tic: function (t) { noise(gSfx, t, 0.012, 0.22, "bandpass", 2600, 6); tone(gSfx, "sine", 1650, t, 0.035, 0.12, { a: 0.001, slide: 1400 }); },
     tac: function (t) { noise(gSfx, t, 0.012, 0.2, "bandpass", 1500, 6); tone(gSfx, "sine", 1050, t, 0.04, 0.12, { a: 0.001, slide: 900 }); },
+    matchwin: function (t) { [67, 72, 76, 79, 84].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.1, 0.5, 0.17, { a: 0.006 }); tone(gSfx, "sine", mtof(m - 12), t + i * 0.1, 0.5, 0.1); }); tone(gSfx, "triangle", mtof(88), t + 0.55, 0.9, 0.16, { a: 0.01 }); },
+    matchlose: function (t) { [67, 64, 60, 55].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.2, 0.55, 0.15, { a: 0.01, lp: 1400 }); }); tone(gSfx, "sine", 49, t + 0.7, 0.8, 0.2, { slide: 38 }); },
     good: function (t) { [79, 84, 88].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.08, 0.35, 0.16, { a: 0.005 }); tone(gSfx, "sine", mtof(m + 12), t + i * 0.08, 0.3, 0.05, { a: 0.005 }); }); },
     bad: function (t) { tone(gSfx, "sawtooth", 98, t, 0.38, 0.17, { a: 0.004, lp: 700 }); tone(gSfx, "square", 103, t, 0.38, 0.1, { a: 0.004, lp: 600 }); noise(gSfx, t, 0.3, 0.06, "lowpass", 500, 0.7); },
     pen: function (t) { var i; for (i = 0; i < 5; i++) noise(gSfx, t + i * 0.028, 0.035, 0.1, "bandpass", 2400 + (i % 2) * 900, 3); noise(gSfx, t, 0.15, 0.03, "highpass", 3500, 0.7); },

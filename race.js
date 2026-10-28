@@ -384,6 +384,13 @@
       op.forEach(function (o) { var r = el("div", "lb-open"), im2 = el("img"); im2.src = thumb(TRACKS[o[1]]); r.appendChild(im2); var d = el("div", "d"); d.appendChild(el("b", "", "Lobby di " + o[0])); d.appendChild(el("span", "", TRACKS[o[1]].name + " · " + o[2] + " giri")); r.appendChild(d); r.appendChild(el("em", "", o[3] + "/8")); var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.toast("Prototipo: le lobby aperte arriveranno col server vero"); }); r.appendChild(g); root.appendChild(r); });
       root.appendChild(el("div", "rc-note", "Qui vedrai le lobby pubbliche dei tuoi amici e di tutti. Per ora sono esempi: la lobby che crei tu funziona davvero, con bot e amici finti."));
     }
+    function palette() {                                                                                               // fumetto con gli 8 colori: quelli già presi sono bloccati
+      var L = LB, cols = lbCols(L), taken = cols.filter(function (c, i) { return i > 0; }), ov = el("div", "lb-pal-ov"), bx = el("div", "lb-pal");
+      bx.appendChild(el("b", "", "COLORE DELLA TUA AUTO")); var gr = el("div", "lb-cols");
+      COLS.forEach(function (cl, n) { var b = el("button", "lb-col" + ((L.col | 0) === n ? " on" : "") + (taken.indexOf(cl) >= 0 ? " busy" : "")); b.type = "button"; b.style.background = cl; if (taken.indexOf(cl) >= 0) b.appendChild(el("u", "", "✕"));
+        b.addEventListener("click", function () { if (taken.indexOf(cl) >= 0) { A.toast("Colore già occupato da un altro pilota"); return; } L.col = n; ov.remove(); lobby(); }); gr.appendChild(b); });
+      bx.appendChild(gr); bx.appendChild(el("span", "lb-pal-n", "Quelli con ✕ sono già presi")); ov.appendChild(bx); ov.addEventListener("click", function (e) { if (e.target === ov) ov.remove(); }); root.appendChild(ov);
+    }
     function lobby(reset) {
       var L = LB, sc0 = !reset && root.querySelector(".lb-body"), sct = sc0 ? sc0.scrollTop : 0; root.innerHTML = ""; root.className = "rc-root lobby"; hook(function () { lobbyHub(); return true; });
       var tp = top("LOBBY", lobbyHub, "‹ Esci");
@@ -391,13 +398,12 @@
       var body = el("div", "lb-body"); root.appendChild(body);
       if (L.tab === 0) {
         var list = el("div", "lb-slots");
-        for (var i = 0; i < 8; i++) { (function (i) { var sl = L.slots[i], r = el("div", "lb-slot" + (sl ? "" : " free")); r.appendChild(el("u", "", String(i + 1))); var dot = el("i", "dot"); dot.style.background = sl ? lbCols(L)[i] : "transparent"; r.appendChild(dot);
-          if (!sl) { r.appendChild(el("span", "n", "libero")); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } r.appendChild(av); var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); r.appendChild(el("em", sl.t, sl.t === "me" ? "LEADER" : (sl.t === "bot" ? "BOT · " + DIFF[L.diff].n : (sl.t === "wait" ? "invito inviato…" : "AMICO")))); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
+        for (var i = 0; i < 8; i++) { (function (i) { var sl = L.slots[i], r = el("div", "lb-slot" + (sl ? "" : " free")); r.appendChild(el("u", "", String(i + 1))); var dot = el(sl && sl.t === "me" ? "button" : "i", "dot" + (sl && sl.t === "me" ? " pick" : "")); dot.style.background = sl ? lbCols(L)[i] : "transparent"; if (sl && sl.t === "me") { dot.type = "button"; dot.addEventListener("click", function () { palette(); }); } r.appendChild(dot);
+          if (!sl) { r.appendChild(el("span", "n", "libero")); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); r.appendChild(el("em", sl.t, sl.t === "me" ? "LEADER" : (sl.t === "bot" ? "BOT · " + DIFF[L.diff].n : (sl.t === "wait" ? "invito inviato…" : "AMICO")))); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
           list.appendChild(r); })(i); }
         body.appendChild(list);
         var ab = el("div", "lb-acts"); var full = L.slots.length >= 8;
         [["＋ INVITA AMICO", function () { inviteSheet(); }, ""], ["＋ BOT", function () { if (L.slots.length < 8) { L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); } }, ""], ["RIEMPI CON BOT", function () { while (L.slots.length < 8) L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }, " alt"]].forEach(function (a) { var b = el("button", "lb-b" + a[2], a[0]); b.type = "button"; b.disabled = full; b.addEventListener("click", a[1]); ab.appendChild(b); }); body.appendChild(ab);
-        var cr = el("div", "lb-row col"); cr.appendChild(el("span", "", "COLORE DELLA TUA AUTO")); var cc = el("div", "lb-cols"); COLS.forEach(function (cl, n) { var b = el("button", "lb-col" + ((L.col | 0) === n ? " on" : "")); b.type = "button"; b.style.background = cl; b.addEventListener("click", function () { L.col = n; lobby(); }); cc.appendChild(b); }); cr.appendChild(cc); body.appendChild(cr);
         var dr = el("div", "lb-row col"); dr.appendChild(el("span", "", "DIFFICOLTÀ BOT")); var chips = el("div", "lb-chips"); DIFF.forEach(function (df, n) { var b = el("button", "mp-gt wide" + (L.diff === n ? " on" : ""), df.n); b.type = "button"; b.addEventListener("click", function () { L.diff = n; lobby(); }); chips.appendChild(b); }); dr.appendChild(chips); body.appendChild(dr);
         body.appendChild(el("div", "rc-note", L.diff === 3 ? "Campione: i bot girano come il TUO record su questa pista (col server: come il miglior giro di tutti)." : "Nelle lobby pubbliche i bot li decide chi crea la lobby: puoi giocare solo con persone, solo con bot o misto."));
       } else {
@@ -598,8 +604,8 @@
           tgl.addEventListener("click", function () { onPod = !onPod; pod.style.display = onPod ? "" : "none"; pg2.style.display = onPod ? "none" : ""; tgl.textContent = onPod ? "TEMPI SUL GIRO ›" : "‹ PODIO"; });
         }
         box.appendChild(pg2);
-        var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIGIOCA"), b = el("button", "mp-go mp-alt", opts.back ? "LOBBY" : "PISTE"); a.type = b.type = "button";
-        a.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); if (tgl) rw.insertBefore(tgl, rw.firstChild); rw.appendChild(a); rw.appendChild(b); box.appendChild(rw); full.appendChild(box);
+        var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIGIOCA"), b = el("button", "mp-go mp-alt", opts.back ? "TORNA ALLA LOBBY" : "PISTE"); a.type = b.type = "button";
+        a.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); if (tgl) rw.insertBefore(tgl, rw.firstChild); if (!opts.back) rw.appendChild(a); rw.appendChild(b); box.appendChild(rw); full.appendChild(box);
       }
       // ---------- proiezione: camera alta dietro l'auto, inclinata verso il basso ----------
       var TH = 42 * Math.PI / 180, CT = Math.cos(TH), ST = Math.sin(TH), DB = 205, HC = 250, FOC = 1.08;
@@ -787,6 +793,19 @@
           else if (o.t.b) bldg(o.t);
           else { var tt = o.t, tc = tr.pal.tree[tt.c % 3]; if (o.d < 1100) box(tt.x, tt.y, tt.s / 5, tt.s / 5, 0, tt.h * 0.45, camA, "#8a5a2b", "#6a421c", "#573612"); box(tt.x, tt.y, tt.s / 2, tt.s / 2, tt.h * 0.3, tt.h * 0.85, camA, tc, shade(tc, -0.35), shade(tc, -0.2)); }
         });
+        if (!tr.night) {                                                                                         // atmosfera per ambiente: sole forte nel deserto/costa, raggi di luce tra gli alberi in campagna
+          ctx.save(); var sunny = tr.id === "canyon" || tr.id === "costa";
+          if (sunny) {
+            var sx = W * 0.84, sy = H * 0.07, sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * 0.95), cw = tr.id === "costa" ? "255,236,190" : "255,190,100";
+            ctx.globalCompositeOperation = "lighter"; sg.addColorStop(0, "rgba(" + cw + ",.34)"); sg.addColorStop(0.35, "rgba(" + cw + ",.12)"); sg.addColorStop(1, "rgba(" + cw + ",0)"); ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+            for (var fq = 1; fq <= 4; fq++) { var fx2 = sx + (W / 2 - sx) * fq * 0.42, fy2 = sy + (H / 2 - sy) * fq * 0.42; ctx.beginPath(); ctx.arc(fx2, fy2, 10 + fq * 9, 0, 6.3); ctx.fillStyle = "rgba(" + cw + ",.05)"; ctx.fill(); }
+            ctx.globalCompositeOperation = "source-over"; ctx.fillStyle = tr.id === "costa" ? "rgba(255,240,200,.05)" : "rgba(255,150,50,.07)"; ctx.fillRect(0, 0, W, H);
+          } else if (!tr.rain) {
+            ctx.globalCompositeOperation = "lighter";
+            for (var rq = 0; rq < 4; rq++) { var rx = W * (0.08 + rq * 0.27) + Math.sin(t * 0.35 + rq * 1.7) * 22, rw = 34 + rq % 2 * 22; ctx.beginPath(); ctx.moveTo(rx, 0); ctx.lineTo(rx + rw, 0); ctx.lineTo(rx + rw + 160, H * 0.8); ctx.lineTo(rx + 120, H * 0.8); ctx.closePath(); var rg2 = ctx.createLinearGradient(rx, 0, rx + 140, H * 0.8); rg2.addColorStop(0, "rgba(255,250,200,.10)"); rg2.addColorStop(1, "rgba(255,250,200,0)"); ctx.fillStyle = rg2; ctx.fill(); }
+          }
+          ctx.restore();
+        }
         (state === "run" ? cars.concat(allG()) : cars).forEach(function (c) {                                                                  // etichette: nome sopra le auto lontane / freccia ai bordi se fuori vista
           if (c === me) return; var p = pr(c.x, c.y, 16), dist = Math.hypot(c.x - me.x, c.y - me.y), out = !p || p[0] < 24 || p[0] > W - 24 || p[1] < 24 || p[1] > H - 70, x, y;
           if (p) { x = Math.max(34, Math.min(W - 34, p[0])); y = Math.max(40, Math.min(H - 80, p[1] - 26)); } else { x = W / 2; y = H - 84; }
