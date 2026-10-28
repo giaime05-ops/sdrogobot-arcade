@@ -143,13 +143,13 @@
     }
     car.drift = car.dd ? 1 : 0;
     if (car.spin > 0) { car.spin -= DT; om = 7; vf *= Math.exp(-1.4 * DT); if (car.spin <= 0 && car.oil) { var o = car.oil, k2 = (o.idx + 4) % tr.N; car.x = tr.P[k2][0] + tr.nx[k2] * o.lat; car.y = tr.P[k2][1] + tr.ny[k2] * o.lat; car.a = tr.ta[k2]; car.vx = Math.cos(car.a) * 70; car.vy = Math.sin(car.a) * 70; car.idx = k2; car.oil = null; car.blink = 1; return; } }
-    var dem = vf * Math.abs(om), sl = (car.spin > 0 || car.dd) ? 0 : Math.max(0, Math.min(1.2, (dem - AG) / (AG * 0.5)));
+    var dem = vf * Math.abs(om), sl = (car.spin > 0 || car.dd) ? 0 : Math.max(0, Math.min(1.2, (dem - AG * (tr.rain ? 0.88 : 1)) / (AG * 0.5)));
     car.slip = sl; if (sl > 0) vf -= 30 * Math.min(1, sl) * DT;
     var wx = fx * vf + sx * vl, wy = fy * vf + sy * vl;
     car.a += om * DT;
     fx = Math.cos(car.a); fy = Math.sin(car.a); sx = -fy; sy = fx;
     vf = wx * fx + wy * fy; vl = wx * sx + wy * sy;
-    var dmp = car.dd ? 2.5 : (brk ? 7 : 12) * (1 - 0.92 * Math.min(1, sl)); if (!car.dd && car.rec > 0) { dmp = 6 + (dmp - 6) * (1 - car.rec); car.rec -= DT / 0.25; }
+    var dmp = car.dd ? 2.5 : (brk ? 7 : 12) * (1 - 0.92 * Math.min(1, sl)); if (tr.rain && !car.dd) dmp *= 0.6; if (!car.dd && car.rec > 0) { dmp = 6 + (dmp - 6) * (1 - car.rec); car.rec -= DT / 0.25; }
     vl *= Math.exp(-(air ? 0.3 : dmp) * DT);
     car.vx = fx * vf + sx * vl; car.vy = fy * vf + sy * vl;
     car.x += car.vx * DT; car.y += car.vy * DT;
@@ -223,9 +223,9 @@
   }
   function champ(tr, n) {                                                       // Campione: i bot girano come il TUO record (poi come il miglior giro di tutti, col server)
     var rec = lsGet("arc_race4_" + tr.id); if (!rec || !rec.t) return null;
-    var base = rec.t / 3, key = Math.round(base * 10); tr._cal = tr._cal || {}; var cal = tr._cal[key];
-    if (!cal) { var solve = function (T) { var lo = 0, hi = 1; for (var i = 0; i < 7; i++) { var q = (lo + hi) / 2; if (botLap(tr, 0.95 + 0.3 * q, 1 + 0.12 * q) > T) lo = q; else hi = q; } return (lo + hi) / 2; }; cal = tr._cal[key] = { q1: solve(base), q2: solve(base * 1.04) }; }
-    var m = [1], vm = [1]; for (var k = 1; k < n; k++) { var r = 1 + 0.012 * (k - 1), q = Math.max(0, Math.min(1, cal.q1 + (cal.q2 - cal.q1) * (r - 1) / 0.04)); m.push(0.95 + 0.3 * q); vm.push(1 + 0.12 * q); }
+    var bl = lsGet("arc_race4b_" + tr.id), base = bl && bl.t ? bl.t : rec.t / 3 * 0.96, key = Math.round(base * 10); tr._cal = tr._cal || {}; var cal = tr._cal[key];
+    if (!cal) { var solve = function (T) { var lo = 0, hi = 3; for (var i = 0; i < 9; i++) { var q = (lo + hi) / 2; if (botLap(tr, 0.95 + 0.2 * q, 1 + 0.1 * q) > T) lo = q; else hi = q; } return (lo + hi) / 2; }; cal = tr._cal[key] = { q1: solve(base), q2: solve(base * 1.04) }; }
+    var m = [1], vm = [1]; for (var k = 1; k < n; k++) { var r = 1 + 0.012 * (k - 1), q = Math.max(0, Math.min(3, cal.q1 + (cal.q2 - cal.q1) * (r - 1) / 0.04)); m.push(0.95 + 0.2 * q); vm.push(1 + 0.1 * q); }
     return { m: m, vm: vm, base: base };
   }
   function aero(tr, cars, o) {                                                  // scia e aiuto agli ultimi (attivabili): effetti leggeri, calcolati prima di ogni passo
@@ -233,10 +233,11 @@
     cars.forEach(function (c) {
       if (c.fin) { c.tw = 0; c.rb = 0; return; }
       var inw = false, tg = null, tgd = 1e9, lc = (c.x - tr.P[c.idx][0]) * tr.nx[c.idx] + (c.y - tr.P[c.idx][1]) * tr.ny[c.idx];
-      if (o.slip) for (k = 0; k < cars.length; k++) { var q = cars[k]; if (q === c || q.fin) continue; var dp = (q.prog - c.prog) * tr.sp; if (dp < 18 || dp > 760 || Math.hypot(q.vx, q.vy) < 180) continue; var lq = (q.x - tr.P[q.idx][0]) * tr.nx[q.idx] + (q.y - tr.P[q.idx][1]) * tr.ny[q.idx]; if (Math.abs(lq - lc) < 22 + dp * 0.05 && dp < tgd) { tgd = dp; tg = q; inw = true; } }
+      if (o.slip) for (k = 0; k < cars.length; k++) { var q = cars[k]; if (q === c || q.fin) continue; var dp = (q.prog - c.prog) * tr.sp; if (dp < 6 || dp > 760 || Math.hypot(q.vx, q.vy) < 180) continue; var lq = (q.x - tr.P[q.idx][0]) * tr.nx[q.idx] + (q.y - tr.P[q.idx][1]) * tr.ny[q.idx]; if (Math.abs(lq - lc) < 22 + dp * 0.05 && dp < tgd) { tgd = dp; tg = q; inw = true; } }
       c.tgt = tg; c.tq = (inw && !(c.spin > 0)) ? (c.tq || 0) + DT : Math.max(0, (c.tq || 0) - DT * 0.8);
       c.tw = c.tq > 0.45 ? Math.min(1, (c.tq - 0.45) / 0.5) : 0; if (c.dd) c.tw *= 0.65;
-      c.rb = o.assist && c.prog < lead ? Math.min(0.09, Math.max(0, lead - c.prog - 15) / (tr.N * 0.12) * 0.09) : 0;
+      var ga = 1e9; if (o.assist) cars.forEach(function (q) { if (q !== c && !q.fin && q.prog > c.prog) { var g = (q.prog - c.prog) * tr.sp / Math.max(200, Math.hypot(q.vx, q.vy)); if (g < ga) ga = g; } });       // distacco in secondi dall'auto davanti: <4 s niente, ~10 s medio, 20+ s forte
+      c.rb = o.assist && ga < 1e8 ? (ga < 4 ? 0 : ga < 10 ? 0.045 * (ga - 4) / 6 : Math.min(0.09, 0.045 + 0.045 * (ga - 10) / 10)) : 0;
     });
   }
   function qualSim(tr, m, vm, off) {                                            // giro di qualifica lanciato, pulito (niente pozze né pedane): tempo e traiettoria
@@ -307,10 +308,10 @@
       op.forEach(function (o) { var r = el("div", "lb-open"), im2 = el("img"); im2.src = thumb(TRACKS[o[1]]); r.appendChild(im2); var d = el("div", "d"); d.appendChild(el("b", "", "Lobby di " + o[0])); d.appendChild(el("span", "", TRACKS[o[1]].name + " · " + o[2] + " giri")); r.appendChild(d); r.appendChild(el("em", "", o[3] + "/8")); var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.toast("Prototipo: le lobby aperte arriveranno col server vero"); }); r.appendChild(g); root.appendChild(r); });
       root.appendChild(el("div", "rc-note", "Qui vedrai le lobby pubbliche dei tuoi amici e di tutti. Per ora sono esempi: la lobby che crei tu funziona davvero, con bot e amici finti."));
     }
-    function lobby() {
-      var L = LB; root.innerHTML = ""; root.className = "rc-root lobby"; hook(function () { lobbyHub(); return true; });
+    function lobby(reset) {
+      var L = LB, sc0 = !reset && root.querySelector(".lb-body"), sct = sc0 ? sc0.scrollTop : 0; root.innerHTML = ""; root.className = "rc-root lobby"; hook(function () { lobbyHub(); return true; });
       var tp = top("LOBBY", lobbyHub, "‹ Esci"); var cd = el("button", "lb-code", L.code + "  ⧉"); cd.type = "button"; cd.addEventListener("click", function () { try { navigator.clipboard.writeText(L.code); } catch (e) {} A.toast("Codice copiato"); }); tp.appendChild(cd);
-      var tabs = el("div", "lb-tabs"); ["👥 GIOCATORI " + L.slots.length + "/8", "🛠 PISTA & REGOLE"].forEach(function (nm, i) { var b = el("button", "lb-tab" + (L.tab === i ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.tab = i; lobby(); }); tabs.appendChild(b); }); root.appendChild(tabs);
+      var tabs = el("div", "lb-tabs"); ["👥 GIOCATORI " + L.slots.length + "/8", "🛠 PISTA & REGOLE"].forEach(function (nm, i) { var b = el("button", "lb-tab" + (L.tab === i ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.tab = i; lobby(true); }); tabs.appendChild(b); }); root.appendChild(tabs);
       var body = el("div", "lb-body"); root.appendChild(body);
       if (L.tab === 0) {
         var list = el("div", "lb-slots");
@@ -326,7 +327,7 @@
         var th = el("div", "lb-tr"); TRACKS.forEach(function (tr, i) { var b = el("button", "lb-t" + (L.ti === i ? " on" : "")); b.type = "button"; var im = el("img"); im.src = thumb(tr); b.appendChild(im); b.appendChild(el("span", "", tr.name)); b.addEventListener("click", function () { L.ti = i; lobby(); }); th.appendChild(b); }); body.appendChild(th);
         var lr = el("div", "lb-row"); lr.appendChild(el("span", "", "GIRI")); var c2 = el("div", "lb-chips"); [3, 5, 7, 10].forEach(function (n) { var b = el("button", "mp-gt" + (L.laps === n ? " on" : ""), String(n)); b.type = "button"; b.addEventListener("click", function () { L.laps = n; lobby(); }); c2.appendChild(b); }); lr.appendChild(c2); body.appendChild(lr);
         var tg = el("div", "lb-tg");
-        [["obst", "💧", "Ostacoli", "Pozze d'acqua e olio"], ["pads", "⚡", "Boost a terra", "Pedane acceleranti"], ["slip", "💨", "Scia", "Stando dietro prendi velocità"], ["assist", "🤝", "Aiuto ultimi", "Chi è indietro va un po' più forte"], ["qual", "⏱", "Qualifica", "Giro lanciato che decide la griglia"]].forEach(function (o) {
+        [["obst", "💧", "Ostacoli", "Pozze d'acqua e olio"], ["pads", "⚡", "Boost a terra", "Pedane acceleranti"], ["slip", "💨", "Scia", "Stando dietro prendi velocità"], ["assist", "🤝", "Aiuto ultimi", "Chi è indietro va un po' più forte"], ["qual", "⏱", "Qualifica", "Giro lanciato che decide la griglia"], ["rain", "🌧", "Pioggia", "Meno aderenza, meno ostacoli"]].forEach(function (o) {
           var r = el("button", "lb-tog" + (L[o[0]] ? " on" : "")); r.type = "button"; r.appendChild(el("i", "", o[1])); var d = el("div", "d"); d.appendChild(el("b", "", o[2])); d.appendChild(el("span", "", o[3])); r.appendChild(d); r.appendChild(el("u", "sw")); r.addEventListener("click", function () { L[o[0]] = !L[o[0]]; lobby(); }); tg.appendChild(r); });
         body.appendChild(tg);
         var pr2 = el("div", "lb-row"); pr2.appendChild(el("span", "", "💰 MONTEPREMI $SDG")); var c3 = el("div", "lb-chips"); [0, 100, 250, 500].forEach(function (n) { var b = el("button", "mp-gt wide" + (L.prize === n ? " on" : ""), n ? String(n) : "NO"); b.type = "button"; b.addEventListener("click", function () { L.prize = n; lobby(); }); c3.appendChild(b); }); pr2.appendChild(c3); body.appendChild(pr2);
@@ -335,10 +336,10 @@
       var go = el("button", "mp-go lb-go", "▶ AVVIA GARA · " + L.slots.filter(function (x) { return x.t !== "wait"; }).length + " piloti" + (L.qual ? " · con qualifica" : "")); go.type = "button"; go.disabled = L.slots.filter(function (x) { return x.t !== "wait"; }).length < 2;
       if (go.disabled) go.textContent = "Servono almeno 2 piloti: aggiungi un bot o invita un amico";
       go.addEventListener("click", function () {
-        var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: COLS[i % 8] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, qual: L.qual, prize: L.prize, back: lobby };
+        var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: COLS[i % 8] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, rain: L.rain, qual: L.qual, prize: L.prize, back: lobby };
         if (L.qual) o.qualPhase = true; race(TRACKS[L.ti], "race", o);
       });
-      root.appendChild(go);
+      root.appendChild(go); body.scrollTop = sct;
     }
     function inviteSheet() {
       var L = LB, used = L.slots.map(function (x) { return x.name; }), sh = el("div", "lb-sheet"), bx = el("div", "lb-sbox"); bx.appendChild(el("b", "", "INVITA UN AMICO")); bx.appendChild(el("span", "", "Gli arriva un avviso discreto nella home. Nel prototipo accettano da soli."));
@@ -365,13 +366,13 @@
     }
     function race(tr, mode, opts) {
       opts = opts || {}; var tr0 = tr, qual = !!opts.qualPhase, nCar = mode === "single" ? 1 : (qual ? (opts.n || 4) : (opts.n || 4));
-      var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); tr = Object.assign({}, tr, { items: itl });
+      var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); if (opts.rain) { var rq = 0; itl = itl.filter(function () { return rq++ % 2 === 0; }); } tr = Object.assign({}, tr, { items: itl, rain: !!opts.rain });
       var solo = mode === "single", laps = qual ? 1 : (solo ? 3 : (opts.laps || RL)), full = el("div", "rc2"), cv = el("canvas", "rc2-cv"), hud = el("div", "rc2-hud"), cd = el("div", "rc2-cd"), tip = el("div", "rc2-tip");
       var left = el("div", "rc2-pad l"), right = el("div", "rc2-pad r"), rev = el("div", "rc2-rev"), rfill = el("i"), bbar = el("div", "rc2-boost"), bfill = el("i"); rev.appendChild(rfill); bbar.appendChild(bfill);
       var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : 4.4;
-      gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small></small><b></b><span></span>"; intro.children[0].textContent = qual ? "🏁 SESSIONE UFFICIALE 🏁" : "CIRCUITO"; intro.children[1].textContent = qual ? "QUALIFICA" : tr.name; intro.children[2].textContent = qual ? "⏱ " + tr.name.toUpperCase() + " · 1 GIRO LANCIATO · DECIDE LA GRIGLIA" : (solo ? "CONTRO IL TEMPO" : "GARA") + " · " + laps + " GIRI"; if (qual) intro.classList.add("qual");
+      gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small></small><b></b><span></span>"; intro.children[0].textContent = qual ? "🏁 SESSIONE UFFICIALE 🏁" : (opts.grid ? "🏆 GRAN PREMIO 🏆" : "CIRCUITO"); intro.children[1].textContent = qual ? "QUALIFICA" : (opts.grid ? "GARA" : tr.name); intro.children[2].textContent = qual ? "⏱ " + tr.name.toUpperCase() + " · 1 GIRO LANCIATO · DECIDE LA GRIGLIA" : (solo ? "CONTRO IL TEMPO" : (opts.grid ? "🏎 " + tr.name.toUpperCase() : "GARA")) + " · " + laps + " GIRI" + (opts.grid ? " · SI PARTE DALLA GRIGLIA" : ""); if (qual) intro.classList.add("qual");
       var tower = el("div", "rc2-tower"), twc = 0, xb = el("button", "rc2-x", "⏸"); xb.type = "button"; var sec = el("div", "rc2-sec"), lapb = el("div", "rc2-lapb");
-      full.appendChild(cv); full.appendChild(hud); full.appendChild(cd); full.appendChild(tip); full.appendChild(left); full.appendChild(right); full.appendChild(bbar); full.appendChild(xb); full.appendChild(sec); full.appendChild(lapb); full.appendChild(gasb); full.appendChild(lch); full.appendChild(intro); if (!solo && !qual) full.appendChild(tower); document.body.appendChild(full);
+      full.appendChild(cv); if (opts.rain) full.appendChild(el("div", "rc2-rain")); full.appendChild(hud); full.appendChild(cd); full.appendChild(tip); full.appendChild(left); full.appendChild(right); full.appendChild(bbar); full.appendChild(xb); full.appendChild(sec); full.appendChild(lapb); full.appendChild(gasb); full.appendChild(lch); full.appendChild(intro); if (!solo && !qual) full.appendChild(tower); document.body.appendChild(full);
       var TGW = window.Telegram && window.Telegram.WebApp;
       try { if (TGW) { if (TGW.unlockOrientation) TGW.unlockOrientation(); if (TGW.requestFullscreen && !TGW.isFullscreen) TGW.requestFullscreen(); if (TGW.disableVerticalSwipes) TGW.disableVerticalSwipes(); if (TGW.enableClosingConfirmation) TGW.enableClosingConfirmation(); } } catch (e) {}
       try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function () {}); } catch (e) {}
@@ -438,7 +439,7 @@
         a.addEventListener("click", function () { pause(false); }); rs.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); rw.appendChild(a); rw.appendChild(rs); rw.appendChild(b); pbox.appendChild(rw); full.appendChild(pbox);
       }
       xb.addEventListener("click", function () { pause(!paused); });
-      window.ArcadeBackHide = true; window.ArcadeBackHook = null; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); if (TGW && TGW.BackButton) TGW.BackButton.hide(); } catch (e) {}
+      window.ArcadeBackHide = false; window.ArcadeBackHook = function () { if (state === "end") return false; pause(!paused); return true; }; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {}
       function say2(x, sec) { tip.textContent = x; msgT = sec || 1.6; }
       function finish() {
         state = "end"; var total = me.finT, rec = solo && (!best || total < best), box = el("div", "rc2-end res");
@@ -643,7 +644,7 @@
         cars.slice().reverse().forEach(function (c) { var mc = mp([c.x, c.y]); ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(mc[0], mc[1], c === me ? 5.5 : 4.2, 0, 7); ctx.fill(); ctx.fillStyle = c.col; ctx.beginPath(); ctx.arc(mc[0], mc[1], c === me ? 4 : 3, 0, 7); ctx.fill(); });
       }
       function hudDraw() {
-        full.className = "rc2" + (state === "intro" ? " intro" : "") + (state === "count" ? " cnt" : "") + (paused ? " paus" : "") + (me.tw > 0 ? " slip" : "") + (qual ? " qual" : ""); if (state === "count") { lchF.style.width = Math.min(100, rev2 * 100) + "%"; lchF.className = rev2 > 1 ? "bad" : (rev2 >= 0.72 ? "ok" : ""); } if (state === "intro") intro.style.display = ""; else if (intro.style.display !== "none") intro.style.display = "none";
+        full.className = "rc2" + (state === "intro" ? " intro" : "") + (state === "count" ? " cnt" : "") + (paused ? " paus" : "") + (me.tw > 0 ? " slip" : "") + (qual ? " qual" : "") + (state === "run" && t < 0.9 ? " gol" : ""); if (state === "count") { lchF.style.height = Math.min(100, rev2 * 100) + "%"; lchF.className = rev2 > 1 ? "bad" : (rev2 >= 0.72 ? "ok" : ""); } if (state === "intro") intro.style.display = ""; else if (intro.style.display !== "none") intro.style.display = "none";
         var pos = rank().indexOf(me), v = Math.round(Math.hypot(me.vx, me.vy) * 0.5), curLap = Math.min(me.lap, laps);
         hud.innerHTML = (solo || qual ? "" : "<b class='p'>" + ORD[pos] + "</b>") + "<span>GIRO " + curLap + "/" + laps + "</span><span>" + v + " km/h</span>" + "";
         bfill.style.width = Math.round(me.meter * 100) + "%"; var lvB = me.meter < 0.22 ? 0 : (me.meter < 0.5 ? 1 : (me.meter < 0.8 ? 2 : 3)); bbar.className = "rc2-boost lv" + lvB + (me.boostT > 0 ? " hot" : "") + (me.dd ? " drift" : "");
@@ -656,10 +657,12 @@
         }
         if (!solo && (twc++ % 5 === 0)) {                                                                                       // classifica live stile F1: nome corto e distacco dall'auto davanti (in secondi, tre decimali)
           var rk = rank(), rows = "";
+          var mi = rk.indexOf(me), ws = Math.min(Math.max(mi - 2, 1), Math.max(1, rk.length - 4));
           rk.forEach(function (c, j) {
+            if (rk.length > 5 && j > 0 && (j < ws || j >= ws + 4)) return;
             var gap = "", cls = c === me ? " me" : "";
             if (j === 0) gap = "LEADER";
-            else { var Ah = rk[j - 1], ld = Math.floor((Ah.prog - c.prog) / tr.N);
+            else { var Ah = rk[0], ld = Math.floor((Ah.prog - c.prog) / tr.N);
               if (c.fin && Ah.fin) gap = "+" + Math.max(0, c.finT - Ah.finT).toFixed(3); else if (ld >= 1) gap = "+" + ld + (ld > 1 ? " GIRI" : " GIRO"); else { var h0 = Ah.hist[Math.floor(c.prog) + 60]; gap = h0 >= 0 ? "+" + Math.max(0, t - h0).toFixed(3) : "—"; } }
             rows += "<div class='tr" + cls + "'><b>" + (j + 1) + "</b><i style='background:" + c.col + "'></i><span>" + (c === me ? "TU" : c.name.slice(0, 3).toUpperCase()) + "</span><em>" + gap + "</em></div>";
           });
@@ -692,7 +695,7 @@
             if (c.fin) { c.vx *= 0.99; c.vy *= 0.99; return; }
             if (k === 0) { step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (t >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
             if (c.blink > 0) c.blink -= DT;
-            if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { lapT.push(t - lapStart); lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
+            if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { lapT.push(t - lapStart); if (!opts.qual && lapT.length > 1) { var bb = lsGet("arc_race4b_" + tr.id); if (!bb || !bb.t || lapT[lapT.length - 1] < bb.t) lsSet("arc_race4b_" + tr.id, { t: lapT[lapT.length - 1] }); } lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
             if (c.prog >= tr.N * laps) { c.fin = true; c.finT = t; }
           });
           cars.forEach(function (c) { var pp = Math.floor(c.prog); while (c.hp < pp) { c.hp++; if (c.hp + 60 >= 0 && c.hp + 60 < c.hist.length) c.hist[c.hp + 60] = t; } });      // quando ogni auto è passata da ogni punto: serve per i distacchi in secondi

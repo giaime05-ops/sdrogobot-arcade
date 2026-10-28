@@ -16,7 +16,7 @@
   function ago(s) { return s < 60 ? "ora" : s < 3600 ? Math.floor(s / 60) + " min fa" : s < 86400 ? Math.floor(s / 3600) + " h fa" : Math.floor(s / 86400) + " g fa"; }
 
   // fumetto sotto il tasto: "Marco è online", un nome alla volta (scorre se sono più persone), resta finché c'è qualcuno online
-  var bub = null, bi = 0, bt = 0, names = [];
+  var bub = null, bi = 0, bt = 0, names = [], bubRaf = 0;   // il fumetto segue il tasto ad ogni frame: niente salti quando cambi schermata
   function placeBub() {
     if (!bub) return;
     var gameOpen = ["avi", "gm", "g4", "heist"].some(function (id) { var n = $(id); return n && !n.hidden; }) || !!document.querySelector(".set-ov:not([hidden]),#sheet:not([hidden]),.rc2");
@@ -28,7 +28,7 @@
   }
   function showName() {
     if (!names.length) { if (bub) { bub.remove(); bub = null; } return; }
-    if (!bub) { bub = el("div", "frbub"); bub.style.visibility = "hidden"; bub.addEventListener("click", open); document.body.appendChild(bub); }
+    if (!bub) { bub = el("div", "frbub"); bub.style.visibility = "hidden"; bub.addEventListener("click", open); document.body.appendChild(bub); } if (!bubRaf) { var lp = function () { placeBub(); bubRaf = bub ? requestAnimationFrame(lp) : 0; }; bubRaf = requestAnimationFrame(lp); }
     var nm0 = names[bi % names.length]; bi++;
     if (!bub._n) { bub.textContent = ""; bub._n = el("span", "nm"); bub.appendChild(bub._n); bub.appendChild(document.createTextNode(" è online")); }
     bub._n.textContent = nm0; bub._n.classList.remove("swap"); void bub._n.offsetWidth; bub._n.classList.add("swap"); placeBub();

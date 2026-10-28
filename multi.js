@@ -89,7 +89,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     c.appendChild(el("div", "mp-lab", "Round (al meglio di)")); var rg = el("div", "dl-seg r3"); c.appendChild(rg);
     function pR() { rg.innerHTML = ""; [1, 3, 5].forEach(function (n) { var b = el("button", st.rounds === n ? "on" : "", String(n)); b.type = "button"; b.addEventListener("click", function () { st.rounds = n; pR(); }); rg.appendChild(b); }); } pR();
     var rw = el("div", "mp-end dl-go"); var go = el("button", "mp-go", "INVIA SFIDA"); go.type = "button"; go.addEventListener("click", send);
-    var gb = el("button", "mp-go mp-alt", "🤖 PROVA COL BOT"); gb.type = "button"; gb.addEventListener("click", function () { st.opp = BOT; duel(); }); rw.appendChild(go); rw.appendChild(gb); c.appendChild(rw);
+    var gb = el("button", "mp-go mp-alt", "🤖 PROVA COL BOT"); gb.type = "button"; gb.addEventListener("click", function () { st.opp = BOT; duel(); }); rw.appendChild(go); rw.appendChild(gb); body.appendChild(rw);
   }
   function send() {
     fit(false); epoch++; body.innerHTML = ""; var c = el("div", "mp-card"); c.appendChild(el("div", "mp-sec", "SFIDA INVIATA A " + st.opp.name.toUpperCase()));
@@ -550,23 +550,24 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   function scopaSetup() {
     fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI"); var mode = "2", c = el("div", "mp-card"); body.appendChild(c);
     c.appendChild(el("div", "mp-sec", "SCOPA · COME VUOI GIOCARE?"));
-    var row = el("div", "mp-rowc"), info = el("div", "pg-me", ""), go = el("div", "mp-end"); c.appendChild(row); c.appendChild(info); c.appendChild(go);
+    var row = el("div", "mp-rowc"), row2 = el("div", "mp-rowc"), info = el("div", "pg-me", ""), go = el("div", "mp-end"), target = st.scTarget == null ? 11 : st.scTarget; c.appendChild(row); c.appendChild(el("div", "mp-lab", "Punteggio finale")); c.appendChild(row2); c.appendChild(info); c.appendChild(go);
     function paintSetup() {
       chips(row, [["2", "2 giocatori"], ["4s", "4 · ognuno per sé"], ["4c", "4 · a coppie"]], mode, function (it) { mode = it[0]; paintSetup(); });
-      say(info, mode === "2" ? "Tu contro un bot, 18 mani a testa." : mode === "4s" ? "Tutti contro tutti (1v1v1v1): vince chi fa più punti." : "Tu e il Bot 2 (di fronte a te) contro Bot 1 e Bot 3: le carte prese si sommano.");
-      go.innerHTML = ""; var a = el("button", "mp-go", "▶ GIOCA · " + A.fmt(st.bet) + " $SDG"); a.type = "button"; a.addEventListener("click", function () { scopaTable(mode); }); go.appendChild(a);
+      chips(row2, [[0, "Una mano"], [11, "A 11 punti"], [21, "A 21 punti"]], target, function (it) { target = it[0]; st.scTarget = target; paintSetup(); });
+      say(info, (target ? "Vince chi arriva per primo a " + target + " punti (carte, denari, settebello, primiera e scope di ogni mano). " : "Si gioca una sola mano. ") + (mode === "2" ? "Tu contro un bot." : mode === "4s" ? "Tutti contro tutti (1v1v1v1): vince chi fa più punti." : "Tu e il Bot 2 (di fronte a te) contro Bot 1 e Bot 3: le carte prese si sommano."));
+      go.innerHTML = ""; var a = el("button", "mp-go", "▶ GIOCA · " + A.fmt(st.bet) + " $SDG"); a.type = "button"; a.addEventListener("click", function () { scopaTable(mode, target); }); go.appendChild(a);
     }
     paintSetup();
   }
-  function scopaTable(mode) {
-    fit(true); epoch++; var E = epoch; body.innerHTML = "";
-    var N = mode === "2" ? 2 : 4, c = el("div", "mp-card"); body.appendChild(c);
-    c.appendChild(el("div", "mp-sec", "SCOPA · " + (mode === "2" ? "1 contro 1" : mode === "4s" ? "1v1v1v1" : "2 contro 2") + " · " + A.fmt(st.bet) + " $SDG"));
+  function scopaTable(mode, target, tot, rn) {
+    fit(true); epoch++; var E = epoch; body.innerHTML = ""; target = target || 0; rn = rn || 1;
+    var N = mode === "2" ? 2 : 4, c = el("div", "mp-card"); body.appendChild(c); tot = tot || (mode === "4s" ? [0, 0, 0, 0] : [0, 0]);
+    c.appendChild(el("div", "mp-sec", "SCOPA · " + (mode === "2" ? "1 contro 1" : mode === "4s" ? "1v1v1v1" : "2 contro 2") + (target ? " · a " + target + " · mano " + rn : "") + " · " + A.fmt(st.bet) + " $SDG"));
     var felt = el("div", "mx-felt bl sc-felt"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea"); c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
     var names = N === 2 ? ["Tu", "🤖 Bot"] : ["Tu", "🤖 Bot 1", mode === "4c" ? "🤖 Bot 2 (socio)" : "🤖 Bot 2", "🤖 Bot 3"];
     var P = names.map(function (n, i) { return { name: n, me: i === 0, ent: mode === "4c" ? i % 2 : i, hand: [], cap: [] }; });
     var NE = mode === "4c" ? 2 : N, ENT = mode === "4c" ? ["Noi", "Loro"] : P.map(function (p) { return p.name.replace("🤖 ", ""); });
-    var deck = [], table = [], turn = 0, lastCap = 0, scope = []; for (var q0 = 0; q0 < NE; q0++) scope.push(0);
+    var deck = [], table = [], turn = (rn - 1) % N, lastCap = 0, scope = []; for (var q0 = 0; q0 < NE; q0++) scope.push(0);
     var sel = null, picks = [];
     for (var s2 = 0; s2 < 4; s2++) for (var v = 1; v <= 10; v++) deck.push({ s: s2, v: v });
     for (var i = deck.length - 1; i > 0; i--) { var j = rnd(i + 1), tmp = deck[i]; deck[i] = deck[j]; deck[j] = tmp; }
@@ -585,9 +586,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     }
     function paint() {
       felt.innerHTML = "";
-      var top = el("div", "sc-top"); P.forEach(function (p, i) { if (p.me) return; var o = el("div", "sc-opp" + (i === turn ? " turn" : "")); var bk = el("div", "sc-bk"); for (var q = 0; q < p.hand.length; q++) bk.appendChild(el("span", "sc-c back")); o.appendChild(bk); o.appendChild(el("div", "mx-tag", p.name)); top.appendChild(o); }); felt.appendChild(top);
+      var top = el("div", "sc-top"); P.forEach(function (p, i) { if (p.me) return; var o = el("div", "sc-opp" + (i === turn ? " turn" : "")); var bk = el("div", "sc-bk"); for (var q = 0; q < p.hand.length; q++) bk.appendChild(el("span", "sc-c back")); o.appendChild(bk); o.appendChild(el("div", "mx-tag", p.name + (target ? " · " + (tot[p.ent] + scope[p.ent]) + " pt" : ""))); top.appendChild(o); }); felt.appendChild(top);
       var tb = el("div", "sc-table"); table.forEach(function (t, i) { var on = picks.indexOf(i) >= 0, e = scEl(t, on ? "pick" : (sel ? "can" : "")); if (sel && turn === 0) e.addEventListener("click", function () { var x = picks.indexOf(i); if (x >= 0) picks.splice(x, 1); else picks.push(i); A.haptic("light"); paint(); upd(); }); tb.appendChild(e); }); if (!table.length) tb.appendChild(el("div", "sc-empty", "tavolo vuoto")); felt.appendChild(tb);
-      felt.appendChild(el("div", "sc-info", "Mazzo " + deck.length + " · Scope: " + ENT.map(function (n, i) { return n + " " + scope[i]; }).join(" · ")));
+      felt.appendChild(el("div", "sc-info", "Mazzo " + deck.length + (target ? " · Punti: " + ENT.map(function (n, i) { return n + " " + (tot[i] + scope[i]); }).join(" – ") : " · Scope: " + ENT.map(function (n, i) { return n + " " + scope[i]; }).join(" · "))));
       var me = el("div", "sc-me"); P[0].hand.forEach(function (cd) { var e = scEl(cd, turn === 0 ? (cd === sel ? "sel" : "pl") : "dis"); if (turn === 0) e.addEventListener("click", function () { sel = (sel === cd ? null : cd); picks = []; A.haptic("light"); paint(); upd(); }); me.appendChild(e); }); felt.appendChild(me);
     }
     function upd() {                                                  // pulsanti e testo guida durante la tua mano
@@ -630,19 +631,38 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         return { n: n, car: cs.length, den: cs.filter(function (x) { return x.s === 0; }).length, sb: cs.some(function (x) { return x.s === 0 && x.v === 7; }), pr: pr, sc: scope[i], pt: 0 }; });
       function top(key) { var mx = Math.max.apply(null, E2.map(function (e) { return e[key]; })), w = E2.filter(function (e) { return e[key] === mx; }); return w.length === 1 && mx > 0 ? w[0] : null; }
       var wCar = top("car"), wDen = top("den"), wPr = top("pr"), wSc = null; E2.forEach(function (e) { e.pt = e.sc + (e === wCar ? 1 : 0) + (e === wDen ? 1 : 0) + (e === wPr ? 1 : 0) + (e.sb ? 1 : 0); });
+      E2.forEach(function (e, i) { tot[i] += e.pt; });
       felt.innerHTML = ""; var rs = el("div", "sc-res"), tbl = el("div", "sc-tbl"); tbl.style.gridTemplateColumns = "auto " + E2.map(function () { return "1fr"; }).join(" ");
       function cell(t, cls) { tbl.appendChild(el("div", "sc-cl" + (cls ? " " + cls : ""), t)); }
       cell(""); E2.forEach(function (e) { cell(e.n, "hd" + (e === E2[0] ? " me" : "")); });
       var maxSc = Math.max.apply(null, E2.map(function (e) { return e.sc; }));
       [["Carte", "car", wCar], ["Denari", "den", wDen], ["Settebello", "sb", null], ["Primiera", "pr", wPr], ["Scope", "sc", null]].forEach(function (r) {
-        cell(r[0], "lb"); E2.forEach(function (e) { var hi = r[1] === "sb" ? e.sb : (r[1] === "sc" ? (e.sc > 0 && e.sc === maxSc) : e === r[2]); cell(r[1] === "sb" ? (e.sb ? "✓" : "–") : String(e[r[1]]), hi ? "hi" : ""); });
+        cell(r[0], "lb"); E2.forEach(function (e) { var hi = r[1] === "sb" ? e.sb : (r[1] === "sc" ? (e.sc > 0 && e.sc === maxSc) : e === r[2]); cell(r[1] === "sb" ? (e.sb ? "✓" : "–") : String(e[r[1]]), hi ? "wn" : ""); });
       });
-      cell("PUNTI", "lb tot"); var mxp = Math.max.apply(null, E2.map(function (e) { return e.pt; })); E2.forEach(function (e) { cell(String(e.pt), "tot" + (e.pt === mxp ? " hi" : "")); });
-      var winners = E2.filter(function (e) { return e.pt === mxp; }), won = winners.length === 1 && winners[0] === E2[0], tie = winners.length > 1 && winners.indexOf(E2[0]) >= 0;
-      rs.appendChild(el("b", "", won ? "HAI VINTO!" : (tie ? "PAREGGIO" : (winners.length === 1 ? "VINCE " + winners[0].n.toUpperCase() : "HAI PERSO")))); rs.appendChild(tbl); felt.appendChild(rs);
-      say(msg, tie ? "Pari: nessuno vince" : (won ? "Hai vinto " + A.fmt(st.bet) + " $SDG (simulato)" : "Hai perso " + A.fmt(st.bet) + " $SDG (simulato)"), won ? "mp-win" : (tie ? "" : "mp-lose")); A.haptic(won ? "ok" : "light"); snd(won ? "win" : "lose");
-      area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { scopaTable(mode); });
-      var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a1); en.appendChild(a2);
+      cell("PUNTI", "lb tot"); var mxp = Math.max.apply(null, E2.map(function (e) { return e.pt; })); E2.forEach(function (e) { cell(String(e.pt), "tot" + (e.pt === mxp ? " wn" : "")); });
+      var winners = E2.filter(function (e) { return e.pt === mxp; }), wonH = winners.length === 1 && winners[0] === E2[0], tieH = winners.length > 1 && winners.indexOf(E2[0]) >= 0;
+      rs.appendChild(el("b", "", (target ? "MANO " + rn + ": " : "") + (wonH ? "HAI VINTO!" : (tieH ? "PAREGGIO" : (winners.length === 1 ? "VINCE " + winners[0].n.toUpperCase() : "HAI PERSO"))))); rs.appendChild(tbl); felt.appendChild(rs);
+      area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en);
+      function gameEnd(won, tie) {
+        say(msg, tie ? "Pari: nessuno vince" : (won ? "Hai vinto " + A.fmt(st.bet) + " $SDG (simulato)" : "Hai perso " + A.fmt(st.bet) + " $SDG (simulato)"), won ? "mp-win" : (tie ? "" : "mp-lose")); A.haptic(won ? "ok" : "light"); snd(won ? "win" : "lose");
+        area.innerHTML = ""; var en2 = el("div", "mp-end"); area.appendChild(en2); var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { scopaTable(mode, target); });
+        var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en2.appendChild(a1); en2.appendChild(a2);
+      }
+      if (!target) { gameEnd(wonH, tieH); return; }
+      var nx = el("button", "mp-go", "AVANTI ▶"); nx.type = "button"; en.appendChild(nx); say(msg, "Tocca AVANTI per vedere la classifica");
+      nx.addEventListener("click", function () {
+        felt.innerHTML = ""; area.innerHTML = ""; var mx = Math.max.apply(null, tot), lead = tot.filter(function (v) { return v === mx; }).length === 1, over = mx >= target && lead, st2 = el("div", "sc-stand");
+        st2.appendChild(el("b", "", over ? "PARTITA FINITA" : "CLASSIFICA · A " + target)); var ord = E2.map(function (e, i) { return { n: e.n, t: tot[i], d: e.pt, me: i === 0 }; }).sort(function (x, y) { return y.t - x.t; });
+        ord.forEach(function (o, i) { var r = el("div", "sc-sr" + (o.me ? " me" : "") + (i === 0 ? " top" : "")); r.appendChild(el("u", "", String(i + 1))); r.appendChild(el("span", "n", o.n)); r.appendChild(el("em", "", "+" + o.d)); r.appendChild(el("i", "t", String(o.t))); var bar = el("div", "bar"), f = el("s"); f.style.width = Math.min(100, o.t / target * 100) + "%"; bar.appendChild(f); r.appendChild(bar); st2.appendChild(r); });
+        st2.appendChild(el("div", "sc-tg", over ? "" : "Primo a " + target + " punti" + (mx >= target ? " (pari in testa: si gioca un'altra mano)" : ""))); felt.appendChild(st2);
+        if (over) { var w0 = tot.indexOf(mx); gameEnd(w0 === 0, false); say(msg, w0 === 0 ? "HAI VINTO LA PARTITA! +" + A.fmt(st.bet) + " $SDG (simulato)" : "Partita persa: " + ENT[w0] + " arriva a " + mx + " (−" + A.fmt(st.bet) + " $SDG simulato)", w0 === 0 ? "mp-win" : "mp-lose"); return; }
+        var cb = el("button", "mp-go", "CONTINUA ▶"); cb.type = "button"; var cw = el("div", "mp-end"); cw.appendChild(cb); area.appendChild(cw); say(msg, "Premi CONTINUA: la prossima mano parte quando sono tutti pronti");
+        cb.addEventListener("click", function () {
+          area.innerHTML = ""; var w = el("div", "mp-wait"), k = 1; area.appendChild(w); function paintW() { w.textContent = "⏳ Continua · " + k + "/" + N + " pronti"; } paintW();
+          (function tick() { if (!alive(E)) return; if (k >= N) return scopaTable(mode, target, tot, rn + 1); wait(500 + rnd(500)).then(function () { if (!alive(E)) return; k++; paintW(); tick(); }); })();
+        });
+      });
+
     }
     paint(); next();
   }

@@ -1556,3 +1556,35 @@ body.sbx .pg-head{padding-top:22px}
 .rc2.qual .rc2-gas,.rc2.qual .rc2-lch{display:none!important}
 .rc2-intro.qual small{color:#ffd23b;letter-spacing:.3em}.rc2-intro.qual b{font-size:50px;color:#ffd23b;text-shadow:0 4px 0 #6b3a00,0 0 24px #ff9f1c}
 .rc2-intro.qual{background:linear-gradient(180deg,rgba(8,4,20,.6),rgba(8,4,20,.1) 40%,rgba(8,4,20,.1) 60%,rgba(8,4,20,.65))}
+/* scopa: classifica a punti e celle uguali (il giallo e' solo il numero) */
+.sc-cl.wn{color:#ffd23b;text-shadow:0 0 8px rgba(255,210,59,.55);font-weight:800}
+.sc-stand{width:100%;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.sc-stand>b{text-align:center;font:400 22px Bungee,Rajdhani,sans-serif;color:#ffe27a}
+.sc-sr{display:grid;grid-template-columns:22px 1fr 40px 38px;grid-template-rows:auto 6px;column-gap:8px;align-items:center;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,.07);color:#fff;font:700 16px Rajdhani,sans-serif}
+.sc-sr u{text-decoration:none;font:400 13px Bungee,Rajdhani,sans-serif;color:#9fb3e0}.sc-sr em{font-style:normal;color:#8be9a8;text-align:right}.sc-sr i.t{font:400 20px Bungee,Rajdhani,sans-serif;font-style:normal;text-align:right}
+.sc-sr .bar{grid-column:1/5;height:6px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}.sc-sr .bar s{display:block;height:100%;background:linear-gradient(90deg,#35e6ff,#8f6bff)}
+.sc-sr.top i.t{color:#ffd23b}.sc-sr.top .bar s{background:linear-gradient(90deg,#ffd23b,#ff9f1c)}.sc-sr.me{box-shadow:0 0 0 1.5px #ff3db0 inset}
+.sc-tg{text-align:center;font:700 14px Rajdhani,sans-serif;color:#9fb3e0}
+/* scroll e riempimento (v75) */
+.rc-root.lobby>.lb-body{flex:1 1 0;min-height:0;flex-shrink:1}
+.rc-root.lobby>.lb-tabs,.rc-root.lobby>.lb-go,.rc-root.lobby>.mp-top{flex:0 0 auto}
+.dl-grid{overflow-y:auto;grid-template-rows:repeat(3,minmax(118px,1fr))}
+.dl-set{overflow-y:auto;justify-content:flex-start!important;gap:6px}
+.dl-set .mp-lab{margin-top:8px}
+.dl-go{flex:0 0 auto;margin-top:8px}
+.dl-o i{width:40px;height:40px}.dl-seg button{padding:13px 2px}
+#mpBody.fit .mp-card.tbl{flex:1 1 0!important;min-height:0;margin:0 0 12px!important;justify-content:space-between}
+#mpBody.fit .mp-card.tbl:last-child{margin-bottom:4px!important}
+#mpBody.fit .mp-card.tbl .mp-ttl{font-size:21px}
+#mpBody.fit .mp-card.tbl .mp-seat{padding:12px 2px}
+
+/* lancio v76: barra verticale accanto ad ACCELERA, sterzo bloccato subito dopo il via */
+.rc2-lch{left:auto!important;top:auto!important;transform:none!important;right:calc(176px + var(--sr,0px))!important;bottom:12px!important;width:24px!important;height:104px!important;border-radius:12px!important}
+.rc2-lch u{left:0!important;right:0!important;width:auto!important;top:auto!important;bottom:72%!important;height:26%!important;border-left:0!important;border-right:0!important;border-top:2px solid #2fd36f;border-bottom:2px solid #2fd36f}
+.rc2-lch i{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:auto!important;height:0}
+.rc2-lch em{display:none!important}
+.rc2.gol .rc2-pad{pointer-events:none;opacity:.3}
+
+/* pioggia v76: velo scuro + righe che scendono (solo CSS, nessun lampeggio) */
+.rc2-rain{position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(rgba(10,14,40,.22),rgba(10,14,40,.22)),repeating-linear-gradient(105deg,rgba(190,215,255,.0) 0 14px,rgba(190,215,255,.22) 14px 15px,rgba(190,215,255,0) 15px 38px);background-size:auto,120px 120px;animation:rcRain .45s linear infinite}
+@keyframes rcRain{to{background-position:0 0,-40px 120px}}
