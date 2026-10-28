@@ -1722,3 +1722,5 @@ body.sbx .pg-head{padding-top:22px}
 .lb-pal{background:#1b0f3a;border:2px solid #fff;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center;max-width:86%}
 .lb-pal b{font:700 15px Rajdhani,sans-serif;letter-spacing:.12em;color:#35e6ff}.lb-pal .lb-cols{justify-content:center;gap:12px}.lb-pal .lb-col{width:44px;height:44px;position:relative}
 .lb-col.busy{opacity:.35}.lb-col u{text-decoration:none;color:#fff;font:700 18px Rajdhani,sans-serif}.lb-pal-n{font:600 12px Rajdhani,sans-serif;opacity:.7}
+#mpBody .tl-seats{margin-bottom:0!important}
+#mpBody .mp-card.tl-rules,#mpBody .tl-rules{margin-top:10px!important}
