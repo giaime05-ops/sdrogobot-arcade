@@ -214,7 +214,7 @@
   function crash(cars) {                     // contatti morbidi: le auto si toccano e si spingono, senza frenarsi
     function cc(c) { var co = Math.cos(c.a), si = Math.sin(c.a); return [[c.x + co * 11, c.y + si * 11], [c.x - co * 11, c.y - si * 11]]; }
     for (var i = 0; i < cars.length; i++) for (var j = i + 1; j < cars.length; j++) {
-      var a = cars[i], b = cars[j]; if (a.air > 0 || b.air > 0 || Math.abs(a.x - b.x) > 56 || Math.abs(a.y - b.y) > 56) continue;
+      var a = cars[i], b = cars[j]; if (a.remote || b.remote || a.air > 0 || b.air > 0 || Math.abs(a.x - b.x) > 56 || Math.abs(a.y - b.y) > 56) continue;
       var ca = cc(a), cb = cc(b);
       for (var p = 0; p < 2; p++) for (var q = 0; q < 2; q++) {
         var dx = cb[q][0] - ca[p][0], dy = cb[q][1] - ca[p][1], d = Math.hypot(dx, dy), R2 = 22;
@@ -386,6 +386,7 @@
       var mk = el("button", "rc-hero h4 slim"); mk.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[3]); mk.appendChild(im); mk.appendChild(el("div", "sh")); var tx = el("div", "tx"); tx.appendChild(el("i", "", "＋")); var bx = el("div", "bx"); bx.appendChild(el("b", "", "CREA LOBBY")); bx.appendChild(el("span", "", "Scegli pista, giri, regole, bot e invita i tuoi amici")); tx.appendChild(bx); mk.appendChild(tx);
       mk.addEventListener("click", function () { LB = newLobby(); lobby(); }); root.appendChild(mk);
       root.appendChild(el("div", "rc-sec", "LOBBY APERTE"));
+      if (real()) { var invBox = el("div", "gl-inv"); root.appendChild(invBox); A.api("/api/room/mine", "GET").then(function (j) { if (!j || !j.success || !root.isConnected) return; (j.rooms || []).filter(function (r) { return r.game === "race"; }).forEach(function (r) { var t3 = TRACKS.filter(function (t) { return t.id === r.cfg.track; })[0] || TRACKS[1], row = el("div", "lb-open"), im3 = el("img"); im3.src = thumb(t3); row.appendChild(im3); var d = el("div", "d"); d.appendChild(el("b", "", "Lobby di " + ((r.players[0] || {}).name || "un amico"))); d.appendChild(el("span", "", t3.name + " · " + r.cfg.laps + " giri" + (r.cfg.prize ? " · premio " + A.fmt(r.cfg.prize) : ""))); row.appendChild(d); row.appendChild(el("em", "", r.players.length + "/8")); var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.api("/api/room/join", "POST", { id: r.id }).then(function (k) { if (k && k.success) guestLobby(k.room); else A.toast((k && k.error) || "Non riesco a entrare"); }); }); row.appendChild(g); invBox.appendChild(row); }); }).catch(function () {}); }
       var op = A.isSandbox() ? [["Marco", 2, 3, 4], ["Spoleto", 4, 5, 6], ["Gabbo", 0, 3, 2], ["albe", 5, 7, 3]] : [];                       // lobby di esempio: solo nell'account di prova
       if (!op.length) root.appendChild(el("div", "rc-note", "Nessuna lobby aperta al momento: creane una tu e invita gli amici."));
       op.forEach(function (o) { var r = el("div", "lb-open"), im2 = el("img"); im2.src = thumb(TRACKS[o[1]]); r.appendChild(im2); var d = el("div", "d"); d.appendChild(el("b", "", "Lobby di " + o[0])); d.appendChild(el("span", "", TRACKS[o[1]].name + " · " + o[2] + " giri")); r.appendChild(d); r.appendChild(el("em", "", o[3] + "/8")); var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.toast("Prototipo: le lobby aperte arriveranno col server vero"); }); r.appendChild(g); root.appendChild(r); });
@@ -430,14 +431,74 @@
       if (go.disabled) go.textContent = "Servono almeno 2 piloti: aggiungi un bot o invita un amico";
       go.addEventListener("click", function () {
         var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: lbCols({ col: L.col, slots: act })[i] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, rain: L.rain, qual: L.qual, prize: L.prize, back: lobby };
-        if (L.qual) o.qualPhase = true; race(TRACKS[L.ti], "race", o);
+        if (L.qual) o.qualPhase = true;
+        var hum = L.slots.filter(function (x) { return x.t === "friend" && x.uid; });
+        if (real() && L.rm && hum.length) { A.api("/api/room/start", "POST", { id: L.rm }).then(function (j) { if (j && j.success) { clearInterval(L._pt); L._pt = 0; runRoom(j.room, function () { LB = L; lobby(); }); } else A.toast((j && j.error) || "Non riesco ad avviare"); }).catch(function () { A.toast("Server non raggiungibile"); }); return; }
+        race(TRACKS[L.ti], "race", o);
       });
-      root.appendChild(go); body.scrollTop = sct;
+      root.appendChild(go); body.scrollTop = sct; if (real() && L.rm) { rmPush(); rmWatch(); }
+    }
+    // ---------- stanze online (account vero): invito dal server, lobby condivisa, auto degli altri in tempo reale ----------
+    function real() { return !isSbx(); }
+    function rmCfg(L) { return { track: TRACKS[L.ti].id, laps: L.laps, prize: L.prize | 0, max: 8, x: { rain: L.rain | 0, obst: L.obst ? 1 : 0, pads: L.pads ? 1 : 0, slip: L.slip ? 1 : 0, hcol: L.col | 0 } }; }
+    function rmEnsure(cb) {
+      var L = LB; if (L.rm) return cb(true);
+      A.api("/api/room/create", "POST", { game: "race", cfg: rmCfg(L) }).then(function (j) { if (j && j.success) { L.rm = j.room.id; cb(true); } else { A.toast((j && j.error) || "Impossibile creare la lobby online"); cb(false); } }).catch(function () { A.toast("Server non raggiungibile"); cb(false); });
+    }
+    function rmPush() { var L = LB; if (L && L.rm && real()) A.api("/api/room/cfg", "POST", { id: L.rm, cfg: rmCfg(L) }).catch(function () {}); }
+    function rmWatch() {                                                                                            // l'host controlla chi è entrato o uscito
+      var L = LB; if (!L || !L.rm || L._pt) return;
+      L._pt = setInterval(function () {
+        if (LB !== L || !root.isConnected || !root.querySelector(".lb-body")) { clearInterval(L._pt); L._pt = 0; return; }
+        A.api("/api/room/sync", "POST", { id: L.rm, since: 1e9 }).then(function (j) {
+          if (!j || !j.success || !j.room) return; var ch = false;
+          L.slots.slice().forEach(function (sl) {
+            if (!sl.pid) return; var p = j.room.players.filter(function (q) { return q.pid === sl.pid; })[0];
+            if (p && sl.t === "wait") { sl.t = "friend"; sl.uid = p.uid; ch = true; A.haptic("ok"); }
+            else if (!p && sl.t === "friend") { L.slots.splice(L.slots.indexOf(sl), 1); ch = true; }
+          });
+          if (ch && LB === L) lobby();
+        }).catch(function () {});
+      }, 1500);
+    }
+    function runRoom(room, back) {                                                                                 // parte la gara online: stessa pista, stesso ordine in griglia per tutti
+      var ps = room.players, mei = Math.max(0, ps.findIndex(function (p) { return p.uid === room.me; })), x = room.cfg.x || {}, cols = lbCols({ col: x.hcol | 0, slots: ps });
+      var order = [mei].concat(ps.map(function (p, i) { return i; }).filter(function (i) { return i !== mei; }));
+      var roster = order.map(function (i) { return { name: ps[i].name, col: cols[i], uid: ps[i].uid }; }), grid = [], map = {};
+      order.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
+      var tr = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1]; build(tr);
+      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, room: { id: room.id, uid: room.me, map: map }, back: back || lobbyHub });
+    }
+    function guestLobby(room) {                                                                                    // lobby di chi è stato invitato: aspetta che l'host avvii
+      root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1];
+      function leave() { alive = false; clearInterval(pt); A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); }
+      hook(function () { leave(); return true; }); top("LOBBY", leave, "‹ Esci");
+      var info = el("div", "mp-card gl-info"); root.appendChild(info); var list = el("div", "lb-slots"); root.appendChild(list); root.appendChild(el("div", "rc-note", "In attesa che l'host avvii la gara…"));
+      function paint(rm) {
+        var t2 = TRACKS.filter(function (t) { return t.id === rm.cfg.track; })[0] || trk; info.innerHTML = ""; info.appendChild(el("b", "", "🏁 " + t2.name)); info.appendChild(el("span", "", rm.cfg.laps + " giri" + (rm.cfg.prize ? " · premio " + A.fmt(rm.cfg.prize) + " $SDG" : "")));
+        list.innerHTML = ""; var cols = lbCols({ col: (rm.cfg.x || {}).hcol | 0, slots: rm.players });
+        rm.players.forEach(function (p, i) { var r = el("div", "lb-slot"); r.appendChild(el("u", "", String(i + 1))); var d = el("i", "dot"); d.style.background = cols[i]; r.appendChild(d); var nn = el("span", "n"); nn.appendChild(A.nameEl(p.name, p.style || {})); r.appendChild(nn); r.appendChild(el("em", p.uid === rm.host ? "me" : "friend", p.uid === rm.host ? "HOST" : (p.uid === rm.me ? "TU" : "PILOTA"))); list.appendChild(r); });
+      }
+      paint(room); var busy = false;
+      var pt = setInterval(function () {
+        if (!alive || !root.isConnected) { clearInterval(pt); return; } if (busy) return; busy = true;
+        A.api("/api/room/sync", "POST", { id: room.id, since: since }).then(function (j) {
+          busy = false; if (!alive || !j) return;
+          if (j.gone) { alive = false; clearInterval(pt); A.toast("La lobby è stata chiusa"); lobbyHub(); return; }
+          if (!j.success) return; since = j.n; paint(j.room);
+          if ((j.events || []).some(function (e) { return e.k === "start"; })) { alive = false; clearInterval(pt); runRoom(j.room, lobbyHub); }
+        }).catch(function () { busy = false; });
+      }, 800);
     }
     function inviteSheet() {
       var L = LB; if (L.slots.length >= 8) return;
       window.ArcadeMulti.friendSheet(L.slots.map(function (x) { return x.pid; }).filter(Boolean), function (f) {
-        if (L.slots.length >= 8) return; var sl = { t: "wait", name: f.name, style: f.style, pid: f.pid, human: true }; L.slots.push(sl); lobby();
+        if (L.slots.length >= 8) return;
+        if (real()) {
+          rmEnsure(function (ok) { if (!ok) return; A.api("/api/room/invite", "POST", { id: L.rm, pid: f.pid }).then(function (j) { if (j && j.success) { L.slots.push({ t: "wait", name: f.name, style: f.style, pid: f.pid, human: true }); lobby(); rmWatch(); if (j.offline) A.toast(f.name + " è offline: l'ho taggato nel gruppo"); } else A.toast((j && j.error) || "Invito non riuscito"); }).catch(function () { A.toast("Server non raggiungibile"); }); });
+          return;
+        }
+        var sl = { t: "wait", name: f.name, style: f.style, pid: f.pid, human: true }; L.slots.push(sl); lobby();
         setTimeout(function () { if (LB === L && L.slots.indexOf(sl) >= 0) { sl.t = "friend"; lobby(); } }, 1500);
       });
     }
@@ -527,7 +588,7 @@
       layout(); window.addEventListener("resize", layout); try { if (TGW && TGW.onEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach(function (ev) { TGW.onEvent(ev, layout); }); } catch (e) {}
       var rd = opts.diff != null ? opts.diff : RD, ch = (!solo && rd === 3) ? champ(tr, nCar) : null, sk = ch ? ch.m : skillsN(rd, nCar), vmv = ch ? ch.vm : null, offs = [0, -26, 26, 0, -14, 14, -34, 34].slice(0, Math.max(nCar, 4));
       var cars = []; for (var ck = 0; ck < (solo || qual ? 1 : nCar); ck++) { var cr = newCar(tr, solo ? 1 : (opts.grid ? Math.max(0, opts.grid.indexOf(ck)) : ck)); if (opts.roster && opts.roster[ck]) { cr.name = opts.roster[ck].name; cr.col = opts.roster[ck].col; } else if (ck) { cr.name = NAMES[ck % NAMES.length]; cr.col = COLS[ck % COLS.length]; } cars.push(cr); }
-      var me = cars[0];
+      var me = cars[0], RMT = opts.room || null; if (RMT) cars.forEach(function (c, k) { if (k && RMT.map[k]) c.remote = RMT.map[k]; });
       cars.forEach(function (c, k) { if (k) { c.bm = DIFF[rd].bm; if (vmv) c.vm = vmv[k]; } });
       if (solo) { me.slot = 0; me.col = COLS[0]; }
       cars.forEach(function (c) { c.hist = new Float32Array(tr.N * laps + 160); c.hist.fill(-1); c.hp = Math.floor(c.prog) - 1; });
@@ -562,22 +623,25 @@
       if (window.__RACE_DEBUG) window.__RACE_DEBUG({ me: me, tr: tr, cars: cars, inp: inp });
       function pastLine(c) { var a = tr.ta[0]; return (c.x - tr.P[0][0]) * Math.cos(a) + (c.y - tr.P[0][1]) * Math.sin(a) >= 0 || c.prog >= tr.N * laps + 4; }
       function rank() { return cars.slice().sort(function (a, b) { return (b.fin ? 1e6 - b.finT : b.prog) - (a.fin ? 1e6 - a.finT : a.prog); }); }
-      function stop(keepFs) { done = true; AU.end(); cancelAnimationFrame(raf); window.removeEventListener("keydown", kdown); window.removeEventListener("keyup", kup); window.removeEventListener("resize", layout); try { if (TGW && TGW.offEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach(function (ev) { TGW.offEvent(ev, layout); }); } catch (e) {} try { if (TGW) { if (TGW.disableClosingConfirmation) TGW.disableClosingConfirmation(); if (!keepFs && TGW.exitFullscreen && TGW.isFullscreen) TGW.exitFullscreen(); } if (!keepFs && screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+      function stop(keepFs) { done = true; if (RT) clearInterval(RT); AU.end(); cancelAnimationFrame(raf); window.removeEventListener("keydown", kdown); window.removeEventListener("keyup", kup); window.removeEventListener("resize", layout); try { if (TGW && TGW.offEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach(function (ev) { TGW.offEvent(ev, layout); }); } catch (e) {} try { if (TGW) { if (TGW.disableClosingConfirmation) TGW.disableClosingConfirmation(); if (!keepFs && TGW.exitFullscreen && TGW.isFullscreen) TGW.exitFullscreen(); } if (!keepFs && screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
         if (!keepFs) window.ArcadeBackHide = false; window.ArcadeBackHook = null; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} full.remove(); }
       function goBack() { if (opts.back) opts.back(); else tracks(mode); }
       var paused = false, pbox = null;
       function pause(on) {
-        if (state === "end") return; paused = on; if (pbox) { pbox.remove(); pbox = null; } if (!on) { last = performance.now(); return; }
+        if (state === "end") return; paused = on && !opts.room; if (pbox) { pbox.remove(); pbox = null; } if (!on) { last = performance.now(); return; }
         pbox = el("div", "rc2-end"); pbox.appendChild(el("b", "", "IN PAUSA"));
         var sr = el("div", "rc2-snd"); [["sfx", "🔊 Suoni"], ["music", "🎵 Musica"]].forEach(function (o) { var row = el("div", "rc2-vol"), nm = el("span", "", o[1]); row.appendChild(nm); row.appendChild(slider(SN[o[0]], function (v) { SN[o[0]] = v; lsSet("arc_race4_snd", SN); var q = {}; q[o[0]] = v; AU.set(q); })); sr.appendChild(row); }); pbox.appendChild(sr);
-        var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIPRENDI"), rs = el("button", "mp-go mp-alt2", "RICOMINCIA"), b = el("button", "mp-go mp-alt", "ESCI"); a.type = b.type = rs.type = "button";
-        a.addEventListener("click", function () { pause(false); }); rs.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); rw.appendChild(a); rw.appendChild(rs); rw.appendChild(b); pbox.appendChild(rw); full.appendChild(pbox);
+        var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIPRENDI"), rs = el("button", "mp-go mp-alt2", opts.room ? "" : "RICOMINCIA"), b = el("button", "mp-go mp-alt", "ESCI"); a.type = b.type = rs.type = "button";
+        a.addEventListener("click", function () { pause(false); }); rs.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); rw.appendChild(a); if (!opts.room) rw.appendChild(rs); rw.appendChild(b); pbox.appendChild(rw); full.appendChild(pbox);
       }
       xb.addEventListener("click", function () { pause(!paused); });
       window.ArcadeBackHide = false; window.ArcadeBackHook = function () { if (state === "end") return false; pause(!paused); return true; }; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {}
       function say2(x, sec) { tip.textContent = x; msgT = sec || 1.6; }
+      var RT = 0, rSince = 0, rBusy = false, finGo = false, finT0 = 0, wbox = null, resLn = null;
       function finish() {
-        state = "end"; AU.sfx("fin"); var total = me.finT, rec = solo && (!best || total < best), ar0 = absRec(tr0), recAll = solo && laps === 3 && (!ar0 || total < ar0.t - 0.005), recPay = recAll && isSbx() ? payRec(tr0, total) : 0, box = el("div", "rc2-end res");
+        if (RMT && !finGo) { state = "end"; if (!finT0) { finT0 = performance.now(); AU.sfx("fin"); wbox = el("div", "rc2-end"); wbox.appendChild(el("b", "", "🏁 ARRIVATO!")); wbox.appendChild(el("div", "rc-lap", "Aspetto gli altri piloti…")); full.appendChild(wbox); }
+          if (!done && cars.some(function (c) { return c.remote && !c.fin; }) && performance.now() - finT0 < 30000) { setTimeout(finish, 300); return; } finGo = true; if (wbox) wbox.remove(); }
+        state = "end"; if (!RMT) AU.sfx("fin"); var total = me.finT, rec = solo && (!best || total < best), ar0 = absRec(tr0), recAll = solo && laps === 3 && (!ar0 || total < ar0.t - 0.005), recPay = recAll && isSbx() ? payRec(tr0, total) : 0, box = el("div", "rc2-end res");
         if (qual) {
           var mine = me.finT - qT0; qres.push({ id: 0, name: "Tu", t: mine }); qres.sort(function (a, b) { return a.t - b.t; }); box.appendChild(el("b", "", "QUALIFICA · GRIGLIA DI PARTENZA")); var tb0 = el("div", "rc2-tbl");
           qres.forEach(function (q, i) { var r = el("div", "rr" + (q.id === 0 ? " me" : "")); r.appendChild(el("span", "pn", String(i + 1))); r.appendChild(el("span", "nm", q.name)); r.appendChild(el("span", "tt", fmt(q.t))); tb0.appendChild(r); }); box.appendChild(tb0);
@@ -588,9 +652,9 @@
         if (rec) { if (isSbx() && laps === 3) lsSet("arc_race4_" + tr.id, { t: total }); lsSet(PF() + "g_" + tr.id, { g: grec }); } A.haptic("ok");
         if (!solo) {                                                                                               // gli altri finiscono la gara (veloce, senza disegnare) così hai la classifica completa coi giri
           var t2 = t, g = 0;
-          while (g++ < 60 * 300 && cars.some(function (c) { return !c.fin; })) {
+          while (g++ < 60 * 300 && cars.some(function (c) { return !c.fin && !c.remote; })) {
             aero(tr, cars, opts); cars.forEach(function (c, k) {
-              if (c.fin || k === 0) return; if (t2 >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
+              if (c.fin || k === 0 || c.remote) return; if (t2 >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
               if (c.prog >= tr.N * c.lap) { (c.lapTs = c.lapTs || []).push(t2 - (c.lapS || 0)); c.lapS = t2; c.lap++; }
               if (c.prog >= tr.N * laps && pastLine(c)) { c.fin = true; c.finT = t2; }
             });
@@ -608,7 +672,14 @@
             }).catch(function () {});
           }
         }
-        else { var p0 = rank().indexOf(me); box.appendChild(el("b", "", p0 === 0 ? "🏆 HAI VINTO!" : ORD[p0] + " POSTO")); if (opts.prize) { var pz = [opts.prize, Math.round(opts.prize * 0.75), Math.round(opts.prize * 0.5)][p0] || 0; box.appendChild(el("div", "rc-lap", pz ? "💰 Premio dal Banco: +" + A.fmt(pz) + " $SDG (prototipo: non accreditato)" : "Premi dal Banco: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)))); } }
+        else {
+          var p0 = rank().indexOf(me); box.appendChild(el("b", "", p0 === 0 ? "🏆 HAI VINTO!" : ORD[p0] + " POSTO"));
+          if (RMT) {                                                                                                  // gara online: il server conferma la classifica (maggioranza) e paga il premio
+            resLn = el("div", "rc-lap", opts.prize ? "💰 Premio: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)) + " $SDG" : ""); box.appendChild(resLn);
+            var ord2 = rank().map(function (c) { return c === me ? RMT.uid : c.remote; });
+            A.api("/api/room/result", "POST", { id: RMT.id, order: ord2 }).then(function (j) { if (j && j.success && j.settled && resLn && !resLn._d) { resLn._d = 1; var py = ((j.result || {}).pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} } }).catch(function () {});
+          } else if (opts.prize) { var pz = [opts.prize, Math.round(opts.prize * 0.75), Math.round(opts.prize * 0.5)][p0] || 0; box.appendChild(el("div", "rc-lap", pz ? "💰 Premio: +" + A.fmt(pz) + " $SDG (simulato)" : "Premi: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)))); }
+        }
         var tb = el("div", "rc2-tbl"), showLaps = laps <= 4;
         rows.forEach(function (c, i) {
           var r = el("div", "rr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me && !opts.roster ? "Tu" : c.name), tt = el("span", "tt", fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt);
@@ -888,7 +959,11 @@
           if (!solo && !qual) aero(tr, cars, opts);
           cars.forEach(function (c, k) {
             if (c.fin) { c.vx *= 0.99; c.vy *= 0.99; return; }
-            if (k === 0) { if (window.__RACE_AUTO) { var pa = pilot(tr, c, 0, 1.2); inp.l = !!pa.l; inp.r = !!pa.r; } step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (t >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
+            if (k === 0) { if (window.__RACE_AUTO) { var pa = pilot(tr, c, 0, 1.2); inp.l = !!pa.l; inp.r = !!pa.r; } step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (!c.remote && t >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
+            if (c.remote) {                                                                                       // auto di un altro giocatore: si muove verso l'ultima posizione ricevuta (+ stima col suo vettore velocità)
+              if (c.tx !== undefined) { c.tx += c.vx * DT; c.ty += c.vy * DT; c.x += (c.tx - c.x) * 0.3; c.y += (c.ty - c.y) * 0.3; var da = c.ta2 - c.a; da = Math.atan2(Math.sin(da), Math.cos(da)); c.a += da * 0.3; c.prog = c.rprog; c.idx = ((Math.floor(c.rprog) % tr.N) + tr.N) % tr.N; }
+              return;
+            }
             if (c.blink > 0) c.blink -= DT;
             if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { AU.sfx("lap"); lapT.push(t - lapStart); if (!opts.qual && lapT.length > 1) { var lt = lapT[lapT.length - 1]; var bb = lsGet(PF() + "b_" + tr.id); if (!bb || !bb.t || lt < bb.t) lsSet(PF() + "b_" + tr.id, { t: lt }); } lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
             if (c.prog >= tr.N * laps && pastLine(c)) { c.fin = true; c.finT = t; }
@@ -908,6 +983,22 @@
           if (me.fin) { finish(); break; }
         }
         draw(); hudDraw(); raf = requestAnimationFrame(frame);
+      }
+      if (RMT) {                                                                                                  // sincronizzazione online: ~6 volte al secondo mando la mia posizione e ricevo quelle degli altri
+        var rSend = function () {
+          if (done || rBusy) return; rBusy = true;
+          var ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0 };
+          A.api("/api/room/sync", "POST", { id: RMT.id, since: rSince, ev: ev }).then(function (j) {
+            rBusy = false; if (!j || !j.success) return; rSince = j.n;
+            (j.events || []).forEach(function (e) {
+              if (e.k !== "p" || e.u === RMT.uid) return; var c = null; cars.forEach(function (q) { if (q.remote === e.u) c = q; }); if (!c) return;
+              if (c.tx === undefined) { c.x = e.x; c.y = e.y; c.a = e.a / 100; } c.tx = e.x; c.ty = e.y; c.ta2 = e.a / 100; c.vx = e.vx; c.vy = e.vy; c.rprog = e.pr / 10; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d;
+              if (e.f && !c.fin) { c.fin = true; c.finT = e.f / 1000; }
+            });
+            if (j.room && j.room.result && resLn && !resLn._d) { resLn._d = 1; var py = (j.room.result.pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} }
+          }).catch(function () { rBusy = false; });
+        };
+        RT = setInterval(rSend, 160);
       }
       raf = requestAnimationFrame(function (n) { last = n; frame(n); });
     }
