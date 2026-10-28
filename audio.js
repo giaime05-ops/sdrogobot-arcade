@@ -21,6 +21,7 @@
     try { ctx = new AC(); } catch (e) { return false; }
     comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5; comp.connect(ctx.destination);
     master = ctx.createGain(); master.gain.value = 0.9; master.connect(comp);
+    if (window.__AUDIO_DBG) { var an = ctx.createAnalyser(); an.fftSize = 2048; master.connect(an); window.__audioLevel = function () { var d = new Float32Array(an.fftSize); an.getFloatTimeDomainData(d); var s = 0, p = 0; for (var i = 0; i < d.length; i++) { s += d[i] * d[i]; p = Math.max(p, Math.abs(d[i])); } return [Math.sqrt(s / d.length), p]; }; }
     gHub = ctx.createGain(); gGame = ctx.createGain(); gSfx = ctx.createGain();
     [gHub, gGame, gSfx].forEach(function (g) { g.connect(master); });
     gHub.gain.value = 0; gGame.gain.value = 0; gSfx.gain.value = cfg.sfx;
@@ -199,6 +200,19 @@
   // ---------- effetti ----------
   var last = {};
   function once(name, ms) { var n = performance.now(); if (last[name] && n - last[name] < ms) return false; last[name] = n; return true; }
+  function mkShot() {                                                                                     // campione di sparo: crack + corpo + thump + coda, saturato
+    var sr = ctx.sampleRate, n = Math.floor(sr * 1.3), b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0), lp1 = 0, lp2 = 0, ph = 0, i;
+    for (i = 0; i < n; i++) {
+      var t = i / sr, w = Math.random() * 2 - 1, w2 = Math.random() * 2 - 1;
+      lp1 += (w2 - lp1) * 0.18; lp2 += (w2 - lp2) * 0.04;                                                  // due rumori filtrati: medio e grave
+      var crack = w * Math.exp(-t / 0.0035) * 1.1, body = lp1 * 3.2 * Math.exp(-t / 0.05) * 0.9, boom = lp2 * 5 * Math.exp(-t / 0.16) * 0.5, tail = lp2 * 3 * Math.exp(-t / 0.42) * 0.18;
+      var f = 38 + 110 * Math.exp(-t / 0.045); ph += 2 * Math.PI * f / sr; var thump = Math.sin(ph) * Math.exp(-t / 0.09) * 0.7;
+      var x = crack + body + boom + tail + thump;
+      var e1 = i > sr * 0.085 ? d[i - Math.floor(sr * 0.085)] * 0.28 : 0, e2 = i > sr * 0.19 ? d[i - Math.floor(sr * 0.19)] * 0.14 : 0;     // rimbalzo sulle pareti
+      d[i] = Math.tanh((x + e1 + e2) * 1.6) * 0.9;
+    }
+    return b;
+  }
   var SFX = {
     click: function (t) { tone(gSfx, "triangle", 1100, t, 0.05, 0.12, { slide: 700 }); },
     chip: function (t) { noise(gSfx, t, 0.05, 0.14, "bandpass", 3500, 4); tone(gSfx, "sine", 2300, t, 0.09, 0.07, { slide: 1700 }); tone(gSfx, "sine", 3100, t + 0.045, 0.07, 0.05); },
@@ -225,14 +239,17 @@
     bigwin: function (t) { [67, 72, 76, 79, 84, 88, 91].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.075, 0.5, 0.14, { a: 0.008 }); tone(gSfx, "sine", mtof(m + 12), t + i * 0.075, 0.4, 0.06); }); for (var i = 0; i < 6; i++) tone(gSfx, "sine", rnd(2500, 5000), t + 0.5 + i * 0.07, 0.1, 0.04); },
     lose: function (t) { tone(gSfx, "sine", 330, t, 0.35, 0.16, { slide: 220 }); tone(gSfx, "sine", 247, t + 0.2, 0.5, 0.14, { slide: 150 }); },
     creak: function (t, p) { p = p || 0; tone(gSfx, "sawtooth", 70 + p * 150, t, 0.11, 0.07, { slide: 55 + p * 120, lp: 700 }); noise(gSfx, t, 0.07, 0.05, "bandpass", 900 + p * 1400, 3); },
-    gun: function (t) {                                                                                  // colpo di rivoltella: schiocco secco + botta bassa + eco corta
-      noise(gSfx, t, 0.03, 0.9, "highpass", 1800, 0.7); noise(gSfx, t, 0.12, 0.65, "bandpass", 2400, 0.9, 600);
-      tone(gSfx, "sine", 190, t, 0.22, 0.75, { slide: 48 }); tone(gSfx, "triangle", 95, t, 0.18, 0.3, { slide: 40 });
-      noise(gSfx, t + 0.02, 0.9, 0.15, "lowpass", 1400, 0.5, 200); noise(gSfx, t + 0.11, 0.5, 0.07, "bandpass", 900, 0.6, 300);
+    gun: function (t) {                                                                                  // colpo di pistola: crepitio istantaneo, botta, coda con eco (campione generato al volo)
+      if (!B.shot) B.shot = mkShot(); playBuf(B.shot, t, 1, 0.95);
     },
     rclick: function (t) { noise(gSfx, t, 0.025, 0.3, "bandpass", 4200, 6); tone(gSfx, "square", 1900, t, 0.03, 0.08, { slide: 900 }); noise(gSfx, t + 0.1, 0.03, 0.2, "bandpass", 3000, 5); tone(gSfx, "triangle", 700, t + 0.1, 0.04, 0.06); },
-    rspin: function (t) { for (var i = 0; i < 9; i++) noise(gSfx, t + i * 0.085, 0.02, 0.16, "bandpass", 3600 + (i % 2) * 500, 6); },
-    boom: function (t) { noise(gSfx, t, 0.9, 0.35, "lowpass", 2400, 0.8, 120); tone(gSfx, "sine", 130, t, 0.8, 0.4, { slide: 38 }); tone(gSfx, "sawtooth", 80, t, 0.5, 0.12, { slide: 30, lp: 400 }); }
+    rspin: function (t) {                                                                                // tamburo che gira: scatti metallici che rallentano + fruscio
+      var tt = 0, gap = 0.035; for (var i = 0; i < 17; i++) { var v = 0.13 + (i % 3 === 0 ? 0.05 : 0); noise(gSfx, t + tt, 0.02, v, "bandpass", 3300 + (i % 2) * 700, 7); tone(gSfx, "square", 1500 + (i % 2) * 300, t + tt, 0.012, 0.035, { slide: 800, lp: 3000 }); tone(gSfx, "sine", 5200, t + tt, 0.05, 0.012, { a: 0.001 }); tt += gap; gap *= 1.11; }
+      noise(gSfx, t, tt + 0.1, 0.05, "bandpass", 1400, 1.5, 500);
+    },
+    tic: function (t) { noise(gSfx, t, 0.012, 0.22, "bandpass", 2600, 6); tone(gSfx, "sine", 1650, t, 0.035, 0.12, { a: 0.001, slide: 1400 }); },
+    tac: function (t) { noise(gSfx, t, 0.012, 0.2, "bandpass", 1500, 6); tone(gSfx, "sine", 1050, t, 0.04, 0.12, { a: 0.001, slide: 900 }); },
+    beat: function (t) { tone(gSfx, "sine", 62, t, 0.16, 0.5, { slide: 40, a: 0.004 }); tone(gSfx, "sine", 58, t + 0.17, 0.14, 0.38, { slide: 38, a: 0.004 }); },    boom: function (t) { noise(gSfx, t, 0.9, 0.35, "lowpass", 2400, 0.8, 120); tone(gSfx, "sine", 130, t, 0.8, 0.4, { slide: 38 }); tone(gSfx, "sawtooth", 80, t, 0.5, 0.12, { slide: 30, lp: 400 }); }
   };
   var cardBuf = null, cardLoading = false, B = {};          // B: slide (slidecard03), slide2 (card-slide), pick (pickupcard05), ball (roulette)
   function loadOne(key, url) {
@@ -272,6 +289,7 @@
     document.addEventListener("click", function (e) {
       var t = e.target && e.target.closest ? e.target.closest("button, .tab, .station") : null;
       if (!t || t.disabled) return;
+      if (t.closest(".rc2")) return;                                  // in corsa i tasti non fanno rumore
       var c = t.className || "";
       if (/\bavi-bet\b/.test(c)) sfx("chip");
       else if (/\bmm-key\b/.test(c)) sfx("digit", parseInt((t.textContent || "").replace(/\D/g, ""), 10) || ((t.querySelector && t.querySelector(".mm-sym")) ? Math.floor(Math.random() * 10) : 0));
@@ -341,51 +359,80 @@
   }
 
 
-  // ---------- audio della corsa: motore, derapata, pioggia, effetti e musichetta (tutto sintetico, si spegne dal menu pausa) ----------
-  var RC = null;
+  // ---------- audio della corsa: motore di kart discreto, gomme, pioggia rilassante (ASMR), effetti morbidi e musica chill ----------
+  // Due volumi separati (suoni / musica), da 0 a 1. Tutto sintetizzato: niente file.
+  var RC = null, rainBuf = null;
+  function bus(v) { v = Math.max(0, Math.min(1, +v || 0)); return v * v; }
+  function mkRain() {                                                                                           // rumore rosa lungo 6 s: pioggia morbida, senza ripetizioni evidenti
+    if (rainBuf) return rainBuf; var n = ctx.sampleRate * 6, b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0), b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, i;
+    for (i = 0; i < n; i++) { var w = Math.random() * 2 - 1; b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852; b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898; d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926; }
+    for (i = 0; i < 4000; i++) { var k = i / 4000; d[i] *= k; d[n - 1 - i] *= k; }
+    return (rainBuf = b);
+  }
   function raceBegin(o) {
     if (RC || !ctx || !noiseBuf) { if (!ctx) { start(); } if (RC || !ctx || !noiseBuf) return; }
     o = o || {}; var g = ctx.createGain(); g.gain.value = 1; g.connect(master);
-    var gs = ctx.createGain(), gm = ctx.createGain(); gs.gain.value = o.sfx === false ? 0 : 1; gm.gain.value = o.music === false ? 0 : 0.5; gs.connect(g); gm.connect(g);
-    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), f = ctx.createBiquadFilter(), eg = ctx.createGain(); o1.type = "sawtooth"; o2.type = "square"; f.type = "lowpass"; f.frequency.value = 650; eg.gain.value = 0;
-    o1.frequency.value = 60; o2.frequency.value = 30; o1.connect(f); o2.connect(f); f.connect(eg); eg.connect(gs); o1.start(); o2.start();
-    function loopNoise(type, freq, q) { var s2 = ctx.createBufferSource(); s2.buffer = noiseBuf; s2.loop = true; var fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = freq; fl.Q.value = q; var gg = ctx.createGain(); gg.gain.value = 0; s2.connect(fl); fl.connect(gg); gg.connect(gs); s2.start(0, Math.random()); return { s: s2, g: gg, f: fl }; }
-    var sq = loopNoise("bandpass", 2700, 7), rb = loopNoise("lowpass", 160, 0.7), rn = loopNoise("highpass", 2400, 0.6);
-    if (o.rain) rn.g.gain.value = o.rain > 1 ? 0.07 : 0.04;
-    RC = { g: g, gs: gs, gm: gm, o1: o1, o2: o2, f: f, eg: eg, sq: sq, rb: rb, rn: rn, on: o.sfx !== false, mus: o.music !== false, step: 0, next: ctx.currentTime + 0.2, iv: 0 };
-    var CH = [[45, 52, 57, 60], [41, 48, 53, 57], [48, 55, 60, 64], [43, 50, 55, 59]];                       // La min, Fa, Do, Sol
+    var gs = ctx.createGain(), gm = ctx.createGain(); gs.gain.value = bus(o.sfx == null ? 0.7 : o.sfx) * 2; gm.gain.value = bus(o.music == null ? 0.5 : o.music) * 6; gs.connect(g); gm.connect(g);
+    // motore: dente di sega + triangolo filtrati, "tossicchia" con un tremolo legato ai giri; niente sub-basso (era quello che suonava sordo)
+    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), f = ctx.createBiquadFilter(), hp = ctx.createBiquadFilter(), eg = ctx.createGain(), mod = ctx.createGain(), lfo = ctx.createOscillator(), ld = ctx.createGain();
+    o1.type = "sawtooth"; o2.type = "triangle"; f.type = "lowpass"; f.frequency.value = 900; f.Q.value = 0.9; hp.type = "highpass"; hp.frequency.value = 85; eg.gain.value = 0; mod.gain.value = 0.72; lfo.type = "sine"; lfo.frequency.value = 30; ld.gain.value = 0.28;
+    o1.frequency.value = 70; o2.frequency.value = 140; o1.connect(f); o2.connect(f); f.connect(hp); hp.connect(mod); lfo.connect(ld); ld.connect(mod.gain); mod.connect(eg); eg.connect(gs); o1.start(); o2.start(); lfo.start();
+    function loopBuf(buf, type, freq, q, type2, freq2) {
+      var s2 = ctx.createBufferSource(); s2.buffer = buf; s2.loop = true; s2.loopStart = 0; var fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = freq; fl.Q.value = q; var last = fl;
+      if (type2) { var f2 = ctx.createBiquadFilter(); f2.type = type2; f2.frequency.value = freq2; fl.connect(f2); last = f2; }
+      var gg = ctx.createGain(); gg.gain.value = 0; s2.connect(fl); last.connect(gg); gg.connect(gs); s2.start(0, Math.random() * 2); return { s: s2, g: gg, f: fl };
+    }
+    var sq = loopBuf(noiseBuf, "bandpass", 1250, 9), rb = loopBuf(noiseBuf, "lowpass", 220, 0.7), gr = loopBuf(noiseBuf, "bandpass", 1800, 1.1), rn = o.rain ? loopBuf(mkRain(), "lowpass", 4200, 0.5, "highpass", 380) : null;
+    var sqLfo = ctx.createOscillator(), sqD = ctx.createGain(); sqLfo.frequency.value = 7; sqD.gain.value = 140; sqLfo.connect(sqD); sqD.connect(sq.f.frequency); sqLfo.start();     // lo stridio "vibra" un po'
+    if (rn) rn.g.gain.value = o.rain > 1 ? 0.14 : 0.07;
+    var ec = ctx.createGain(), dl = ctx.createDelay(1.2), fb = ctx.createGain(), elp = ctx.createBiquadFilter(); ec.gain.value = 0.5; dl.delayTime.value = 60 / 106 * 0.75; fb.gain.value = 0.3; elp.type = "lowpass"; elp.frequency.value = 2200;
+    ec.connect(dl); dl.connect(elp); elp.connect(fb); fb.connect(dl); elp.connect(gm);
+    RC = { g: g, gs: gs, gm: gm, o1: o1, o2: o2, f: f, eg: eg, lfo: lfo, sq: sq, rb: rb, gr: gr, rn: rn, sqLfo: sqLfo, ec: ec, rainLv: o.rain || 0, sv: o.sfx == null ? 0.7 : o.sfx, mv: o.music == null ? 0.5 : o.music, step: 0, next: ctx.currentTime + 0.2, iv: 0, nextDrop: 0 };
+    var C1 = [[53, 57, 60, 64], [55, 59, 62, 64], [52, 55, 59, 62], [57, 60, 64, 67]], C2 = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 52, 55, 59], [55, 59, 62, 65]], PENT = [72, 74, 76, 79, 81, 84], ARP = [0, 2, 1, 3, 2, 1, 3, 2];
+    var beat = 60 / 106, sd = beat / 4;
     RC.iv = setInterval(function () {
-      if (!RC || !RC.mus) { if (RC) RC.next = ctx.currentTime + 0.2; return; }
-      while (RC.next < ctx.currentTime + 0.35) {
-        var st = RC.step++, ch = CH[(st >> 4) & 3], t = RC.next, sx = st & 15;
-        if (sx % 2 === 0) tone(RC.gm, "sawtooth", mtof(ch[0] - 12 + (sx === 6 || sx === 14 ? 12 : 0)), t, 0.2, 0.2, { lp: 520 });
-        tone(RC.gm, "square", mtof(ch[[1, 2, 3, 2][sx & 3]] + 12), t, 0.11, 0.07, { lp: 1900 });
-        if (sx % 4 === 0) noise(RC.gm, t, 0.05, 0.25, "lowpass", 220, 0.7); if (sx === 4 || sx === 12) noise(RC.gm, t, 0.09, 0.2, "highpass", 2500, 0.8);
-        RC.next += 60 / 122 / 4;
+      if (!RC) return; var now = ctx.currentTime;
+      if (RC.rainLv) while (RC.nextDrop < now + 0.3) {                                                           // gocce: piccoli tic acuti a caso, come sul tetto
+        var td = Math.max(RC.nextDrop, now); noise(RC.gs, td, 0.012, (RC.rainLv > 1 ? 0.05 : 0.03) * (0.4 + Math.random() * 0.8), "bandpass", 3500 + Math.random() * 4500, 2.5);
+        RC.nextDrop = td + (RC.rainLv > 1 ? 0.012 : 0.03) + Math.random() * (RC.rainLv > 1 ? 0.045 : 0.1);
+      }
+      if (RC.mv < 0.02) { RC.next = now + 0.2; return; }
+      while (RC.next < now + 0.35) {
+        var st = RC.step++, bar = st >> 4, sx = st & 15, ch = ((bar >> 2) & 1 ? C2 : C1)[bar & 3], t = RC.next, big = (bar >> 2) & 1;
+        if (sx === 0) { ch.forEach(function (n, q) { tone(RC.gm, "triangle", mtof(n), t, sd * 15.5, 0.02, { a: 0.3, lp: 1000, detune: q * 3 - 4 }); }); tone(RC.gm, "sine", mtof(ch[0] - 12), t, sd * 15, 0.05, { a: 0.2 }); }
+        if (sx === 0) tone(RC.gm, "triangle", mtof(ch[0] - 24 + (big ? 12 : 0)), t, beat * 1.7, 0.13, { lp: 520, a: 0.01 });
+        if (sx === 10) tone(RC.gm, "triangle", mtof(ch[0] - 17), t, beat * 0.9, 0.09, { lp: 520, a: 0.01 });
+        if (sx === 0 || sx === 8) tone(RC.gm, "sine", 125, t, 0.14, 0.11, { slide: 48, a: 0.004 }); else if (sx === 11 && Math.random() < 0.4) tone(RC.gm, "sine", 120, t, 0.1, 0.05, { slide: 50, a: 0.003 });
+        if (sx === 4 || sx === 12) { noise(RC.gm, t, 0.07, 0.05, "bandpass", 1700, 1.2); tone(RC.gm, "triangle", 190, t, 0.06, 0.04, { slide: 150 }); }
+        if (sx % 2 === 0) noise(RC.gm, t, sx === 6 || sx === 14 ? 0.08 : 0.03, sx === 6 || sx === 14 ? 0.02 : 0.012, "highpass", 7500, 0.7);
+        if (sx % 2 === 0 && Math.random() > 0.18) tone(RC.gm, "triangle", mtof(ch[ARP[(sx >> 1) & 7]] + 12), t, 0.3, 0.045, { lp: 2400, a: 0.004, send: RC.ec });
+        if (big && (sx === 0 || sx === 3 || sx === 6 || sx === 8 || sx === 11) && Math.random() < 0.55) { var mn = PENT[Math.floor(Math.random() * PENT.length)]; tone(RC.gm, "sine", mtof(mn), t, 0.35, 0.05, { a: 0.01, send: RC.ec }); tone(RC.gm, "triangle", mtof(mn + 12), t, 0.2, 0.012, { a: 0.01 }); }
+        RC.next += sd;
       }
     }, 90);
   }
   function raceEnd() {
     if (!RC) return; var R0 = RC; RC = null; clearInterval(R0.iv); var t = ctx.currentTime;
-    R0.g.gain.setTargetAtTime(0, t, 0.15); setTimeout(function () { try { R0.o1.stop(); R0.o2.stop(); R0.sq.s.stop(); R0.rb.s.stop(); R0.rn.s.stop(); R0.g.disconnect(); } catch (e) {} }, 700);
+    R0.g.gain.setTargetAtTime(0, t, 0.15); setTimeout(function () { try { R0.o1.stop(); R0.o2.stop(); R0.lfo.stop(); R0.sqLfo.stop(); R0.sq.s.stop(); R0.rb.s.stop(); R0.gr.s.stop(); if (R0.rn) R0.rn.s.stop(); R0.g.disconnect(); } catch (e) {} }, 700);
   }
-  function raceEngine(v, boost, drift, off, still) {                                                          // v = velocità 0..1.1, still = ferma al semaforo (giri a vuoto con ACCELERA)
-    if (!RC) return; var t = ctx.currentTime, fr = 52 + v * 150 + (boost ? 28 : 0);
-    RC.o1.frequency.setTargetAtTime(fr, t, 0.08); RC.o2.frequency.setTargetAtTime(fr * 0.5, t, 0.08); RC.f.frequency.setTargetAtTime(500 + v * 900 + (boost ? 500 : 0), t, 0.1);
-    RC.eg.gain.setTargetAtTime(still ? 0.05 + v * 0.1 : 0.07 + v * 0.06 + (boost ? 0.03 : 0), t, 0.1);
-    RC.sq.g.gain.setTargetAtTime(drift ? 0.05 + v * 0.03 : 0, t, 0.05); RC.rb.g.gain.setTargetAtTime(off ? 0.12 : 0, t, 0.08);
+  function raceEngine(v, boost, drift, off, still) {                                                          // v = velocità 0..1.1, still = ferma al semaforo
+    if (!RC) return; var t = ctx.currentTime, fr = 72 + v * 190 + (boost ? 26 : 0);
+    RC.o1.frequency.setTargetAtTime(fr, t, 0.08); RC.o2.frequency.setTargetAtTime(fr * 2.003, t, 0.08); RC.lfo.frequency.setTargetAtTime(24 + v * 46, t, 0.1); RC.f.frequency.setTargetAtTime(750 + v * 1300 + (boost ? 500 : 0), t, 0.1);
+    RC.eg.gain.setTargetAtTime(still ? 0.02 + v * 0.036 : 0.034 + v * 0.044 + (boost ? 0.016 : 0), t, 0.1);
+    RC.sq.g.gain.setTargetAtTime(drift ? 0.04 + v * 0.025 : 0, t, 0.06); RC.sq.f.frequency.setTargetAtTime(1150 + v * 450, t, 0.1);
+    RC.rb.g.gain.setTargetAtTime(off ? 0.05 : 0, t, 0.08); RC.gr.g.gain.setTargetAtTime(off ? 0.012 + v * 0.012 : 0, t, 0.08);
   }
   var RSFX = {
-    beep: function (t, hi) { tone(RC.gs, "square", hi ? 880 : 440, t, hi ? 0.45 : 0.16, 0.16, { lp: 3000 }); },
-    boost: function (t) { noise(RC.gs, t, 0.55, 0.16, "bandpass", 500, 1.1, 2600); tone(RC.gs, "sawtooth", 180, t, 0.45, 0.07, { slide: 520, lp: 1500 }); },
-    hit: function (t) { noise(RC.gs, t, 0.22, 0.45, "lowpass", 900, 0.7, 150); tone(RC.gs, "sine", 120, t, 0.2, 0.45, { slide: 45 }); },
-    spin: function (t) { noise(RC.gs, t, 0.7, 0.18, "bandpass", 2400, 4, 1500); },
-    lap: function (t) { [76, 81, 88].forEach(function (m, i) { tone(RC.gs, "triangle", mtof(m), t + i * 0.09, 0.3, 0.14, { a: 0.006 }); }); },
-    fin: function (t) { [67, 72, 76, 79, 84, 88].forEach(function (m, i) { tone(RC.gs, "triangle", mtof(m), t + i * 0.09, 0.5, 0.15, { a: 0.008 }); tone(RC.gs, "sine", mtof(m + 12), t + i * 0.09, 0.4, 0.05); }); },
-    pad: function (t) { tone(RC.gs, "sine", 900, t, 0.1, 0.08, { slide: 1500 }); }
+    beep: function (t, hi) { tone(RC.gs, "sine", hi ? 784 : 523, t, hi ? 0.5 : 0.18, 0.12, { a: 0.01 }); if (hi) tone(RC.gs, "triangle", 1568, t, 0.3, 0.03, { a: 0.01 }); },
+    boost: function (t) { noise(RC.gs, t, 0.55, 0.06, "bandpass", 700, 1.2, 3200); tone(RC.gs, "triangle", 300, t, 0.5, 0.035, { slide: 900, lp: 1800 }); },
+    hit: function (t) { tone(RC.gs, "sine", 150, t, 0.2, 0.28, { slide: 55 }); noise(RC.gs, t, 0.12, 0.2, "lowpass", 700, 0.7, 200); },
+    spin: function (t) { noise(RC.gs, t, 0.55, 0.09, "bandpass", 1300, 8, 800); tone(RC.gs, "sine", 920, t, 0.5, 0.02, { slide: 620 }); },
+    lap: function (t) { [76, 81, 88].forEach(function (m, i) { tone(RC.gs, "triangle", mtof(m), t + i * 0.09, 0.3, 0.09, { a: 0.006 }); }); },
+    fin: function (t) { [67, 72, 76, 79, 84, 88].forEach(function (m, i) { tone(RC.gs, "triangle", mtof(m), t + i * 0.09, 0.5, 0.1, { a: 0.008 }); tone(RC.gs, "sine", mtof(m + 12), t + i * 0.09, 0.4, 0.035); }); },
+    pad: function (t) { tone(RC.gs, "sine", 700, t, 0.12, 0.05, { slide: 1300 }); }
   };
-  function raceSfx(name, a) { if (!RC || !RC.on || !RSFX[name] || !once("r_" + name, 80)) return; try { RSFX[name](ctx.currentTime + 0.005, a); } catch (e) {} }
-  function raceSet(o) { if (!RC) return; if (o.sfx != null) { RC.on = !!o.sfx; RC.gs.gain.setTargetAtTime(o.sfx ? 1 : 0, ctx.currentTime, 0.05); } if (o.music != null) { RC.mus = !!o.music; RC.gm.gain.setTargetAtTime(o.music ? 0.5 : 0, ctx.currentTime, 0.1); } }
+  function raceSfx(name, a) { if (!RC || RC.sv < 0.02 || !RSFX[name] || !once("r_" + name, 80)) return; try { RSFX[name](ctx.currentTime + 0.005, a); } catch (e) {} }
+  function raceSet(o) { if (!RC) return; var t = ctx.currentTime; if (o.sfx != null) { RC.sv = +o.sfx; RC.gs.gain.setTargetAtTime(bus(RC.sv) * 2, t, 0.05); } if (o.music != null) { RC.mv = +o.music; RC.gm.gain.setTargetAtTime(bus(RC.mv) * 6, t, 0.1); } }
 
   window.ArcadeAudio = {
     sfx: sfx, start: start, race: { begin: raceBegin, end: raceEnd, engine: raceEngine, sfx: raceSfx, set: raceSet }, loaded: function () { return Object.keys(B); },

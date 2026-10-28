@@ -411,6 +411,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
           kb.appendChild(r);
         });
         var go = el("button", "gh-k go", "INVIA"); go.type = "button"; go.addEventListener("click", send); kb.appendChild(go);
+        var tn = 0; (function tock() { if (over || !alive(E)) return; snd(tn++ % 2 ? "tic" : "tac"); if (shown >= 5 && tn % 2 === 0) snd("beat"); setTimeout(tock, shown >= 5 ? 320 : 520); })();
         reveal();
       });
     },
@@ -420,7 +421,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         area.innerHTML = ""; var box = el("div", "rr-box"), cyl = el("div", "rr-cyl"), chs = [], btn = el("button", "mp-go rr-go", "SPARA"), fl = el("div", "rr-flash");
         for (var i = 0; i < 6; i++) { var ch = el("i", "rr-ch"); ch.style.transform = "rotate(" + i * 60 + "deg) translateY(-50px)"; cyl.appendChild(ch); chs.push(ch); }
         var gun = el("div", "rr-gun"); gun.innerHTML = REV; box.appendChild(gun); box.appendChild(cyl); box.appendChild(btn); box.appendChild(fl); area.appendChild(box); btn.type = "button"; btn.hidden = true;
-        say(msg, "Un solo proiettile. Si sorteggia chi inizia…"); cyl.classList.add("spin"); snd("rspin");
+        say(msg, "Un solo proiettile. Si sorteggia chi inizia…"); cyl.classList.add("spin"); snd("rspin"); A.vib([0, 12, 60, 12, 80, 12, 110, 12, 150]);
         wait(1500).then(function () { cyl.classList.remove("spin"); say(msg, (turn === 0 ? "Inizi TU" : "Inizia " + opn)); return wait(900); }).then(next);
         function next() {
           if (!alive(E)) return; chs.forEach(function (c) { c.classList.remove("on"); }); chs[shot].classList.add("on");
@@ -430,8 +431,8 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         function fire() {
           if (!alive(E)) return; say(msg, turn === 0 ? "…" : opn + " preme il grilletto…"); wait(1000).then(function () {
             if (!alive(E)) return;
-            if (shot === bullet) { chs[shot].classList.add("bang"); fl.className = "rr-flash on"; snd("gun"); A.haptic("bad"); say(msg, "💥 BANG! " + (turn === 0 ? "Sei morto." : opn + " è morto!"), turn === 0 ? "mp-lose" : "mp-win"); wait(1700).then(function () { res(turn === 0 ? -1 : 1); }); }
-            else { chs[shot].classList.add("em"); snd("rclick"); say(msg, "*click* — vuoto. " + (turn === 0 ? "Sei salvo… per ora." : opn + " è salvo.")); shot++; turn = 1 - turn; wait(1200).then(next); }
+            if (shot === bullet) { chs[shot].classList.add("bang"); fl.className = "rr-flash on"; snd("gun"); A.haptic("bad"); A.vib([0, 70, 30, 160]); say(msg, "💥 BANG! " + (turn === 0 ? "Sei morto." : opn + " è morto!"), turn === 0 ? "mp-lose" : "mp-win"); wait(1700).then(function () { res(turn === 0 ? -1 : 1); }); }
+            else { chs[shot].classList.add("em"); snd("rclick"); A.vib(18); say(msg, "*click* — vuoto. " + (turn === 0 ? "Sei salvo… per ora." : opn + " è salvo.")); shot++; turn = 1 - turn; wait(1200).then(next); }
           });
         }
       });

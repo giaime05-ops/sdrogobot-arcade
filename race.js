@@ -499,8 +499,8 @@
       var qgh = [], qres = [], qT0 = -1;
       if (qual) { var k0 = tr.N - 14; me.x = tr.P[k0][0]; me.y = tr.P[k0][1]; me.a = tr.ta[k0]; me.vx = 0; me.vy = 0; me.idx = k0; me.prog = -14; me.slot = 0;
         for (var qk = 1; qk < nCar; qk++) { var rs0 = opts.roster && opts.roster[qk], qs = qualSim(tr, sk[qk], vmv ? vmv[qk] : 1, offs[qk] * 0.5); qres.push({ id: qk, name: rs0 ? rs0.name : NAMES[qk % NAMES.length], t: qs.t }); qgh.push({ x: qs.path[0], y: qs.path[1], a: qs.path[2], col: rs0 ? rs0.col : COLS[qk % COLS.length], name: rs0 ? rs0.name : NAMES[qk % NAMES.length], ghost: true, hit: 0, path: qs.path }); } }
-      var AU = (window.ArcadeAudio || {}).race || { begin: function () {}, end: function () {}, engine: function () {}, sfx: function () {}, set: function () {} }, SN = lsGet("arc_race4_snd") || { sfx: 1, music: 1 }, pBoost = false, pHit = false, pSpin = false, lastNl = 0;
-      AU.begin({ rain: opts.rain, sfx: !!SN.sfx, music: !!SN.music });
+      var AU = (window.ArcadeAudio || {}).race || { begin: function () {}, end: function () {}, engine: function () {}, sfx: function () {}, set: function () {} }, SN = (function () { var q = lsGet("arc_race4_snd"); if (!q || q.v !== 2) { q = { v: 2, sfx: 0.7, music: 0.5 }; lsSet("arc_race4_snd", q); } return q; })(), pBoost = false, pHit = false, pSpin = false, lastNl = 0;
+      AU.begin({ rain: opts.rain, sfx: SN.sfx, music: SN.music });
       var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 0 }, gl = [], grec = [], gtick = 0;
       if (solo) {
         var gm = (lsGet("arc_race4g_" + tr.id) || {}).g, ab0 = GPf.best ? absBest(tr) : null;
@@ -532,7 +532,7 @@
       function pause(on) {
         if (state === "end") return; paused = on; if (pbox) { pbox.remove(); pbox = null; } if (!on) { last = performance.now(); return; }
         pbox = el("div", "rc2-end"); pbox.appendChild(el("b", "", "IN PAUSA"));
-        var sr = el("div", "rc2-snd"); [["sfx", "🔊 Suoni"], ["music", "🎵 Musica"]].forEach(function (o) { var b = el("button", "mp-gt wide" + (SN[o[0]] ? " on" : ""), o[1]); b.type = "button"; b.addEventListener("click", function () { SN[o[0]] = SN[o[0]] ? 0 : 1; lsSet("arc_race4_snd", SN); b.classList.toggle("on", !!SN[o[0]]); var q = {}; q[o[0]] = !!SN[o[0]]; AU.set(q); }); sr.appendChild(b); }); pbox.appendChild(sr);
+        var sr = el("div", "rc2-snd"); [["sfx", "🔊 Suoni"], ["music", "🎵 Musica"]].forEach(function (o) { var row = el("label", "rc2-vol"), nm = el("span", "", o[1]), rg = el("input"); rg.type = "range"; rg.min = 0; rg.max = 100; rg.value = Math.round(SN[o[0]] * 100); rg.addEventListener("input", function () { SN[o[0]] = rg.value / 100; lsSet("arc_race4_snd", SN); var q = {}; q[o[0]] = SN[o[0]]; AU.set(q); }); row.appendChild(nm); row.appendChild(rg); sr.appendChild(row); }); pbox.appendChild(sr);
         var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIPRENDI"), rs = el("button", "mp-go mp-alt2", "RICOMINCIA"), b = el("button", "mp-go mp-alt", "ESCI"); a.type = b.type = rs.type = "button";
         a.addEventListener("click", function () { pause(false); }); rs.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); rw.appendChild(a); rw.appendChild(rs); rw.appendChild(b); pbox.appendChild(rw); full.appendChild(pbox);
       }

@@ -1693,3 +1693,9 @@ body.sbx .pg-head{padding-top:22px}
 .lb-slot,.lb-slot.full{border:1.5px solid rgba(255,255,255,.8)}.lb-slot.free{border:1.5px solid rgba(255,255,255,.22)}
 .lb-slot{height:40px}.lb-slot .lbav{width:28px;height:28px;flex:0 0 28px;font-size:15px}
 .lb-tg+.lb-row button:disabled,.lb-chips .mp-gt:disabled{opacity:.35}
+
+.rc2-snd{flex-direction:column;gap:6px;align-items:stretch;width:100%}
+.rc2-vol{display:flex;align-items:center;gap:10px;font:700 15px Rajdhani,sans-serif;color:#fff}.rc2-vol span{flex:0 0 92px;text-align:left}
+.rc2-vol input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:8px;border-radius:6px;background:linear-gradient(90deg,#ff3db0,#35e6ff);outline:none}
+.rc2-vol input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #ff3db0;box-shadow:0 0 8px rgba(255,61,176,.8)}
+.rc2-vol input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #ff3db0}

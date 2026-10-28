@@ -29,6 +29,7 @@
     n = Math.round(Number(n) || 0);
     return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
+  function vib(p) { try { if (window.ArcadeSettings && window.ArcadeSettings.vib === false) return; if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
   function haptic(kind) {
     try {
       if (!tg || !tg.HapticFeedback) return;
@@ -294,7 +295,7 @@
     return refreshMe();
   }
 
-  window.Arcade = { multiOn: function () { return !!(SBX || ME.multi); }, newOn: function () { return !!(SBX || ME.isnew); }, tip: tip, avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  window.Arcade = { multiOn: function () { return !!(SBX || ME.multi); }, newOn: function () { return !!(SBX || ME.isnew); }, tip: tip, avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, vib: vib, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 
