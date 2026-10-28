@@ -33,37 +33,121 @@
     var h = el("div", "mp-top"); var bk = el("button", "mp-back", "‹ Multi"); bk.type = "button"; bk.addEventListener("click", to || lobby);
     h.appendChild(bk); h.appendChild(el("div", "mp-title", title)); body.appendChild(h); return h;
   }
+  // ---- amici (da /api/social/friends: nome e stile profilo veri), per scegliere chi invitare
+  var frCache = null;
+  function loadFriends() {
+    if (frCache) return Promise.resolve(frCache);
+    return A.api("/api/social/friends").then(function (j) { frCache = (j.friends || []).filter(function (f) { return !/^bot\d/.test(f.pid || ""); }); if (!frCache.length) throw 0; frCache.sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0); }); return frCache; }).catch(function () {
+      return names().filter(function (p) { return p.id !== "bot"; }).map(function (p) { return { pid: p.id, name: p.name, style: p.style || {}, online: false }; });
+    });
+  }
+  function friendSheet(exclude, pick) {
+    var sh = el("div", "fr-sheet"), bx = el("div", "fr-sbox"); bx.appendChild(el("b", "", "SCEGLI UN AMICO")); var lst = el("div", "fr-list"); bx.appendChild(lst); lst.appendChild(el("div", "pg-empty", "Carico…"));
+    var cl = el("button", "mp-go mp-alt", "CHIUDI"); cl.type = "button"; cl.addEventListener("click", function () { sh.remove(); }); bx.appendChild(cl); sh.appendChild(bx); sh.addEventListener("click", function (e) { if (e.target === sh) sh.remove(); }); document.body.appendChild(sh);
+    loadFriends().then(function (L) {
+      lst.innerHTML = ""; L = L.filter(function (f) { return exclude.indexOf(f.pid) < 0; });
+      if (!L.length) { lst.appendChild(el("div", "pg-empty", "Nessun amico da invitare.")); return; }
+      L.forEach(function (f) {
+        var r = el("button", "fr-r" + (f.online ? " on" : "")); r.type = "button"; var av = el("div", "avatar rav"); A.styleAvatar(av, f.style || {}, (f.name || "?").charAt(0).toUpperCase()); r.appendChild(av);
+        var n = el("div", "nm"); n.appendChild(A.nameEl(f.name, f.style || {})); r.appendChild(n); r.appendChild(el("span", "st", f.online ? "● online" : "offline"));
+        r.addEventListener("click", function () { sh.remove(); pick(f); }); lst.appendChild(r);
+      });
+    });
+  }
+  var HUBART = {
+    pk: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(118 66)"><g transform="rotate(-24)"><rect x="-26" y="-40" width="52" height="76" rx="6" fill="#fff"/><text x="-19" y="-22" font-size="16" font-weight="900" fill="#c0182f" font-family="Bungee,sans-serif">A</text><text x="-12" y="14" font-size="38" fill="#c0182f">♥</text></g><g transform="rotate(-4)"><rect x="-26" y="-40" width="52" height="76" rx="6" fill="#fff"/><text x="-19" y="-22" font-size="16" font-weight="900" fill="#111" font-family="Bungee,sans-serif">K</text><text x="-12" y="14" font-size="38" fill="#111">♠</text></g><g transform="rotate(18)"><rect x="-26" y="-40" width="52" height="76" rx="6" fill="#fff"/><text x="-19" y="-22" font-size="16" font-weight="900" fill="#c0182f" font-family="Bungee,sans-serif">Q</text><text x="-12" y="14" font-size="38" fill="#c0182f">♦</text></g></g><g><circle cx="176" cy="96" r="13" fill="#e8233f" stroke="#fff" stroke-width="3" stroke-dasharray="5 4"/><circle cx="176" cy="88" r="13" fill="#2b6fff" stroke="#fff" stroke-width="3" stroke-dasharray="5 4"/><circle cx="160" cy="100" r="13" fill="#111" stroke="#fff" stroke-width="3" stroke-dasharray="5 4"/></g></svg>',
+    du: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(130 62)"><g transform="rotate(42)"><rect x="-5" y="-52" width="10" height="82" rx="3" fill="#dfe6f2"/><rect x="-1.5" y="-50" width="3" height="78" fill="#9fb0c8"/><rect x="-16" y="28" width="32" height="7" rx="3" fill="#ffb300"/><rect x="-4" y="34" width="8" height="20" rx="3" fill="#7a3b12"/></g><g transform="rotate(-42)"><rect x="-5" y="-52" width="10" height="82" rx="3" fill="#dfe6f2"/><rect x="-1.5" y="-50" width="3" height="78" fill="#9fb0c8"/><rect x="-16" y="28" width="32" height="7" rx="3" fill="#ffb300"/><rect x="-4" y="34" width="8" height="20" rx="3" fill="#7a3b12"/></g><g fill="#ffd23b"><path d="M0 -22 L5 -6 L20 -2 L5 3 L0 18 L-5 3 L-20 -2 L-5 -6Z" opacity=".95"/></g></g><g fill="#fff" opacity=".7"><circle cx="86" cy="26" r="2.5"/><circle cx="178" cy="22" r="3"/><circle cx="96" cy="104" r="2"/><circle cx="184" cy="100" r="2.5"/></g></svg>',
+    rc: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><path d="M100 120 L128 0 L176 0 L200 120Z" fill="#2a1d55"/><path d="M128 0 L134 0 L112 120 L100 120Z" fill="#ff3db0"/><path d="M176 0 L170 0 L196 120 L200 120Z" fill="#ff3db0"/><g stroke="#fff" stroke-width="3" stroke-dasharray="9 9"><line x1="152" y1="0" x2="156" y2="120"/></g><g transform="translate(150 78)"><rect x="-17" y="-8" width="34" height="30" rx="7" fill="#19d3ff"/><rect x="-12" y="-17" width="24" height="14" rx="5" fill="#0a7fa6"/><rect x="-22" y="8" width="10" height="16" rx="3" fill="#111"/><rect x="12" y="8" width="10" height="16" rx="3" fill="#111"/><rect x="-14" y="22" width="28" height="5" rx="2" fill="#ffd23b"/></g><g stroke="#fff" opacity=".6" stroke-width="2"><line x1="60" y1="30" x2="92" y2="30"/><line x1="48" y1="52" x2="84" y2="52"/><line x1="66" y1="76" x2="96" y2="76"/></g><g transform="translate(10 8)"><path d="M0 0h8v8h-8zM16 0h8v8h-8zM8 8h8v8h-8zM24 8h8v8h-8z" fill="#fff" opacity=".85"/></g></svg>',
+    qz: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><text x="106" y="96" font-size="110" font-weight="900" fill="#fff" opacity=".9" font-family="Bungee,sans-serif">?</text><text x="170" y="52" font-size="48" font-weight="900" fill="#ffd23b" font-family="Bungee,sans-serif">?</text><text x="76" y="40" font-size="34" font-weight="900" fill="#2ee6c0" font-family="Bungee,sans-serif">?</text></svg>'
+  };
   // ---- home del multiplayer: grandi riquadri, uno per sezione
   function lobby() {
     fit(true); epoch++; body.innerHTML = "";
     body.appendChild(el("div", "pg-me", "🛠️ Prototipo (solo admin): gli avversari sono simulati"));
     var g = el("div", "mp-hub"); body.appendChild(g);
-    [["🃏", "TAVOLI", "Blackjack e Poker fino a 4 giocatori", tables, true], ["⚔️", "SFIDE 1v1", "Sasso-carta-forbici, dadi, tris, roulette…", duels, true],
-     ["🏎️", "CORSA F1", "Giri a tempo, fantasma e classifica", function () { if (window.ArcadeRace) { fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); } }, true],
-     ["🧠", "QUIZ", "Quiz multiplayer: in arrivo", null, false]].forEach(function (t) {
-      var b = el("button", "mp-tile" + (t[4] ? "" : " off")); b.type = "button";
-      b.appendChild(el("i", "", t[0])); b.appendChild(el("b", "", t[1])); b.appendChild(el("span", "", t[2]));
+    [["pk", "TAVOLI", "Poker, Blackjack e Scopa con gli amici", tables, true], ["du", "SFIDE 1v1", "Sasso-carta-forbici, dadi, tris, roulette…", duels, true],
+     ["rc", "GRAND PRIX", "Giri a tempo, gare e classifiche", function () { if (window.ArcadeRace) { fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); } }, true],
+     ["qz", "QUIZ", "Sfida il gruppo: in arrivo", null, false]].forEach(function (t) {
+      var b = el("button", "mp-tile t-" + t[0] + (t[4] ? "" : " off")); b.type = "button";
+      var art = el("div", "mp-art"); art.innerHTML = HUBART[t[0]]; b.appendChild(art);
+      var tx = el("div", "mp-tx"); tx.appendChild(el("b", "", t[1])); tx.appendChild(el("span", "", t[2])); if (!t[4]) tx.appendChild(el("em", "", "🔒 PRESTO")); b.appendChild(tx);
       b.addEventListener("click", function () { if (t[3]) { A.haptic("light"); t[3](); } else A.toast("Presto!"); }); g.appendChild(b);
     });
   }
-  // ---- tavoli
+  // ---- tavoli: elenco (un banner per gioco) → GIOCA apre la lobby del tavolo
+  var TBL = {
+    pk: { name: "Poker Texas", sub: "Fino a 4 giocatori · buy-in e puntate", max: 4, art: HUBART.pk },
+    bj: { name: "Blackjack insieme", sub: "Tutti contro il banco · fino a 4", max: 4, art: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><text x="62" y="104" font-size="96" font-weight="900" fill="#ffd23b" font-family="Bungee,sans-serif" opacity=".95">21</text><g transform="translate(150 60) rotate(14)"><rect x="-22" y="-32" width="44" height="64" rx="6" fill="#fff"/><text x="-16" y="-14" font-size="14" font-weight="900" fill="#111" font-family="Bungee,sans-serif">A</text><text x="-11" y="16" font-size="32" fill="#111">♠</text></g></svg>' },
+    sc: { name: "Scopa", sub: "In 2 o in 4 · a 11 o 21 punti", max: 4, art: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(78 60)"><circle r="40" fill="#ffd23b" stroke="#b8860b" stroke-width="5"/><circle r="30" fill="none" stroke="#b8860b" stroke-width="3" stroke-dasharray="4 5"/><text x="-14" y="14" font-size="40" font-weight="900" fill="#8a5a00" font-family="Bungee,sans-serif">7</text></g><g transform="translate(150 62) rotate(10)"><rect x="-24" y="-36" width="48" height="72" rx="6" fill="#fdf3d8"/><path d="M0 -20 L12 0 L0 20 L-12 0Z" fill="#c0182f"/></g></svg>' }
+  };
   function tables() {
     fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI");
-    [["Poker Texas", "🂡", "pk"], ["Blackjack insieme", "🃏", "bj"], ["Scopa (2 o 4)", "🎴", "sc"]].forEach(function (t) {
-      var tc = el("div", "mp-card tbl " + t[2]); tc.appendChild(el("div", "mp-ttl", t[1] + " " + t[0]));
-      var seats = el("div", "mp-seats"); tc.appendChild(seats); var n = 1;
-      function paintSeats() {
-        seats.innerHTML = "";
-        for (var i = 0; i < 4; i++) { var s = el("span", "mp-seat" + (i === 0 ? " me" : ""), i < n ? (i === 0 ? "Tu" : "🤖 Bot " + i) : "libero"); seats.appendChild(s); }
-      }
-      paintSeats();
-      var rw = el("div", "mp-end");
-      var j = el("button", "mp-go", "+ BOT"); j.type = "button";
-      j.addEventListener("click", function () { if (n < 4) { n++; paintSeats(); A.haptic("light"); } else A.toast("Tavolo pieno"); });
-      var gt = el("button", "mp-go mp-alt", "▶ GIOCA"); gt.type = "button";
-      gt.addEventListener("click", function () { var bots = Math.max(1, n - 1); if (t[2] === "sc") scopaSetup(); else if (t[2] === "bj") bjTable(bots); else pkSetup(bots); });
-      rw.appendChild(j); rw.appendChild(gt); tc.appendChild(rw); body.appendChild(tc);
+    var g = el("div", "mp-hub tbl-list"); body.appendChild(g);
+    ["pk", "bj", "sc"].forEach(function (k) {
+      var t = TBL[k], b = el("button", "mp-tile tb-" + k); b.type = "button"; var art = el("div", "mp-art"); art.innerHTML = t.art; b.appendChild(art);
+      var tx = el("div", "mp-tx"); tx.appendChild(el("b", "", t.name)); tx.appendChild(el("span", "", t.sub)); tx.appendChild(el("em", "", "▶ GIOCA")); b.appendChild(tx);
+      b.addEventListener("click", function () { A.haptic("light"); st.tl = null; tableLobby(k); }); g.appendChild(b);
     });
+  }
+  // ---- lobby di un tavolo: posti (tu, amici invitati, bot) + regole + AVVIA. Stessa schermata che userà il server.
+  function tableLobby(k) {
+    fit(true); epoch++; body.innerHTML = ""; var T = TBL[k]; backBar(T.name.toUpperCase(), tables);
+    var L = st.tl && st.tl.k === k ? st.tl : (st.tl = { k: k, code: "SDG-" + Math.random().toString(36).slice(2, 6).toUpperCase(), seats: [{ t: "me" }, null, null, null], buy: 0, rich: false, mode: "4s", target: st.scTarget == null ? 11 : st.scTarget });
+    var wallet = walletNow();
+    var top = el("div", "tl-code"); top.appendChild(el("span", "", "CODICE TAVOLO")); top.appendChild(el("b", "", L.code)); var sh = el("button", "tl-share", "🔗 CONDIVIDI"); sh.type = "button"; sh.addEventListener("click", function () { A.toast("Nel gioco vero invii il codice a chi vuoi"); }); top.appendChild(sh); body.appendChild(top);
+    var seatsE = el("div", "tl-seats"); body.appendChild(seatsE);
+    var rules = el("div", "mp-card tl-rules"); body.appendChild(rules);
+    var go = el("div", "mp-end dl-go"); body.appendChild(go);
+    function count() { return L.seats.filter(Boolean).length; }
+    function addBot(i) { var n = L.seats.filter(function (x) { return x && x.t === "bot"; }).length + 1; L.seats[i] = { t: "bot", name: "Bot " + n }; A.haptic("light"); paint(); }
+    function invite(i) { friendSheet(L.seats.filter(Boolean).map(function (x) { return x.pid; }), function (f) { var sl = { t: "wait", name: f.name, style: f.style, pid: f.pid }; L.seats[i] = sl; paint(); wait(1400).then(function () { if (L.seats[i] === sl) { sl.t = "friend"; if (st.tl === L) paint(); } }); }); }
+    function paintSeats() {
+      seatsE.innerHTML = "";
+      for (var i = 0; i < T.max; i++) (function (i) {
+        var x = L.seats[i], c = el("div", "tl-seat" + (x ? " full " + x.t : ""));
+        if (!x) {
+          c.appendChild(el("div", "tl-no", "Posto " + (i + 1))); var r = el("div", "tl-btns"); var a = el("button", "", "👥 INVITA"), b = el("button", "alt", "🤖 BOT"); a.type = b.type = "button";
+          a.addEventListener("click", function () { invite(i); }); b.addEventListener("click", function () { addBot(i); }); r.appendChild(a); r.appendChild(b); c.appendChild(r);
+        } else {
+          var av = el("div", "avatar rav"); if (x.t === "bot") av.textContent = "🤖"; else A.styleAvatar(av, x.t === "me" ? ((A.me && A.me().style) || {}) : (x.style || {}), (x.t === "me" ? "T" : (x.name || "?").charAt(0).toUpperCase())); c.appendChild(av);
+          var nm = el("div", "tl-nm"); if (x.t === "me" || x.t === "bot") nm.appendChild(el("span", "", x.t === "me" ? "Tu" : x.name)); else nm.appendChild(A.nameEl(x.name, x.style || {}));
+          nm.appendChild(el("small", "", x.t === "me" ? "HOST" : x.t === "bot" ? "bot" : x.t === "wait" ? "invitato…" : "pronto ✓")); c.appendChild(nm);
+          if (x.t !== "me") { var rm = el("button", "tl-x", "✕"); rm.type = "button"; rm.addEventListener("click", function () { L.seats[i] = null; paint(); }); c.appendChild(rm); }
+        }
+        seatsE.appendChild(c);
+      })(i);
+    }
+    function paintRules() {
+      rules.innerHTML = ""; var n = count();
+      if (k === "pk") {
+        rules.appendChild(el("div", "mp-sec", "REGOLE · BUY-IN"));
+        var steps = L.rich ? [1000, 2000, 5000] : [100, 200, 500], opts = steps.filter(function (v) { return v <= wallet; }); if (!opts.length && wallet > 0 && !L.rich) opts = [wallet];
+        if (opts.indexOf(L.buy) < 0) L.buy = opts[0] || 0;
+        rules.appendChild(el("div", "pg-me", "Saldo " + A.fmt(wallet) + " $SDG · ante " + A.fmt(L.rich ? 50 : 5) + " a mano"));
+        var r1 = el("div", "mp-rowc"), r2 = el("div", "mp-rowc"); rules.appendChild(r1); rules.appendChild(r2);
+        if (opts.length) chips(r1, opts.map(function (v) { return [v, A.fmt(v)]; }), L.buy, function (it) { L.buy = it[0]; paintRules(); paintGo(); }); else rules.appendChild(el("div", "pg-me", L.rich ? "Servono almeno 1.000 $SDG per il tavolo ricco." : "Non hai $SDG per sederti."));
+        chips(r2, [[0, "Normale"], [1, "💎 Ricco (×10)"]], L.rich ? 1 : 0, function (it) { L.rich = !!it[0]; L.buy = 0; paintRules(); paintGo(); });
+      } else if (k === "bj") {
+        rules.appendChild(el("div", "mp-sec", "REGOLE"));
+        rules.appendChild(el("div", "pg-me", "Ognuno punta a ogni mano e gioca contro il banco. Vince chi si avvicina di più a 21 senza sballare."));
+      } else {
+        rules.appendChild(el("div", "mp-sec", "REGOLE · SCOPA"));
+        if (n > 2) { var r3 = el("div", "mp-rowc"); rules.appendChild(r3); chips(r3, [["4s", "Ognuno per sé"], ["4c", "A coppie"]], L.mode, function (it) { L.mode = it[0]; paintRules(); }); }
+        else rules.appendChild(el("div", "pg-me", "2 giocatori. Con 3 o 4 posti si gioca in 4."));
+        rules.appendChild(el("div", "mp-lab", "Punteggio finale")); var r4 = el("div", "mp-rowc"); rules.appendChild(r4);
+        chips(r4, [[0, "Una mano"], [11, "A 11"], [21, "A 21"]], L.target, function (it) { L.target = it[0]; st.scTarget = L.target; paintRules(); });
+        rules.appendChild(el("div", "pg-me", "Posta " + A.fmt(st.bet) + " $SDG"));
+      }
+    }
+    function paintGo() {
+      go.innerHTML = ""; var n = count(), ok = n >= 2 && !(k === "pk" && !L.buy), b = el("button", "mp-go", n < 2 ? "AGGIUNGI UN GIOCATORE" : "▶ AVVIA"); b.type = "button"; b.disabled = !ok;
+      b.addEventListener("click", function () {
+        var bots = Math.max(1, count() - 1);
+        if (k === "pk") pkTable(bots, { buy: L.buy, wallet: wallet - L.buy, u: L.rich ? 50 : 5 }); else if (k === "bj") bjTable(bots); else scopaTable(count() > 2 ? L.mode : "2", L.target);
+      }); go.appendChild(b);
+    }
+    function paint() { paintSeats(); paintRules(); paintGo(); }
+    paint();
   }
   // ---- sfide 1v1, tutto in una schermata
 var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGradient id="rvg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9cfdb"/><stop offset=".5" stop-color="#7b8394"/><stop offset="1" stop-color="#3a3f4c"/></linearGradient><linearGradient id="rvw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a2c"/><stop offset="1" stop-color="#4a2a12"/></linearGradient></defs><rect x="70" y="21" width="106" height="12" rx="2" fill="url(#rvg)"/><rect x="70" y="18" width="106" height="3.5" fill="#dfe4ee"/><rect x="168" y="14" width="6" height="6" fill="#aab1c0"/><path d="M28 20H72V47H46L28 38Z" fill="url(#rvg)"/><rect x="50" y="15" width="28" height="31" rx="4" fill="#5b6272" stroke="#2b2f3a" stroke-width="1.5"/><g stroke="#2b2f3a" stroke-width="1.5"><path d="M58 17V44M66 17V44M74 17V44"/></g><path d="M28 20L19 10H31L36 20Z" fill="#3a3f4c"/><path d="M30 37L50 46L45 87H20Z" fill="url(#rvw)" stroke="#2a1608" stroke-width="1.5"/><path d="M48 47Q62 68 80 47" fill="none" stroke="#7b8394" stroke-width="3.5"/><path d="M62 48L66 58" stroke="#c9cfdb" stroke-width="3"/></svg>';
@@ -83,7 +167,14 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     var m = GMETA[st.game], hero = el("div", "dl-hero g-" + st.game); hero.appendChild(el("i", "", m[0])); var hx = el("div"); hx.appendChild(el("b", "", m[1])); hx.appendChild(el("span", "", m[2])); hero.appendChild(hx); body.appendChild(hero);
     var c = el("div", "dl-set"); body.appendChild(c);
     c.appendChild(el("div", "mp-lab", "Avversario")); var og = el("div", "dl-opp"); c.appendChild(og);
-    function pO() { og.innerHTML = ""; names().slice(0, 8).forEach(function (p) { var b = el("button", "dl-o" + (p.id === st.opp.id ? " on" : "")); b.type = "button"; var av = el("i", "", p.id === "bot" ? "🤖" : p.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 1).toUpperCase()); b.appendChild(av); b.appendChild(el("span", "", p.name.replace("🤖 ", ""))); b.addEventListener("click", function () { st.opp = p; pO(); }); og.appendChild(b); }); } pO();
+    function pO() {
+      og.innerHTML = ""; var p = st.opp, isB = p.id === "bot", b = el("button", "dl-sel" + (isB ? "" : " on")); b.type = "button";
+      var av = el("div", "avatar rav"); if (isB) av.textContent = "🤖"; else A.styleAvatar(av, p.style || {}, p.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 1).toUpperCase()); b.appendChild(av);
+      var nm = el("div", "dl-nm"); nm.appendChild(isB ? el("span", "", "Scegli un amico") : A.nameEl(p.name, p.style || {})); nm.appendChild(el("small", "", isB ? "Tocca per vedere i tuoi amici" : "Tocca per cambiare")); b.appendChild(nm); b.appendChild(el("em", "", "▾"));
+      b.addEventListener("click", function () { friendSheet([], function (f) { st.opp = { id: f.pid, name: f.name, style: f.style }; pO(); }); });
+      var bb = el("button", "dl-bot" + (isB ? " on" : "")); bb.type = "button"; bb.appendChild(el("i", "", "🤖")); bb.appendChild(el("span", "", "Bot")); bb.addEventListener("click", function () { st.opp = BOT; pO(); });
+      og.appendChild(b); og.appendChild(bb);
+    } pO();
     c.appendChild(el("div", "mp-lab", "Puntata $SDG")); var bg = el("div", "dl-seg"); c.appendChild(bg);
     function pB() { bg.innerHTML = ""; [10, 50, 100, 500, 1000].forEach(function (n) { var b = el("button", st.bet === n ? "on" : "", A.fmt(n)); b.type = "button"; b.addEventListener("click", function () { st.bet = n; pB(); }); bg.appendChild(b); }); } pB();
     c.appendChild(el("div", "mp-lab", "Round (al meglio di)")); var rg = el("div", "dl-seg r3"); c.appendChild(rg);
@@ -300,7 +391,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         show();
         say(msg, "Indovina la parola in comune prima di " + st.opp.name + " (meno indizi = più bello)");
         function finish(r, txt) { if (over) return; over = true; kb.classList.add("off"); say(msg, txt, r > 0 ? "mp-win" : (r < 0 ? "mp-lose" : "")); list.appendChild(el("div", "gh-sol", "🔑 " + sol)); wait(1500).then(function () { res(r); }); }
-        function reveal() { if (over || !alive(E)) return; shown++; list.appendChild(el("div", "gh-c", cl[shown - 1].toUpperCase())); snd("chip");
+        function reveal() { if (over || !alive(E)) return; shown++; list.appendChild(el("div", "gh-c", cl[shown - 1].toUpperCase())); list.scrollTop = list.scrollHeight; snd("chip");
           if (shown === botAt && botOk) return wait(1200 + rnd(1800)).then(function () { if (!over && alive(E)) finish(-1, st.opp.name + " ha indovinato: " + sol); });
           if (shown >= 5) { tm.textContent = "ultimo indizio: 12 secondi…"; return wait(12000).then(function () { if (!over && alive(E)) finish(0, "Nessuno ha indovinato: nuova parola"); }); }
           tm.textContent = "indizio " + shown + "/5"; wait(5200).then(reveal); }

@@ -78,7 +78,7 @@
   }
   function show(name, fromUser) {
     var idx = ORDER.indexOf(name); if (idx < 0) return;
-    cur = name; pos = idx;
+    var prev = cur; cur = name; pos = idx;
     if (name !== "lead") cat = "coins";                 // uscendo dalla classifica, al ritorno si riparte dai Ricconi
     document.body.setAttribute("data-tab", name === "hub" ? "hub" : "other");
     Array.prototype.forEach.call(tabs, function (t) { t.classList.toggle("on", t.getAttribute("data-tab") === name); });
@@ -88,7 +88,7 @@
     if (name === "lead") loadLead();
     if (name === "act") { loadAct(); lsSet("arc_q_seen", dayKey()); refreshBadge(); }
     if (name === "shop" && window.ArcadeShop) window.ArcadeShop.load();
-    if (name === "mp" && window.ArcadeMulti) window.ArcadeMulti.load();
+    if (name === "mp" && window.ArcadeMulti && (prev !== "mp" || fromUser)) window.ArcadeMulti.load();   // uno swipe annullato non ti riporta alla home del multiplayer
     if (name === "hub") { A.refreshMe(); refreshBadge(); }
   }
   views.mp.style.transform = "translate3d(100%,0,0)"; views.lead.style.transform = "translate3d(200%,0,0)"; views.act.style.transform = "translate3d(-100%,0,0)"; views.shop.style.transform = "translate3d(-200%,0,0)";

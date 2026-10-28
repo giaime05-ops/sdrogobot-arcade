@@ -225,7 +225,11 @@
     bigwin: function (t) { [67, 72, 76, 79, 84, 88, 91].forEach(function (m, i) { tone(gSfx, "triangle", mtof(m), t + i * 0.075, 0.5, 0.14, { a: 0.008 }); tone(gSfx, "sine", mtof(m + 12), t + i * 0.075, 0.4, 0.06); }); for (var i = 0; i < 6; i++) tone(gSfx, "sine", rnd(2500, 5000), t + 0.5 + i * 0.07, 0.1, 0.04); },
     lose: function (t) { tone(gSfx, "sine", 330, t, 0.35, 0.16, { slide: 220 }); tone(gSfx, "sine", 247, t + 0.2, 0.5, 0.14, { slide: 150 }); },
     creak: function (t, p) { p = p || 0; tone(gSfx, "sawtooth", 70 + p * 150, t, 0.11, 0.07, { slide: 55 + p * 120, lp: 700 }); noise(gSfx, t, 0.07, 0.05, "bandpass", 900 + p * 1400, 3); },
-    gun: function (t) { noise(gSfx, t, 0.55, 0.7, "lowpass", 5200, 0.7, 180); noise(gSfx, t, 0.07, 0.55, "highpass", 2400, 1); tone(gSfx, "sine", 170, t, 0.4, 0.55, { slide: 38 }); noise(gSfx, t + 0.12, 0.7, 0.12, "lowpass", 900, 0.6, 150); },
+    gun: function (t) {                                                                                  // colpo di rivoltella: schiocco secco + botta bassa + eco corta
+      noise(gSfx, t, 0.03, 0.9, "highpass", 1800, 0.7); noise(gSfx, t, 0.12, 0.65, "bandpass", 2400, 0.9, 600);
+      tone(gSfx, "sine", 190, t, 0.22, 0.75, { slide: 48 }); tone(gSfx, "triangle", 95, t, 0.18, 0.3, { slide: 40 });
+      noise(gSfx, t + 0.02, 0.9, 0.15, "lowpass", 1400, 0.5, 200); noise(gSfx, t + 0.11, 0.5, 0.07, "bandpass", 900, 0.6, 300);
+    },
     rclick: function (t) { noise(gSfx, t, 0.025, 0.3, "bandpass", 4200, 6); tone(gSfx, "square", 1900, t, 0.03, 0.08, { slide: 900 }); noise(gSfx, t + 0.1, 0.03, 0.2, "bandpass", 3000, 5); tone(gSfx, "triangle", 700, t + 0.1, 0.04, 0.06); },
     rspin: function (t) { for (var i = 0; i < 9; i++) noise(gSfx, t + i * 0.085, 0.02, 0.16, "bandpass", 3600 + (i % 2) * 500, 6); },
     boom: function (t) { noise(gSfx, t, 0.9, 0.35, "lowpass", 2400, 0.8, 120); tone(gSfx, "sine", 130, t, 0.8, 0.4, { slide: 38 }); tone(gSfx, "sawtooth", 80, t, 0.5, 0.12, { slide: 30, lp: 400 }); }

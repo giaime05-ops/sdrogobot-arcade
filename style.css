@@ -1588,3 +1588,59 @@ body.sbx .pg-head{padding-top:22px}
 /* pioggia v76: velo scuro + righe che scendono (solo CSS, nessun lampeggio) */
 .rc2-rain{position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(rgba(10,14,40,.22),rgba(10,14,40,.22)),repeating-linear-gradient(105deg,rgba(190,215,255,.0) 0 14px,rgba(190,215,255,.22) 14px 15px,rgba(190,215,255,0) 15px 38px);background-size:auto,120px 120px;animation:rcRain .45s linear infinite}
 @keyframes rcRain{to{background-position:0 0,-40px 120px}}
+
+/* home multiplayer v77: banner a tutta altezza, uno per sezione, ognuno col suo disegno e colore */
+.mp-hub{display:flex!important;flex-direction:column;gap:12px;flex:1;min-height:0;align-content:stretch!important;padding:4px 0 8px!important}
+.mp-tile{position:relative;flex:1 1 0;min-height:0;flex-direction:row!important;justify-content:flex-start!important;align-items:center;padding:0 16px!important;overflow:hidden;text-align:left;border-width:2px}
+.mp-tile .mp-art{position:absolute;inset:0;pointer-events:none}.mp-tile .mp-art svg{width:100%;height:100%;display:block}
+.mp-tile .mp-tx{position:relative;display:flex;flex-direction:column;gap:5px;max-width:58%;text-align:left;align-items:flex-start}
+.mp-tile .mp-tx b{font:400 26px Bungee,Rajdhani,sans-serif;letter-spacing:1px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.mp-tile .mp-tx span{font:700 14px Rajdhani,sans-serif;color:#fff;opacity:.92;line-height:1.15;text-shadow:0 1px 6px rgba(0,0,0,.6);text-align:left}
+.mp-tile .mp-tx em{font:400 11px Bungee,sans-serif;font-style:normal;background:rgba(0,0,0,.45);padding:3px 8px;border-radius:8px;color:#ffe27a}
+.mp-tile.t-pk{background:radial-gradient(circle at 70% 40%,#1f9a5a,#0b4a2c 70%);border-color:#4cf0a0;box-shadow:0 0 18px rgba(76,240,160,.35)}
+.mp-tile.t-du{background:radial-gradient(circle at 70% 40%,#c8283a,#4a0a18 75%);border-color:#ff7a5c;box-shadow:0 0 18px rgba(255,122,92,.35)}
+.mp-tile.t-rc{background:linear-gradient(120deg,#3a1a8f,#150a3a 70%);border-color:#c98bff;box-shadow:0 0 18px rgba(201,139,255,.4)}
+.mp-tile.t-qz{background:linear-gradient(120deg,#12586f,#0c1f3a 75%);border-color:#2ee6c0}
+.mp-tile.off{opacity:.6!important}
+.mp-tile .mp-art{left:44%;right:2px;top:4px;bottom:4px;inset:4px 2px 4px 44%}
+.mp-tile .mp-tx{max-width:56%}.mp-tile .mp-tx b{font-size:23px}
+
+/* amici: scelta con stile profilo (v77) */
+.dl-opp{display:flex!important;gap:8px}
+.dl-sel{flex:1;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.07);color:#fff;text-align:left}
+.dl-sel.on{border-color:#ff3db0;background:rgba(255,61,176,.18);box-shadow:0 0 12px rgba(255,61,176,.45)}
+.dl-sel .avatar{width:44px;height:44px;flex:0 0 44px;font-size:20px}.dl-sel .dl-nm{flex:1;display:flex;flex-direction:column;min-width:0;font:700 17px Rajdhani,sans-serif}.dl-sel small{font:600 12px Rajdhani,sans-serif;opacity:.7}.dl-sel em{font-style:normal;font-size:18px;opacity:.8}
+.dl-bot{width:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.07);color:#fff;font:700 13px Rajdhani,sans-serif}.dl-bot i{font-style:normal;font-size:24px}
+.dl-bot.on{border-color:#35e6ff;background:rgba(53,230,255,.16);box-shadow:0 0 12px rgba(53,230,255,.4)}
+.fr-sheet{position:fixed;inset:0;z-index:200;background:rgba(5,2,20,.7);display:flex;align-items:flex-end;justify-content:center}
+.fr-sbox{width:100%;max-width:520px;max-height:78%;display:flex;flex-direction:column;gap:8px;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:#150a33;border:2px solid #ff3db0;border-bottom:0}
+.fr-sbox>b{font:400 16px Bungee,Rajdhani,sans-serif;color:#ffd6ef;letter-spacing:1px;text-align:center}
+.fr-list{flex:1 1 auto;min-height:60px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}
+.fr-r{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;text-align:left;flex:0 0 auto}
+.fr-r .avatar{width:38px;height:38px;flex:0 0 38px}.fr-r .nm{flex:1;font:700 17px Rajdhani,sans-serif}.fr-r .st{font:700 12px Rajdhani,sans-serif;opacity:.6}.fr-r.on .st{color:#52ff9a;opacity:1}
+/* tavoli v77: elenco a banner + lobby del tavolo */
+.tbl-list .mp-tile .mp-tx b{font-size:22px}
+.mp-tile.tb-pk{background:radial-gradient(circle at 70% 40%,#1f9a5a,#0b4a2c 70%);border-color:#4cf0a0}
+.mp-tile.tb-bj{background:radial-gradient(circle at 70% 40%,#b3203a,#3d0814 75%);border-color:#ff7a8c}
+.mp-tile.tb-sc{background:radial-gradient(circle at 70% 40%,#2a5fd0,#0b1c55 75%);border-color:#7aa8ff}
+.tl-code{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);flex:0 0 auto}
+.tl-code span{font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;opacity:.7}.tl-code b{flex:1;font:400 18px Bungee,Rajdhani,sans-serif;color:#ffd23b;letter-spacing:2px}
+.tl-share{border:0;border-radius:10px;padding:7px 10px;background:#35e6ff;color:#06222b;font:700 13px Rajdhani,sans-serif}
+.tl-seats{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:0 0 auto}
+.tl-seat{min-height:84px;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:14px;border:1.5px dashed rgba(255,255,255,.3);background:rgba(255,255,255,.04);position:relative}
+.tl-seat.full{border-style:solid;background:rgba(255,255,255,.09)}.tl-seat.me{border-color:#ffd23b;box-shadow:0 0 12px rgba(255,210,59,.35)}.tl-seat.friend{border-color:#52ff9a}.tl-seat.wait{border-color:#ffb347;opacity:.85}.tl-seat.bot{border-color:#35e6ff}
+.tl-seat .avatar{width:42px;height:42px;flex:0 0 42px;font-size:20px}.tl-nm{flex:1;min-width:0;display:flex;flex-direction:column;font:700 17px Rajdhani,sans-serif}.tl-nm small{font:600 11px Rajdhani,sans-serif;opacity:.7;letter-spacing:.08em}
+.tl-no{position:absolute;top:5px;left:10px;font:700 10px Rajdhani,sans-serif;opacity:.5;letter-spacing:.1em}
+.tl-btns{display:flex;gap:6px;width:100%;margin-top:10px}.tl-btns button{flex:1;border:0;border-radius:10px;padding:9px 2px;background:linear-gradient(180deg,#ff6fc8,#c2188f);color:#fff;font:700 13px Rajdhani,sans-serif}.tl-btns button.alt{background:linear-gradient(180deg,#35e6ff,#1286b3);color:#04222b}
+.tl-x{position:absolute;top:3px;right:5px;border:0;background:none;color:#fff;opacity:.6;font-size:15px}
+.tl-rules{flex:1 1 auto;min-height:0;overflow-y:auto}
+.tl-rules{display:flex;flex-direction:column;justify-content:space-evenly;gap:8px}
+/* ghigliottina: la tastiera resta sempre visibile, gli indizi scorrono (v77) */
+#mpBody.fit .mp-area:has(.gh-box){flex:1 1 0;min-height:0;display:flex;flex-direction:column}
+#mpBody.fit .gh-box{flex:1;min-height:0}
+#mpBody.fit .gh-list{flex:1 1 0;min-height:48px;overflow-y:auto}
+#mpBody.fit .gh-t,#mpBody.fit .gh-in,#mpBody.fit .gh-kb{flex:0 0 auto}
+/* dadi: il nome non finisce sotto i dadi e niente esce dal pannello (v77) */
+.mx-pan{overflow:hidden;padding-top:26px!important}
+.mx-nm{position:absolute;top:6px;left:0;right:0;z-index:0;pointer-events:none}
+.mx-stage{z-index:1}
