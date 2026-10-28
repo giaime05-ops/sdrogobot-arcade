@@ -37,7 +37,7 @@
   var frCache = null;
   function loadFriends() {
     if (frCache) return Promise.resolve(frCache);
-    return A.api("/api/social/friends").then(function (j) { frCache = (j.friends || []).filter(function (f) { return !/^bot\d/.test(f.pid || ""); }); if (!frCache.length) throw 0; frCache.sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0); }); return frCache; }).catch(function () {
+    return A.api("/api/social/friends").then(function (j) { frCache = (j.friends || []).filter(function (f) { return !/^bot\d/.test(f.pid || ""); }).map(function (f) { f.real = true; return f; }); if (!frCache.length) throw 0; frCache.sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0); }); return frCache; }).catch(function () {
       return names().filter(function (p) { return p.id !== "bot"; }).map(function (p) { return { pid: p.id, name: p.name, style: p.style || {}, online: false }; });
     });
   }
@@ -73,6 +73,7 @@
   function lobby() {
     fit(true); epoch++; body.innerHTML = "";
     if (A.isSandbox && A.isSandbox()) body.appendChild(el("div", "pg-me", "🛠️ Prototipo (solo admin): gli avversari sono simulati"));
+    body.appendChild(invBox());
     var g = el("div", "mp-hub"); body.appendChild(g);
     [["pk", "TAVOLI", "Poker, Blackjack e Scopa con gli amici", tables, true], ["du", "SFIDE 1v1", "Sasso-carta-forbici, dadi, tris, roulette…", duels, true],
      ["rc", "GRAND PRIX", "Giri a tempo, gare e classifiche", function () { if (window.ArcadeRace) { fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); } }, true],
@@ -90,7 +91,7 @@
     sc: { name: "Scopa", sub: "In 2 o in 4 · a 11 o 21 punti", max: 4, art: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><g transform="translate(78 60)"><circle r="40" fill="#ffd23b" stroke="#b8860b" stroke-width="5"/><circle r="30" fill="none" stroke="#b8860b" stroke-width="3" stroke-dasharray="4 5"/><text x="-14" y="14" font-size="40" font-weight="900" fill="#8a5a00" font-family="Bungee,sans-serif">7</text></g><g transform="translate(150 62) rotate(10)"><rect x="-24" y="-36" width="48" height="72" rx="6" fill="#fdf3d8"/><path d="M0 -20 L12 0 L0 20 L-12 0Z" fill="#c0182f"/></g></svg>' }
   };
   function tables() {
-    fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI");
+    fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI"); body.appendChild(invBox());
     var g = el("div", "mp-hub tbl-list"); body.appendChild(g);
     ["pk", "bj", "sc"].forEach(function (k) {
       var t = TBL[k], b = el("button", "mp-tile tb-" + k); b.type = "button"; var art = el("div", "mp-art"); art.innerHTML = t.art; b.appendChild(art);
@@ -181,7 +182,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       og.innerHTML = ""; var p = st.opp, isB = p.id === "bot", b = el("button", "dl-sel" + (isB ? "" : " on")); b.type = "button";
       var av = el("div", "avatar rav"); if (isB) av.textContent = "🤖"; else A.styleAvatar(av, p.style || {}, p.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 1).toUpperCase()); b.appendChild(av);
       var nm = el("div", "dl-nm"); nm.appendChild(isB ? el("span", "", "Scegli un amico") : A.nameEl(p.name, p.style || {})); nm.appendChild(el("small", "", isB ? "Tocca per vedere i tuoi amici" : "Tocca per cambiare")); b.appendChild(nm); b.appendChild(el("em", "", "▾"));
-      b.addEventListener("click", function () { friendSheet([], function (f) { st.opp = { id: f.pid, name: f.name, style: f.style }; pO(); }); });
+      b.addEventListener("click", function () { friendSheet([], function (f) { st.opp = { id: f.pid, name: f.name, style: f.style, real: !!f.real }; pO(); }); });
       var bb = el("button", "dl-bot" + (isB ? " on" : "")); bb.type = "button"; bb.appendChild(el("i", "", "🤖")); bb.appendChild(el("span", "", "Bot")); bb.addEventListener("click", function () { st.opp = BOT; pO(); });
       og.appendChild(b); og.appendChild(bb);
     } pO();
@@ -189,13 +190,142 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     function pB() { bg.innerHTML = ""; [10, 50, 100, 500, 1000].forEach(function (n) { var b = el("button", st.bet === n ? "on" : "", A.fmt(n)); b.type = "button"; b.addEventListener("click", function () { st.bet = n; pB(); }); bg.appendChild(b); }); } pB();
     c.appendChild(el("div", "mp-lab", "Round (al meglio di)")); var rg = el("div", "dl-seg r3"); c.appendChild(rg);
     function pR() { rg.innerHTML = ""; [1, 3, 5].forEach(function (n) { var b = el("button", st.rounds === n ? "on" : "", String(n)); b.type = "button"; b.addEventListener("click", function () { st.rounds = n; pR(); }); rg.appendChild(b); }); } pR();
-    var rw = el("div", "mp-end dl-go"); var go = el("button", "mp-go", "INVIA SFIDA"); go.type = "button"; go.addEventListener("click", send);
+    body.appendChild(invBox());
+    var rw = el("div", "mp-end dl-go"); var go = el("button", "mp-go", "INVIA SFIDA"); go.type = "button"; go.addEventListener("click", function () { if (st.opp.real && isReal()) sendNet(); else send(); });
     var gb = el("button", "mp-go mp-alt", "🤖 PROVA COL BOT"); gb.type = "button"; gb.addEventListener("click", function () { st.opp = BOT; duel(); }); rw.appendChild(go); rw.appendChild(gb); body.appendChild(rw);
   }
   function send() {
     fit(false); epoch++; body.innerHTML = ""; var c = el("div", "mp-card"); c.appendChild(el("div", "mp-sec", "SFIDA INVIATA A " + st.opp.name.toUpperCase()));
     c.appendChild(el("div", "pg-me", "In attesa che accetti…")); body.appendChild(c);
     wait(1500).then(duel);
+  }
+
+
+  // ====================================================================== rete (stanze del server)
+  function isReal() { return !(A.isSandbox && A.isSandbox()); }
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var NET = null;
+  function gr(n) { return NET ? Math.floor(NET.R() * n) : rnd(n); }          // casualità condivisa: stessa su entrambi i telefoni
+  function netClose() { if (NET) { NET.dead = true; clearTimeout(NET.t); } NET = null; }
+  function netOpen(room, onStart) {
+    netClose();
+    var N = NET = { id: room.id, me: room.me, view: room, since: 0, inbox: [], out: [], busy: false, dead: false, waiters: [], seed: 0, order: [], idx: 0, calls: 0, seq: 0, seen: {}, onStart: onStart, t: 0, started: false, R: Math.random, offT: 0 };
+    function handle(e) {
+      var key = e.u + ":" + e.s; if (e.s != null) { if (N.seen[key]) return; N.seen[key] = 1; }
+      if (e.k === "start") { if (N.started) return; N.started = true; N.seed = e.seed; N.order = e.order || []; N.idx = Math.max(0, N.order.indexOf(N.me)); N.opp = N.order[1 - N.idx]; if (N.onStart) N.onStart(e); return; }
+      if (e.k === "join" || e.k === "leave") { if (e.k === "leave") N.left = e.u; return; }
+      N.inbox.push(e); N.waiters = N.waiters.filter(function (w) { var i = N.inbox.indexOf(e); if (i >= 0 && w.pred(e)) { N.inbox.splice(i, 1); clearInterval(w.iv); w.res(e); return false; } return true; });
+    }
+    function pump() {
+      if (N.dead || N.busy) return; N.busy = true; var ev = N.out.shift();
+      var body = { id: N.id, since: N.since }; if (ev) body.ev = ev;
+      A.api("/api/room/sync", "POST", body).then(function (j) {
+        N.busy = false; if (N.dead) return;
+        if (j.gone) N.gone = true;
+        if (j.room) N.view = j.room; if (typeof j.n === "number") N.since = j.n;
+        (j.events || []).forEach(handle); sched();
+      }).catch(function () { N.busy = false; if (ev) N.out.unshift(ev); if (!N.dead) N.t = setTimeout(pump, 1200); });
+    }
+    function sched() { if (N.dead) return; clearTimeout(N.t); N.t = setTimeout(pump, N.out.length ? 0 : 420); }
+    N.pump = pump; pump();
+    return N;
+  }
+  function netSend(ev) { if (!NET) return; ev.s = ++NET.seq; NET.out.push(ev); clearTimeout(NET.t); NET.t = setTimeout(NET.pump, 0); }
+  function oppOffline() { var N = NET; if (!N || !N.view) return false; var p = (N.view.players || []).filter(function (q) { return q.uid === N.opp; })[0]; return !p || N.left === N.opp || (p && p.online === false); }
+  function netTake(pred) {                                       // aspetta un evento dell'avversario; se sparisce per più di 25 s → abbandono
+    var N = NET;
+    return new Promise(function (res, rej) {
+      for (var i = 0; i < N.inbox.length; i++) if (pred(N.inbox[i])) return res(N.inbox.splice(i, 1)[0]);
+      var w = { pred: pred, res: res }, off = 0;
+      w.iv = setInterval(function () { if (N.dead) { clearInterval(w.iv); return; } if (oppOffline()) { off += 1; if (off >= 25) { clearInterval(w.iv); rej({ forfeit: true }); } } else off = 0; }, 1000);
+      N.waiters.push(w);
+    });
+  }
+  function mvf(c) { return function (e) { return e.k === "m" && e.c === c && NET && e.u === NET.opp; }; }
+  // ---- inviti ricevuti (non Grand Prix): in alto nella lobby e nelle schermate Sfide/Tavoli
+  var DUELS = { srf: 1, dadi: 1, hl: 1, tris: 1, rou: 1, rr: 1, ghig: 1 };
+  function invites(box) {
+    if (!isReal()) return;
+    A.api("/api/room/mine", "GET").then(function (j) {
+      if (!j || !j.success || !box.isConnected) return; box.innerHTML = "";
+      (j.rooms || []).filter(function (r) { return r.game !== "race" && r.host !== r.me; }).forEach(function (r) {
+        var row = el("div", "lb-open"), d = el("div", "d"), hn = (r.players[0] || {}).name || "un amico", gname = (GNAME[r.game] || (TBL[r.game === "poker" ? "pk" : r.game === "bj" ? "bj" : "sc"] || {}).name || r.game);
+        d.appendChild(el("b", "", "Invito di " + hn)); d.appendChild(el("span", "", gname + (r.cfg.stake ? " · puntata " + A.fmt(r.cfg.stake) + " $SDG" : ""))); row.appendChild(d);
+        var g = el("button", "lb-j", "ENTRA"); g.type = "button";
+        g.addEventListener("click", function () { A.api("/api/room/join", "POST", { id: r.id }).then(function (k) { if (k && k.success) guestJoin(k.room); else A.toast((k && k.error) || "Non riesco a entrare"); }).catch(function (x) { A.toast((x && x.message) || "Server non raggiungibile"); }); });
+        row.appendChild(g); box.appendChild(row);
+      });
+    }).catch(function () {});
+  }
+  function invBox() { var b = el("div", "gl-inv"); invites(b); return b; }
+  function tableGuest(room) { A.toast("Tavoli online in arrivo"); }
+  function guestJoin(room) {
+    if (DUELS[room.game]) {
+      st.game = room.game; st.bet = room.cfg.stake; st.rounds = (room.cfg.x && room.cfg.x.rounds) || 3; var h = room.players.filter(function (p) { return p.uid === room.host; })[0] || room.players[0];
+      st.opp = { id: h.pid, name: h.name, style: h.style, uid: h.uid, real: true };
+      waitStart(room, "In attesa che " + h.name + " avvii la sfida…", false);
+    } else tableGuest(room);
+  }
+  // schermata d'attesa: chi ha creato la stanza avvia appena l'invitato è dentro; l'invitato aspetta il via
+  function waitStart(room, txt, isHost) {
+    fit(false); epoch++; var E = epoch; body.innerHTML = ""; var c = el("div", "mp-card"); c.appendChild(el("div", "mp-sec", isHost ? "SFIDA INVIATA A " + st.opp.name.toUpperCase() : "SFIDA DI " + st.opp.name.toUpperCase()));
+    c.appendChild(el("div", "pg-me", txt)); var rw = el("div", "mp-end"), cn = el("button", "mp-go mp-alt", "ANNULLA"); cn.type = "button"; rw.appendChild(cn); c.appendChild(rw); body.appendChild(c);
+    var N = netOpen(room, function () { if (alive(E)) duel(); }), t0 = Date.now(), started = false;
+    cn.addEventListener("click", function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); netClose(); (DUELS[room.game] ? duels : tables)(); });
+    var iv = setInterval(function () {
+      if (!alive(E) || !NET || NET !== N) return clearInterval(iv);
+      if (N.gone) { clearInterval(iv); A.toast("La stanza è stata chiusa"); netClose(); return DUELS[room.game] ? duels() : tables(); }
+      if (isHost && !started && N.view && (N.view.players || []).length >= 2) { started = true; A.api("/api/room/start", "POST", { id: room.id }).catch(function () { started = false; }); }
+      if (isHost && Date.now() - t0 > 180000) { clearInterval(iv); A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); netClose(); A.toast("Nessuna risposta: puntata restituita"); (DUELS[room.game] ? duels : tables)(); }
+    }, 900);
+  }
+  function sendNet() {
+    var o = st.opp; fit(false); epoch++; body.innerHTML = ""; var c = el("div", "mp-card"); c.appendChild(el("div", "pg-me", "Creo la sfida…")); body.appendChild(c);
+    A.api("/api/room/create", "POST", { game: st.game, cfg: { stake: st.bet, max: 2, x: { rounds: st.rounds } } }).then(function (j) {
+      if (!j || !j.success) throw new Error((j && j.error) || "Impossibile creare la sfida");
+      return A.api("/api/room/invite", "POST", { id: j.room.id, pid: o.id }).then(function (k) {
+        if (k && k.offline) A.toast(o.name + " è offline: l'ho taggato nel gruppo");
+        waitStart(j.room, "In attesa che " + o.name + " accetti…", true);
+      }, function (x) { A.api("/api/room/leave", "POST", { id: j.room.id }).catch(function () {}); throw x; });
+    }).catch(function (x) { A.toast((x && x.message) || "Server non raggiungibile"); duelSetup(); });
+  }
+  // fine partita online: invio la classifica, il server paga se concordiamo (o se l'altro è sparito)
+  function netSettle(won, box) {
+    var N = NET; if (!N) return; var ord = won ? [N.me, N.opp] : [N.opp, N.me], tries = 0, done = false;
+    box.textContent = "⏳ Conferma dell'esito…"; box.className = "pg-me";
+    (function post() {
+      if (done || tries++ > 30 || !NET || NET !== N) return;
+      A.api("/api/room/result", "POST", { id: N.id, order: ord }).then(function (j) {
+        if (j && j.settled && j.result) {
+          done = true; var r = j.result, py = (r.pay || {})[N.me] || 0;
+          if (r.refund) box.textContent = "↩️ Esito non concordante: puntate restituite"; else if (r.sim) box.textContent = won ? "🏆 Vinto (prova, soldi finti)" : "💀 Perso (prova, soldi finti)";
+          else box.textContent = won ? "🏆 Hai vinto +" + A.fmt(py - st.bet) + " $SDG" : "💀 Hai perso −" + A.fmt(st.bet) + " $SDG";
+          box.className = "pg-me " + (won ? "mp-win" : "mp-lose"); try { A.refreshMe(); } catch (e) {}
+        } else setTimeout(post, tries < 4 ? 1200 : 3000);
+      }).catch(function () { setTimeout(post, 3000); });
+    })();
+  }
+
+
+  // tris online: il giocatore 1 è ❌, il 2 è ⭕; a ogni round comincia a turno uno dei due
+  function trisNet(area, msg, E) {
+    var N = NET, me = N.idx + 1, c0 = N.calls, b = [0, 0, 0, 0, 0, 0, 0, 0, 0], L = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]], starter = c0 % 2;
+    function win(p) { return L.some(function (l) { return l.every(function (x) { return b[x] === p; }); }); }
+    function free() { return b.filter(function (v) { return !v; }).length; }
+    var grid = el("div", "mp-board"), cells = []; area.appendChild(grid);
+    return new Promise(function (res, rej) {
+      function paint() { cells.forEach(function (c, i) { c.textContent = b[i] === 1 ? "❌" : (b[i] === 2 ? "⭕" : ""); }); }
+      function finish(r, t) { grid.classList.add("lock"); say(msg, t, r > 0 ? "mp-win" : (r < 0 ? "mp-lose" : "")); setTimeout(function () { if (alive(E)) res(r); }, 1100); }
+      function check() { if (win(me)) { finish(1, "Tris! Round tuo"); return true; } if (win(3 - me)) { finish(-1, st.opp.name + " ha fatto tris"); return true; } if (!free()) { finish(0, "Pari: si rigioca"); return true; } return false; }
+      function mine() { grid.classList.remove("lock"); say(msg, "Sei la " + (me === 1 ? "❌" : "⭕") + ": tocca una casella"); }
+      function theirs() { grid.classList.add("lock"); say(msg, "⏳ " + st.opp.name + " pensa…"); netTake(mvf(c0)).then(function (e) { if (!alive(E)) return; var i = e.v | 0; if (i >= 0 && i < 9 && !b[i]) b[i] = 3 - me; snd("pen"); paint(); if (!check()) mine(); }, rej); }
+      for (var i = 0; i < 9; i++) (function (i) {
+        var c = el("button", "mp-cell"); c.type = "button"; cells.push(c);
+        c.addEventListener("click", function () { if (b[i] || grid.classList.contains("lock")) return; A.haptic("light"); snd("pen"); b[i] = me; paint(); netSend({ k: "m", c: c0, v: i }); if (!check()) theirs(); });
+        grid.appendChild(c);
+      })(i);
+      grid.classList.add("lock"); if (starter === N.idx) mine(); else theirs();
+    });
   }
 
   // ====================================================================== 1v1 (struttura comune)
@@ -210,14 +340,18 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     function draw() { head.textContent = GNAME[st.game] + " · round " + Math.min(rd, st.rounds) + "/" + st.rounds + " · " + A.fmt(st.bet) + " $SDG"; sa.textContent = me; sb.textContent = op; }
     function end() {
       var won = me > op; draw(); area.innerHTML = "";
-      msg.textContent = won ? "🏆 HAI VINTO +" + A.fmt(st.bet) + " $SDG (simulato)" : "💀 HAI PERSO −" + A.fmt(st.bet) + " $SDG (simulato)"; msg.className = "pg-me " + (won ? "mp-win" : "mp-lose"); A.haptic(won ? "ok" : "bad");
+      A.haptic(won ? "ok" : "bad");
+      if (NET) { netSettle(won, msg); var r3 = el("button", "mp-go mp-alt", "TORNA ALLA LOBBY"); r3.type = "button"; r3.addEventListener("click", function () { netClose(); duels(); }); area.appendChild(r3); return; }
+      msg.textContent = won ? "🏆 HAI VINTO +" + A.fmt(st.bet) + " $SDG (simulato)" : "💀 HAI PERSO −" + A.fmt(st.bet) + " $SDG (simulato)"; msg.className = "pg-me " + (won ? "mp-win" : "mp-lose");
       var r1 = el("button", "mp-go", "RIGIOCA"); r1.type = "button"; r1.addEventListener("click", duel);
       var r2 = el("button", "mp-go mp-alt", "LOBBY"); r2.type = "button"; r2.addEventListener("click", duels); area.appendChild(r1); area.appendChild(r2);
     }
     function next() {
       if (!alive(E)) return; draw(); area.innerHTML = ""; msg.className = "pg-me";
-      GAME[st.game](area, msg, E).then(function (r) {                    // r: 1 vinto, -1 perso, 0 pari (si rigioca)
+      if (NET) { NET.calls++; NET.R = mulberry((NET.seed + NET.calls * 7919) | 0); NET.waiters.forEach(function (w) { clearInterval(w.iv); }); NET.waiters = []; }
+      GAME[st.game](area, msg, E).catch(function (x) { if (x && x.forfeit && alive(E)) { me = need; op = 0; msg.textContent = ""; A.toast(st.opp.name + " ha abbandonato"); return 99; } throw x; }).then(function (r) {                    // r: 1 vinto, -1 perso, 0 pari (si rigioca)
         if (!alive(E)) return;
+        if (r === 99) return end();
         if (r > 0) me++; else if (r < 0) op++;
         if (r) rd++;
         draw();
@@ -268,7 +402,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     srf: function (area, msg, E) {
       say(msg, "Scegli la tua mossa");
       return btnRow(area, HANDS).then(function (i) {
-        var o = rnd(3), clash = el("div", "mp-clash"); area.innerHTML = ""; area.appendChild(clash);
+        if (!NET) return [i, rnd(3)]; var c0 = NET.calls; netSend({ k: "m", c: c0, v: i }); say(msg, "⏳ In attesa di " + st.opp.name + "…"); return netTake(mvf(c0)).then(function (e) { return [i, e.v | 0]; });
+      }).then(function (pr) {
+        var i = pr[0], o = pr[1], clash = el("div", "mp-clash"); area.innerHTML = ""; area.appendChild(clash);
         var L = el("span", "shake", "✊"), R = el("span", "shake r", "✊"); clash.appendChild(L); clash.appendChild(R); say(msg, "Sasso…"); snd("rps"); setTimeout(function () { say(msg, "Carta…"); snd("rps"); }, 330); setTimeout(function () { say(msg, "Forbici…"); snd("rps"); }, 660);
         return wait(1000).then(function () {
           snd("rpsgo"); L.className = "pop"; R.className = "pop"; L.textContent = HANDS[i][0]; R.textContent = HANDS[o][0];
@@ -304,7 +440,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       O.cup.classList.add("auto"); O.cup.style.animation = "none";
       say(msg, "Tocca il bussolotto per lanciare");
       hint.textContent = "";
-      return new Promise(function (res) {
+      return new Promise(function (res, rej) {
         var t0 = 0, iv = 0, done = false;
         function stop() { clearInterval(iv); iv = 0; }
         function down(ev) {
@@ -314,25 +450,26 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         function up() { if (!t0 || done) return; var held = Date.now() - t0; t0 = 0; done = true; hint.textContent = ""; setTimeout(function () { if (!alive(E)) return; stop(); M.cup.classList.remove("hold"); go(); }, Math.max(0, 700 - held)); }
         function go() {
           hint.textContent = ""; M.p.classList.add("act");
-          var mv = [1 + rnd(6), 1 + rnd(6)], ov = [1 + rnd(6), 1 + rnd(6)];
+          var mv = [1 + rnd(6), 1 + rnd(6)], ov = [1 + rnd(6), 1 + rnd(6)], gate = Promise.resolve();
+          if (NET) { var dv = [1 + gr(6), 1 + gr(6), 1 + gr(6), 1 + gr(6)], c0 = NET.calls; mv = NET.idx ? dv.slice(2) : dv.slice(0, 2); ov = NET.idx ? dv.slice(0, 2) : dv.slice(2); netSend({ k: "m", c: c0 }); gate = netTake(mvf(c0)); }
           throwDice(M, mv).then(function () {
             if (!alive(E)) return; var a = mv[0] + mv[1]; M.tot.textContent = a; M.p.classList.remove("act"); O.p.classList.add("act");
-            say(msg, st.opp.name + " agita il bussolotto…"); O.cup.style.animation = ""; O.cup.classList.add("hold"); snd("creak", .5);
+            say(msg, NET ? "⏳ " + st.opp.name + " sta per lanciare…" : st.opp.name + " agita il bussolotto…"); O.cup.style.animation = ""; O.cup.classList.add("hold"); snd("creak", .5);
             var n = 0, iv2 = setInterval(function () { if (!alive(E)) return clearInterval(iv2); snd("creak", Math.random()); if (++n > 7) clearInterval(iv2); }, 140);
-            return wait(1250).then(function () { O.cup.classList.remove("hold"); return throwDice(O, ov); }).then(function () {
+            return gate.then(function () { return wait(1250); }).then(function () { O.cup.classList.remove("hold"); return throwDice(O, ov); }).then(function () {
               if (!alive(E)) return; var b = ov[0] + ov[1]; O.tot.textContent = b; O.p.classList.remove("act");
               var r = a === b ? 0 : (a > b ? 1 : -1); say(msg, "Tu " + a + " · " + st.opp.name + " " + b + (r === 0 ? " — pari: si rilancia" : ""), r > 0 ? "mp-win" : (r < 0 ? "mp-lose" : ""));
               (r > 0 ? M : O).tot.style.color = r === 0 ? "" : "#58ffa8"; snd(r > 0 ? "win" : (r < 0 ? "lose" : "click"));
               return wait(1300).then(function () { res(r); });
             });
-          });
+          }).catch(rej);
         }
         M.cup.style.touchAction = "none"; M.cup.addEventListener("contextmenu", function (e) { e.preventDefault(); }); M.cup.addEventListener("pointerdown", function (e) { try { M.cup.setPointerCapture(e.pointerId); } catch (x) {} down(e); }); M.cup.addEventListener("pointerup", up); M.cup.addEventListener("pointercancel", up);
       });
     },
     hl: function (area, msg, E) {
-      var c1 = rnd(13), c2 = rnd(13); while (c2 === c1) c2 = rnd(13);
-      var s1 = rnd(4), s2 = rnd(4), SUITS = ["♠", "♥", "♦", "♣"];
+      var c1 = gr(13), c2 = gr(13); while (c2 === c1) c2 = gr(13);
+      var s1 = gr(4), s2 = gr(4), SUITS = ["♠", "♥", "♦", "♣"];
       function flipCard(r, s, up) {
         var w = el("span", "mx-fl"), i = el("span", "mx-fi" + (up ? " up" : "")); w.appendChild(i);
         i.appendChild(el("span", "mx-fa", "?")); i.appendChild(el("span", "mx-fb" + (s === 1 || s === 2 ? " red" : ""), RK[r] + SUITS[s])); w._i = i; return w;
@@ -343,7 +480,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       M.appendChild(el("div", "mx-nm", "Tu")); split.appendChild(O); split.appendChild(mid); split.appendChild(M); area.appendChild(split);
       say(msg, "La seconda carta sarà più ALTA o più BASSA della prima?");
       return btnRow(M, [["⬆️ ALTO", ""], ["⬇️ BASSO", ""]]).then(function (i) {
-        var bi = rnd(2), up = c2 > c1; M.querySelectorAll("button").forEach(function (b) { b.style.opacity = ".5"; });
+        if (!NET) return [i, rnd(2)]; var c0 = NET.calls; netSend({ k: "m", c: c0, v: i }); return netTake(mvf(c0)).then(function (e) { return [i, e.v | 0]; });
+      }).then(function (pr) {
+        var i = pr[0], bi = pr[1], up = c2 > c1; M.querySelectorAll("button").forEach(function (b) { b.style.opacity = ".5"; });
         op.textContent = "✔ ha scelto"; snd("click");
         return wait(800).then(function () {
           snd("flip"); k2._i.classList.add("up"); return wait(800);
@@ -356,6 +495,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       });
     },
     tris: function (area, msg, E) {
+      if (NET) return trisNet(area, msg, E);
       var b = [0, 0, 0, 0, 0, 0, 0, 0, 0], L = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
       function win(p) { for (var i = 0; i < 8; i++) if (L[i].every(function (x) { return b[x] === p; })) return true; return false; }
       function free() { var f = []; b.forEach(function (v, i) { if (!v) f.push(i); }); return f; }
@@ -393,9 +533,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     },
     ghig: function (area, msg, E) {
       var pool = GHIG.map(function (_, i) { return i; }).filter(function (i) { return ghUsed.indexOf(i) < 0; }); if (!pool.length) { ghUsed = []; pool = GHIG.map(function (_, i) { return i; }); }
-      var pi = pool[rnd(pool.length)]; ghUsed.push(pi); var sol = GHIG[pi][0], cl = GHIG[pi][1].split(" "), shown = 0, lock = 0, over = false, word = "";
-      var botAt = 2 + rnd(3), botOk = Math.random() < 0.72;                     // il bot risponde dopo N indizi (e ci azzecca 7 volte su 10)
-      return new Promise(function (res) {
+      var pi = pool[gr(pool.length)]; ghUsed.push(pi); var sol = GHIG[pi][0], cl = GHIG[pi][1].split(" "), shown = 0, lock = 0, over = false, word = "";
+      var botAt = NET ? 99 : 2 + rnd(3), botOk = !NET && Math.random() < 0.72, c0 = NET ? NET.calls : 0, okSeen = false;                     // il bot risponde dopo N indizi (e ci azzecca 7 volte su 10)
+      return new Promise(function (res, rej) {
         area.innerHTML = ""; var box = el("div", "gh-box"), list = el("div", "gh-list"), disp = el("div", "gh-in"), kb = el("div", "gh-kb"), tm = el("div", "gh-t");
         box.appendChild(tm); box.appendChild(list); box.appendChild(disp); box.appendChild(kb); area.appendChild(box);
         function show() { disp.textContent = word || "scrivi la parola in comune…"; disp.classList.toggle("ph", !word); }
@@ -403,9 +543,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         function finish(r, txt) { if (over) return; over = true; kb.classList.add("off"); say(msg, txt, r > 0 ? "mp-win" : (r < 0 ? "mp-lose" : "")); list.appendChild(el("div", "gh-sol", "🔑 " + sol)); wait(1500).then(function () { res(r); }); }
         function reveal() { if (over || !alive(E)) return; shown++; list.appendChild(el("div", "gh-c", cl[shown - 1].toUpperCase())); list.scrollTop = list.scrollHeight; snd("chip");
           if (shown === botAt && botOk) return wait(1200 + rnd(1800)).then(function () { if (!over && alive(E)) finish(-1, st.opp.name + " ha indovinato: " + sol); });
-          if (shown >= 5) { tm.textContent = "ultimo indizio: 12 secondi…"; return wait(12000).then(function () { if (!over && alive(E)) finish(0, "Nessuno ha indovinato: nuova parola"); }); }
+          if (shown >= 5) { tm.textContent = "ultimo indizio: 12 secondi…"; return wait(12000).then(function () { if (!over && alive(E)) (NET ? wait(1500) : Promise.resolve()).then(function () { if (!over && alive(E)) finish(0, "Nessuno ha indovinato: nuova parola"); }); }); }
           tm.textContent = "indizio " + shown + "/5"; wait(5200).then(reveal); }
-        function send() { if (over || Date.now() < lock || !word) return; if (norm(word) === sol) { A.haptic("ok"); snd("good"); finish(1, "Giusto! Era " + sol); } else { A.haptic("bad"); snd("bad"); lock = Date.now() + 2500; word = ""; disp.textContent = "Sbagliato! attendi 2,5 s"; disp.classList.add("ph"); setTimeout(show, 2500); } }
+        function send() { if (over || Date.now() < lock || !word) return; if (norm(word) === sol) { A.haptic("ok"); snd("good"); if (NET) { netSend({ k: "ok", c: c0 }); say(msg, "✔ Giusto! Verifico chi è stato più veloce…"); kb.classList.add("off"); } else finish(1, "Giusto! Era " + sol); } else { A.haptic("bad"); snd("bad"); lock = Date.now() + 2500; word = ""; disp.textContent = "Sbagliato! attendi 2,5 s"; disp.classList.add("ph"); setTimeout(show, 2500); } }
         ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"].forEach(function (rw, ri) {
           var r = el("div", "gh-kr"); rw.split("").forEach(function (ch) { var k = el("button", "gh-k", ch); k.type = "button"; k.addEventListener("click", function () { if (over || Date.now() < lock || word.length >= 12) return; word += ch; A.haptic("light"); show(); }); r.appendChild(k); });
           if (ri === 2) { var d = el("button", "gh-k w", "⌫"); d.type = "button"; d.addEventListener("click", function () { word = word.slice(0, -1); show(); }); r.appendChild(d); }
@@ -413,12 +553,13 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         });
         var go = el("button", "gh-k go", "INVIA"); go.type = "button"; go.addEventListener("click", send); kb.appendChild(go);
         var tn = 0; (function tock() { if (over || !alive(E)) return; snd(tn++ % 2 ? "tic" : "tac"); if (shown >= 5 && tn % 2 === 0) snd("beat"); setTimeout(tock, shown >= 5 ? 320 : 520); })();
+        if (NET) netTake(function (e) { return e.k === "ok" && e.c === c0; }).then(function (e) { if (e.u === NET.me) finish(1, "Giusto! Era " + sol); else finish(-1, st.opp.name + " ha indovinato: " + sol); }, rej);
         reveal();
       });
     },
     rr: function (area, msg, E) {
-      var bullet = rnd(6), shot = 0, turn = rnd(2), opn = st.opp.name;
-      return new Promise(function (res) {
+      var bullet = gr(6), shot = 0, turn = NET ? (gr(2) === NET.idx ? 0 : 1) : rnd(2), opn = st.opp.name, c0 = NET ? NET.calls : 0;
+      return new Promise(function (res, rej) {
         area.innerHTML = ""; var box = el("div", "rr-box"), cyl = el("div", "rr-cyl"), chs = [], btn = el("button", "mp-go rr-go", "SPARA"), fl = el("div", "rr-flash");
         for (var i = 0; i < 6; i++) { var ch = el("i", "rr-ch"); ch.style.transform = "rotate(" + i * 60 + "deg) translateY(-50px)"; cyl.appendChild(ch); chs.push(ch); }
         var gun = el("div", "rr-gun"); gun.innerHTML = REV; box.appendChild(gun); box.appendChild(cyl); box.appendChild(btn); box.appendChild(fl); area.appendChild(box); btn.type = "button"; btn.hidden = true;
@@ -426,8 +567,8 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         wait(1500).then(function () { cyl.classList.remove("spin"); say(msg, (turn === 0 ? "Inizi TU" : "Inizia " + opn)); return wait(900); }).then(next);
         function next() {
           if (!alive(E)) return; chs.forEach(function (c) { c.classList.remove("on"); }); chs[shot].classList.add("on");
-          if (turn === 0) { say(msg, "Tocca a te: premi il grilletto…"); btn.hidden = false; btn.onclick = function () { btn.hidden = true; A.haptic("heavy"); fire(); }; }
-          else { say(msg, opn + " prende la pistola…"); wait(1100 + rnd(900)).then(fire); }
+          if (turn === 0) { say(msg, "Tocca a te: premi il grilletto…"); btn.hidden = false; btn.onclick = function () { btn.hidden = true; A.haptic("heavy"); if (NET) netSend({ k: "m", c: c0 }); fire(); }; }
+          else { say(msg, opn + " prende la pistola…"); (NET ? netTake(mvf(c0)) : wait(1100 + rnd(900))).then(fire, rej); }
         }
         function fire() {
           if (!alive(E)) return; say(msg, turn === 0 ? "…" : opn + " preme il grilletto…"); wait(1000).then(function () {
@@ -440,11 +581,13 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     },
     rou: function (area, msg, E) {
       var ORD = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
-      say(msg, "Scegli il tuo colore: l'altro va a " + st.opp.name);
-      return btnRow(area, [["🔴 ROSSO", ""], ["⚫ NERO", ""]]).then(function (i) {
+      var chooser = NET ? (NET.calls % 2 === NET.idx) : true, c0 = NET ? NET.calls : 0, pick;
+      if (chooser) { say(msg, "Scegli il tuo colore: l'altro va a " + st.opp.name); pick = btnRow(area, [["🔴 ROSSO", ""], ["⚫ NERO", ""]]).then(function (i) { if (NET) netSend({ k: "m", c: c0, v: i }); return i; }); }
+      else { say(msg, "⏳ " + st.opp.name + " sceglie il colore…"); pick = netTake(mvf(c0)).then(function (e) { return 1 - (e.v | 0); }); }
+      return pick.then(function (i) {
         area.innerHTML = "";
         var S = 250, cv = el("canvas", "mx-wheel"); cv.width = S * 2; cv.height = S * 2; cv.style.width = S + "px"; cv.style.height = S + "px"; area.appendChild(cv);
-        var ctx = cv.getContext("2d"), cx = S, cy = S, R = S - 6, n = rnd(37), idx = ORD.indexOf(n), seg = Math.PI * 2 / 37, T = 5200;
+        var ctx = cv.getContext("2d"), cx = S, cy = S, R = S - 6, n = gr(37), idx = ORD.indexOf(n), seg = Math.PI * 2 / 37, T = 5200;
         say(msg, "Tu " + (i ? "NERO" : "ROSSO") + " · " + st.opp.name + " " + (i ? "ROSSO" : "NERO"));
         var th0 = Math.random() * 6, whTurns = 1.4, ballTurns = 7;
         var thEnd = th0 + Math.PI * 2 * whTurns, phEnd = thEnd + idx * seg;          // la pallina si ferma sulla casella n
