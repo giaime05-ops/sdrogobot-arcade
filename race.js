@@ -522,7 +522,7 @@
         root.appendChild(op);
       } else {
         var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 0 }, gr = el("div", "rc-laps"); gr.appendChild(el("span", "", "FANTASMI"));
-        [["mine", "👻 Il tuo"], ["best", "🏆 Record assoluto"]].forEach(function (o) { var b = el("button", "mp-gt wide" + (GPf[o[0]] ? " on" : ""), o[1]); b.type = "button"; b.addEventListener("click", function () { GPf[o[0]] = GPf[o[0]] ? 0 : 1; lsSet("arc_race4_gp", GPf); tracks(mode); }); gr.appendChild(b); });
+        [["mine", "👻 Il tuo"], ["best", "🏆 Record assoluto"]].forEach(function (o) { var b = el("button", "mp-gt wide gsw" + (GPf[o[0]] ? " on" : ""), ""); b.type = "button"; b.appendChild(el("span", "gl", o[1])); var sw = el("span", "sw"); sw.appendChild(el("u", "", GPf[o[0]] ? "ON" : "OFF")); sw.appendChild(el("i", "kn", "")); b.appendChild(sw); b.addEventListener("click", function () { GPf[o[0]] = GPf[o[0]] ? 0 : 1; lsSet("arc_race4_gp", GPf); tracks(mode); }); gr.appendChild(b); });
         root.appendChild(gr);
       }
       TRACKS.forEach(function (tr) {

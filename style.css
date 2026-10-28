@@ -1724,3 +1724,13 @@ body.sbx .pg-head{padding-top:22px}
 .lb-col.busy{opacity:.35}.lb-col u{text-decoration:none;color:#fff;font:700 18px Rajdhani,sans-serif}.lb-pal-n{font:600 12px Rajdhani,sans-serif;opacity:.7}
 #mpBody .tl-seats{margin-bottom:0!important}
 #mpBody .mp-card.tl-rules,#mpBody .tl-rules{margin-top:10px!important}
+
+.mp-gt.gsw{flex-direction:row;gap:8px;align-items:center;justify-content:center}
+.mp-gt.gsw .gl{font:700 13px Rajdhani,sans-serif}
+.gsw .sw{position:relative;display:inline-flex;align-items:center;width:46px;height:22px;border-radius:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);flex:none;transition:background .15s}
+.gsw .sw u{text-decoration:none;position:absolute;right:6px;font:700 10px Rajdhani,sans-serif;color:#cdbbea;letter-spacing:.5px}
+.gsw .sw .kn{position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#bfaedd;transition:left .15s}
+.gsw.on .sw{background:#ff3db0;border-color:#ff8ad0;box-shadow:0 0 8px rgba(255,61,176,.7)}
+.gsw.on .sw u{right:auto;left:7px;color:#fff}
+.gsw.on .sw .kn{left:26px;background:#fff}
+.gsw:not(.on){opacity:.75}
