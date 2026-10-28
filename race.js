@@ -12,16 +12,17 @@
 ,
     { id: "zigzag", name: "Zig Zag", hw: 98, laps: 3, k: 1.4, pud: "water", night: 1, pal: { g1: "#2a5a52", g2: "#2f645b", sky: "#1c2a5a", tree: ["#2c8a6a", "#1f6a58", "#4fb089"], road: ["#55526a", "#5e5b76"] }, pts: [[-200, 0], [50, 0], [300, 0], [388, 24], [450, 90], [513, 209], [577, 329], [639, 394], [727, 419], [815, 394], [877, 329], [940, 209], [1004, 90], [1066, 24], [1154, 0], [1241, 24], [1304, 90], [1367, 209], [1431, 329], [1493, 394], [1581, 419], [1668, 394], [1731, 329], [1794, 209], [1858, 90], [1920, 24], [2008, 0], [2095, 24], [2158, 90], [2221, 209], [2285, 329], [2347, 394], [2435, 419], [2522, 394], [2585, 329], [2648, 209], [2712, 90], [2774, 24], [2862, 0], [2987, 0], [3112, 0], [3409, 123], [3532, 420], [3409, 717], [3112, 840], [2857, 840], [2602, 840], [2348, 840], [2093, 840], [1838, 840], [1583, 840], [1329, 840], [1074, 840], [819, 840], [564, 840], [310, 840], [55, 840], [-200, 840], [-497, 717], [-620, 420], [-497, 123]] },
     { id: "gp", name: "Sdrogo Ring", hw: 118, laps: 3, k: 1.7, pud: "oil", pal: { g1: "#7aa83a", g2: "#82b244", sky: "#8fd8ff", tree: ["#5fa03a", "#3c7a2a", "#9acb4a"], road: ["#66647a", "#6f6d86"] }, pts: [[-300, 0], [-100, 0], [100, 0], [300, 0], [500, 0], [700, 0], [900, 0], [1100, 0], [1300, 20], [1450, 100], [1530, 240], [1520, 400], [1440, 530], [1330, 640], [1330, 780], [1450, 880], [1450, 1020], [1330, 1120], [1130, 1160], [930, 1160], [780, 1230], [740, 1380], [860, 1480], [1060, 1500], [1260, 1480], [1400, 1560], [1440, 1700], [1330, 1820], [1130, 1830], [900, 1830], [700, 1830], [500, 1830], [300, 1780], [220, 1640], [260, 1500], [200, 1380], [40, 1330], [-140, 1370], [-240, 1500], [-350, 1610], [-510, 1580], [-540, 1400], [-500, 1220], [-540, 1040], [-620, 880], [-600, 700], [-500, 560], [-540, 400], [-560, 240], [-500, 100]] },
-    { id: "downtown", pth: 0.0013, name: "Downtown Night", hw: 110, laps: 3, k: 1.8, pud: "oil", night: 1, theme: "city", pal: { g1: "#15152a", g2: "#1a1a33", sky: "#0a0620", tree: ["#2a2f6a", "#3a2a6e", "#1f3b6e"], road: ["#4a4a62", "#53536e"] }, pts: [[0, 0], [300, 0], [600, 0], [900, 0], [1150, 60], [1250, 240], [1150, 420], [950, 500], [800, 620], [850, 800], [1050, 880], [1200, 1030], [1150, 1230], [950, 1320], [700, 1300], [500, 1200], [300, 1260], [100, 1180], [0, 1000], [100, 820], [300, 740], [320, 580], [150, 480], [-50, 340], [-60, 160]] },
-    { id: "skyline", pth: 0.0013, name: "Skyline Neon", hw: 112, laps: 3, k: 1.7, pud: "water", night: 1, theme: "city", pal: { g1: "#12142e", g2: "#171a38", sky: "#0a0a28", tree: ["#1f3b6e", "#3a2a6e", "#2a2f6a"], road: ["#4a4a66", "#545473"] }, pts: [[0, 0], [300, 0], [600, 0], [900, 0], [1200, 0], [1400, 60], [1500, 200], [1450, 360], [1300, 440], [1100, 440], [950, 520], [950, 660], [1100, 740], [1300, 740], [1450, 820], [1480, 980], [1380, 1100], [1200, 1140], [1000, 1140], [800, 1100], [650, 1000], [500, 880], [350, 880], [200, 960], [60, 940], [-60, 820], [-40, 660], [80, 560], [80, 420], [-40, 320], [-100, 180], [-70, 60]] },
-    { id: "canyon", pth: 0.0013, name: "Canyon Rush", hw: 116, laps: 3, k: 1.7, pud: "oil", pal: { g1: "#c98a4c", g2: "#d2945a", sky: "#f6c98a", tree: ["#a9532a", "#8a3f1e", "#c9a24a"], road: ["#6a5a58", "#756462"] }, pts: [[0, 0], [300, 0], [600, 0], [900, 0], [1150, 50], [1300, 200], [1250, 380], [1050, 470], [850, 420], [700, 300], [520, 300], [400, 420], [430, 600], [600, 700], [820, 720], [980, 820], [980, 980], [820, 1080], [600, 1080], [380, 1040], [200, 900], [100, 700], [-60, 560], [-200, 400], [-200, 220], [-120, 80]] },
-    { id: "costa", pth: 0.002, pdth: 0.0034, name: "Costa Blu", hw: 114, laps: 3, k: 1.6, pud: "water", pal: { g1: "#e3d097", g2: "#eadba2", sky: "#78d4ff", tree: ["#2aa86a", "#1f8a58", "#58d6a0"], road: ["#6d7280", "#767b8a"] }, pts: [[0, 0], [400, 0], [800, 0], [1100, 0], [1350, 80], [1450, 260], [1400, 450], [1250, 560], [1250, 720], [1400, 820], [1450, 1000], [1330, 1150], [1100, 1200], [900, 1120], [760, 980], [620, 1000], [520, 1140], [340, 1200], [160, 1120], [100, 950], [200, 800], [380, 730], [420, 580], [300, 450], [120, 420], [-60, 320], [-100, 160]] }
+    { id: "canyon", pth: 0.0013, name: "Canyon Rush", hw: 116, laps: 3, k: 1, cs: 7, pud: "oil", pal: { g1: "#d9a463", g2: "#e0ad6c", dots: ["#b98348", "#f0cf98", "#c98f52"], sky: "#f6c98a", tree: ["#a9532a", "#8a3f1e", "#c9a24a"], road: ["#6a5a58", "#756462"] }, pts: [[-432,389], [-396,285], [-326,202], [-231,148], [-124,127], [-14,118], [96,109], [206,100], [316,90], [425,81], [535,72], [645,63], [755,54], [864,45], [974,35], [1084,26], [1194,17], [1304,8], [1413,10], [1521,33], [1627,62], [1734,91], [1840,120], [1946,149], [2052,178], [2159,207], [2265,236], [2367,277], [2459,335], [2538,411], [2601,501], [2650,600], [2699,698], [2748,797], [2785,900], [2794,1009], [2771,1115], [2718,1209], [2639,1286], [2549,1350], [2460,1414], [2369,1477], [2268,1517], [2159,1515], [2059,1473], [1972,1405], [1889,1333], [1805,1262], [1722,1190], [1634,1124], [1532,1086], [1423,1089], [1323,1133], [1235,1199], [1147,1265], [1059,1331], [970,1397], [871,1443], [762,1459], [652,1465], [543,1472], [433,1479], [323,1486], [213,1487], [106,1463], [13,1407], [-68,1332], [-146,1254], [-223,1177], [-301,1099], [-379,1021], [-444,932], [-476,827], [-476,717], [-461,608], [-446,498]] },
+    { id: "downtown", pth: 0.0013, name: "Downtown Night", hw: 110, laps: 3, k: 1, cs: 7, pud: "oil", night: 1, theme: "city", pal: { g1: "#6b6a80", g2: "#747390", bg: "#1b1a30", dots: ["#4a495c", "#a2a1bd", "#5a596e"], sky: "#0a0620", tree: ["#2c3158", "#3a2f63", "#24405f"], road: ["#34344a", "#3c3c56"] }, pts: [[-300,270], [-275,164], [-213,76], [-122,18], [-15,0], [95,0], [204,0], [314,0], [423,0], [532,0], [642,0], [751,0], [860,4], [966,32], [1064,80], [1166,119], [1273,131], [1379,105], [1478,59], [1579,16], [1686,0], [1795,0], [1905,0], [2014,0], [2124,0], [2233,0], [2342,7], [2445,41], [2528,109], [2583,203], [2600,311], [2600,420], [2600,530], [2600,639], [2575,745], [2511,832], [2418,888], [2310,900], [2200,900], [2092,911], [1996,961], [1930,1046], [1901,1151], [1900,1260], [1900,1369], [1892,1478], [1853,1579], [1776,1655], [1675,1693], [1566,1700], [1456,1700], [1347,1700], [1238,1700], [1129,1694], [1027,1659], [947,1585], [908,1484], [896,1376], [862,1273], [789,1194], [688,1156], [579,1150], [470,1150], [360,1150], [251,1150], [141,1150], [32,1150], [-77,1143], [-178,1104], [-254,1027], [-293,926], [-300,817], [-300,708], [-300,598], [-300,489], [-300,379]] },
+    { id: "skyline", pth: 0.0013, name: "Skyline Neon", hw: 112, laps: 3, k: 1, cs: 7, pud: "water", night: 1, theme: "city", pal: { g1: "#66677f", g2: "#6f708a", bg: "#16172e", dots: ["#454659", "#9fa0bb", "#56576b"], sky: "#0a0a28", tree: ["#24405f", "#3a2f63", "#2c3158"], road: ["#303047", "#38384f"] }, pts: [[-300,240], [-272,134], [-204,49], [-104,7], [6,0], [117,0], [227,0], [338,0], [448,0], [559,0], [669,0], [780,0], [890,0], [1001,0], [1111,0], [1222,0], [1332,0], [1442,0], [1553,0], [1663,0], [1774,0], [1884,0], [1995,0], [2105,3], [2215,17], [2321,42], [2423,84], [2517,141], [2604,209], [2685,285], [2763,363], [2830,450], [2892,541], [2922,647], [2941,755], [2935,865], [2907,970], [2865,1072], [2808,1167], [2740,1253], [2666,1336], [2576,1398], [2480,1451], [2374,1478], [2265,1497], [2155,1500], [2044,1500], [1934,1500], [1823,1500], [1713,1500], [1602,1500], [1492,1500], [1381,1500], [1271,1500], [1160,1500], [1050,1500], [939,1500], [829,1500], [719,1497], [615,1462], [538,1386], [504,1282], [511,1173], [566,1079], [656,1017], [764,1000], [874,1000], [985,1000], [1095,1000], [1206,1000], [1315,991], [1413,943], [1478,855], [1500,748], [1476,641], [1410,555], [1311,508], [1202,500], [1091,500], [981,500], [870,500], [760,500], [649,500], [539,500], [428,500], [318,500], [207,500], [97,500], [-14,500], [-123,490], [-218,437], [-281,348]] },
+    { id: "costa", pth: 0.002, pdth: 0.0034, name: "Costa Blu", hw: 114, laps: 3, k: 1, cs: 7, pud: "water", pal: { g1: "#e3d097", g2: "#eadba2", dots: ["#c9b36e", "#f6e9b8", "#d8c283"], sky: "#78d4ff", tree: ["#2aa86a", "#1f8a58", "#58d6a0"], road: ["#6d7280", "#767b8a"] }, pts: [[-370,247], [-323,147], [-247,68], [-150,17], [-41,0], [69,0], [179,0], [289,0], [399,0], [509,0], [619,0], [729,0], [839,0], [949,0], [1059,0], [1169,0], [1279,0], [1389,0], [1499,0], [1609,0], [1719,0], [1829,0], [1938,8], [2045,33], [2147,73], [2245,123], [2344,172], [2442,221], [2540,270], [2639,319], [2737,369], [2833,422], [2922,486], [2995,569], [3047,664], [3089,766], [3123,870], [3158,975], [3192,1079], [3208,1188], [3195,1296], [3158,1398], [3097,1489], [3012,1558], [2918,1615], [2822,1669], [2726,1723], [2626,1767], [2518,1780], [2412,1751], [2323,1687], [2242,1613], [2161,1539], [2078,1466], [1982,1415], [1874,1405], [1770,1437], [1681,1501], [1600,1575], [1519,1649], [1438,1724], [1356,1797], [1261,1851], [1155,1877], [1047,1898], [939,1918], [830,1938], [722,1958], [614,1973], [506,1961], [409,1912], [326,1840], [244,1766], [167,1688], [115,1592], [104,1484], [139,1381], [213,1302], [308,1246], [406,1197], [504,1148], [596,1088], [662,1001], [688,895], [674,787], [629,687], [570,595], [486,525], [382,494], [273,507], [166,533], [60,560], [-47,587], [-154,613], [-262,611], [-356,558], [-405,461], [-401,352]] }
   ];
   try { if (!localStorage.getItem("arc_race_reset73")) { Object.keys(localStorage).forEach(function (k) { if (/^arc_race4[gs]?_(?!laps$|diff$)/.test(k)) localStorage.removeItem(k); }); localStorage.setItem("arc_race_reset73", "1"); } } catch (e) {}   // azzera i tempi del vecchio formato (una volta sola)
   var NEON = ["#ff3db0", "#35e6ff", "#ffd23b", "#a855f7"];
   var VMAX = 520, VOFF = 270, DT = 1 / 60, AG = 340, WALL = 38, KERB = 14;
   var COLS = ["#ff2fa8", "#35e6ff", "#ffd23b", "#a855f7", "#ff8a3b", "#4ade80", "#f87171", "#60a5fa"], NAMES = ["Tu", "Turbo", "Zap", "Rex", "Nova", "Blitz", "Fox", "Ace"];
 
+  function hh(n) { n = Math.imul(n ^ 61 ^ (n >>> 16), 9) ; n = Math.imul(n ^ (n >>> 4), 0x27d4eb2d); n ^= n >>> 15; return (n >>> 0) / 4294967296; }
   function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
   function geom(P) {
     var N = P.length, ta = [], nx = [], ny = [], kap = [], sg = [], sp = 0, k;
@@ -42,11 +43,11 @@
   }
   function build(tr) {                      // spline chiusa (Catmull-Rom); il traguardo sta a metà del rettilineo più lungo
     if (tr.P) return tr;
-    var c = tr.pts.map(function (p) { return [p[0] * tr.k, p[1] * tr.k]; }), n = c.length, P = [], k;
+    var CS = tr.cs || 14, c = tr.pts.map(function (p) { return [p[0] * tr.k, p[1] * tr.k]; }), n = c.length, P = [], k;
     for (var i = 0; i < n; i++) {
       var p0 = c[(i + n - 1) % n], p1 = c[i], p2 = c[(i + 1) % n], p3 = c[(i + 2) % n];
-      for (var s = 0; s < 14; s++) {
-        var t = s / 14, t2 = t * t, t3 = t2 * t;
+      for (var s = 0; s < CS; s++) {
+        var t = s / CS, t2 = t * t, t3 = t2 * t;
         P.push([0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
                 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)]);
       }
@@ -70,7 +71,7 @@
       if (pud ? !straightAt(k, 4, tr.pth || 0.0006) : !straightAt(k, 4, tr.pdth || 0.0019)) continue;                                  // pozze solo sui rettilinei; le pedane anche sulle curve larghe
       var off = lane[(li * 3 + Math.floor(R() * 2)) % lane.length] * tr.hw; li++; lastIt = k;
       if (pud) items.push({ t: tr.pud || "oil", idx: k, lat: off, x: P[k][0] + nx[k] * off, y: P[k][1] + ny[k] * off });
-      else if (padN++ % 2 === 1) {                                                                                  // ogni tanto due pedane sfalsate: scegli quale prendere
+      else if (padN++ % 2 === 1 && straightAt(k + 6, 4, tr.pdth || 0.0019) && !near(k + 6)) {                                                                                  // ogni tanto due pedane sfalsate: scegli quale prendere
         var o1 = -0.5 * tr.hw, o2 = 0.5 * tr.hw, k2 = k + 6;
         items.push({ t: "pad", idx: k, lat: o1, x: P[k][0] + nx[k] * o1, y: P[k][1] + ny[k] * o1 }); items.push({ t: "pad", idx: k2, lat: o2, x: P[k2][0] + nx[k2] * o2, y: P[k2][1] + ny[k2] * o2 }); lastIt = k2;
       } else items.push({ t: "pad", idx: k, lat: off, x: P[k][0] + nx[k] * off, y: P[k][1] + ny[k] * off });
@@ -93,7 +94,9 @@
     for (k = 0; k < N; k += 2) [1, -1].forEach(function (sg2) {       // scenografia: sempre lontana dalla pista (anche dalle altre parti del circuito)
       function ok(x, y, rad) { return dmin(x, y) > wl + rad + 24 && (!hasGap || dgap(x, y) > wl + 300 + rad); }
       if (tr.theme === "city") {                                                                                         // città di notte: palazzi con luci neon in alto e lampioni lungo la pista
-        if (R() < 0.5) { var ob = (wl + 110 + R() * 170) * sg2, bx = P[k][0] + nx[k] * ob, by = P[k][1] + ny[k] * ob, bw = 12 + R() * 14, bh2 = 12 + R() * 14, bhh = 22 + R() * 40; if (ok(bx, by, Math.hypot(bw, bh2) + 6)) trees.push({ b: 1, x: bx, y: by, w: bw, d: bh2, h: bhh, s: bw * 2, c: Math.floor(R() * 3), a: Math.floor(R() * 4) }); }
+        if (k % 10 === 0) { var bw = 26 + R() * 30, bd = 26 + R() * 30, ob = (wl + 104 + bd + R() * 40) * sg2, bx = P[k][0] + nx[k] * ob, by = P[k][1] + ny[k] * ob, bhh = 50 + R() * 150, okb = ok(bx, by, Math.hypot(bw, bd) + 8);
+          for (var bq = 0; okb && bq < trees.length; bq++) if (trees[bq].b && Math.hypot(trees[bq].x - bx, trees[bq].y - by) < trees[bq].w + trees[bq].d + bw + bd - 20) okb = false;
+          if (okb) trees.push({ b: 1, x: bx, y: by, w: bw, d: bd, h: bhh, s: bw * 2, ang: ta[k], c: Math.floor(R() * 3), a: Math.floor(R() * 4), wc: Math.floor(R() * 3), band: R() < 0.55, roof: Math.floor(R() * 3), seed: Math.floor(R() * 99999) }); }
         if (k % 8 === 0) { var ol = (wl + 22) * sg2; deco.push({ t: "lamp", x: P[k][0] + nx[k] * ol, y: P[k][1] + ny[k] * ol, c: Math.floor(k / 8) % 3 }); }
         return;
       }
@@ -298,7 +301,21 @@
   function tIdx(tr) { for (var i = 0; i < TRACKS.length; i++) if (TRACKS[i].id === tr.id) return i; return 0; }
   function lapTarget(tr) { build(tr); if (!tr._ut) tr._ut = Math.round(botLap(tr, 1, 1) * 1.08 * 10) / 10; return tr._ut; }
   function isUnlocked(tr) { return tIdx(tr) < 3 || !!lsGet("arc_race4u_" + tr.id); }
-  function lockText(tr) { var p = TRACKS[tIdx(tr) - 1]; return "Fai un giro sotto " + fmt(lapTarget(p)) + " su " + p.name + " (oppure vinci una gara con giocatori veri)"; }
+  var PRICE = [0, 0, 0, 500, 750, 950, 1150, 1400, 1700, 2000], REWARD = [150, 150, 150, 300, 350, 400, 500, 600, 800, 1000];     // sblocco a pagamento e premio per ogni record battuto
+  function price(tr) { return PRICE[tIdx(tr)] || 0; }
+  function reward(tr) { return REWARD[tIdx(tr)] || 150; }
+  function wal() { var w = lsGet("arc_race4_w"); return w == null ? 5000 : w; }               // saldo di prova (solo nell'account admin di prova)
+  function walAdd(n) { lsSet("arc_race4_w", Math.max(0, wal() + n)); }
+  function lockText(tr) { return "Sblocca per " + A.fmt(price(tr)) + " $SDG"; }
+  function buyTrack(tr, cb) {
+    if (!(A.isSandbox && A.isSandbox())) { A.api("/api/race/unlock", "POST", { track: tr.id }).then(function (j) { if (j && j.success) { lsSet("arc_race4u_" + tr.id, 1); try { A.refreshMe(); } catch (e) {} cb(true); } else { A.toast((j && j.error) || "Sblocco non riuscito"); cb(false); } }).catch(function () { A.toast("Server non raggiungibile"); cb(false); }); return; }
+    var p = price(tr); if (wal() < p) { A.toast("Servono " + A.fmt(p) + " $SDG (saldo di prova " + A.fmt(wal()) + ")"); cb(false); return; }
+    walAdd(-p); lsSet("arc_race4u_" + tr.id, 1); A.haptic("ok"); cb(true);
+  }
+  function payRec(tr, tm) {                                         // premio per un record battuto (anche il proprio, se sei tu il migliore)
+    var r = reward(tr); if (A.isSandbox && A.isSandbox()) walAdd(r); else { try { A.api("/api/race/record", "POST", { track: tr.id, t: Math.round(tm * 1000) }).then(function () { try { A.refreshMe(); } catch (e) {} }); } catch (e) {} }
+    return r;
+  }
   function art(tr) {                                  // sfondo della scheda pista: disegno 2D di un tratto di circuito col clima della pista
     var cv = el("canvas", "rc-art"), w = 360, h = 130, d = 2; cv.width = w * d; cv.height = h * d; var c = cv.getContext("2d"); c.scale(d, d);
     var N = tr.N, P = tr.P, fk = 0, fb = -1; for (var i = 0; i < N; i++) { var kk = 0; for (var q = -10; q <= 10; q += 5) kk += tr.kap[(i + q + N) % N]; if (kk > fb && Math.min(i, N - i) > 30) { fb = kk; fk = i; } }
@@ -338,7 +355,8 @@
     }
     // ---------------- lobby (prototipo) ----------------
     var LB = null, FRIENDS = ["Marco", "Spoleto", "maicol", "Lorenzo", "albe", "Gabbo"];
-    function newLobby() { var cd = "SDG-" + Math.random().toString(36).slice(2, 6).toUpperCase(); return { code: cd, ti: 1, laps: 3, diff: 3, vis: 0, tab: 0, obst: true, pads: true, slip: true, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: "Tu" }] }; }
+    function myNm() { try { return window.ArcadeMulti.myName(); } catch (e) { return "Tu"; } }
+    function newLobby() { return { ti: 1, laps: 3, diff: 3, vis: 0, tab: 0, obst: true, pads: true, slip: true, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
     function lobbyHub() {
       root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; });
       top("LOBBY", menu, "‹ Grand Prix");
@@ -351,13 +369,13 @@
     }
     function lobby(reset) {
       var L = LB, sc0 = !reset && root.querySelector(".lb-body"), sct = sc0 ? sc0.scrollTop : 0; root.innerHTML = ""; root.className = "rc-root lobby"; hook(function () { lobbyHub(); return true; });
-      var tp = top("LOBBY", lobbyHub, "‹ Esci"); var cd = el("button", "lb-code", L.code + "  ⧉"); cd.type = "button"; cd.addEventListener("click", function () { try { navigator.clipboard.writeText(L.code); } catch (e) {} A.toast("Codice copiato"); }); tp.appendChild(cd);
+      var tp = top("LOBBY", lobbyHub, "‹ Esci");
       var tabs = el("div", "lb-tabs"); ["👥 GIOCATORI " + L.slots.length + "/8", "🛠 PISTA & REGOLE"].forEach(function (nm, i) { var b = el("button", "lb-tab" + (L.tab === i ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.tab = i; lobby(true); }); tabs.appendChild(b); }); root.appendChild(tabs);
       var body = el("div", "lb-body"); root.appendChild(body);
       if (L.tab === 0) {
         var list = el("div", "lb-slots");
         for (var i = 0; i < 8; i++) { (function (i) { var sl = L.slots[i], r = el("div", "lb-slot" + (sl ? "" : " free")); r.appendChild(el("u", "", String(i + 1))); var dot = el("i", "dot"); dot.style.background = sl ? COLS[i % 8] : "transparent"; r.appendChild(dot);
-          if (!sl) { r.appendChild(el("span", "n", "libero")); } else { r.appendChild(el("span", "n", sl.name)); r.appendChild(el("em", sl.t, sl.t === "me" ? "LEADER" : (sl.t === "bot" ? "BOT · " + DIFF[L.diff].n : (sl.t === "wait" ? "invito inviato…" : "AMICO")))); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
+          if (!sl) { r.appendChild(el("span", "n", "libero")); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } r.appendChild(av); var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); r.appendChild(el("em", sl.t, sl.t === "me" ? "LEADER" : (sl.t === "bot" ? "BOT · " + DIFF[L.diff].n : (sl.t === "wait" ? "invito inviato…" : "AMICO")))); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
           list.appendChild(r); })(i); }
         body.appendChild(list);
         var ab = el("div", "lb-acts"); var full = L.slots.length >= 8;
@@ -365,14 +383,16 @@
         var dr = el("div", "lb-row col"); dr.appendChild(el("span", "", "DIFFICOLTÀ BOT")); var chips = el("div", "lb-chips"); DIFF.forEach(function (df, n) { var b = el("button", "mp-gt wide" + (L.diff === n ? " on" : ""), df.n); b.type = "button"; b.addEventListener("click", function () { L.diff = n; lobby(); }); chips.appendChild(b); }); dr.appendChild(chips); body.appendChild(dr);
         body.appendChild(el("div", "rc-note", L.diff === 3 ? "Campione: i bot girano come il TUO record su questa pista (col server: come il miglior giro di tutti)." : "Nelle lobby pubbliche i bot li decide chi crea la lobby: puoi giocare solo con persone, solo con bot o misto."));
       } else {
-        var th = el("div", "lb-tr"); TRACKS.forEach(function (tr, i) { var b = el("button", "lb-t" + (L.ti === i ? " on" : "")); b.type = "button"; var im = el("img"); im.src = thumb(tr); b.appendChild(im); b.appendChild(el("span", "", (isUnlocked(tr) ? "" : "🔒 ") + tr.name)); b.addEventListener("click", function () { L.ti = i; lobby(); }); th.appendChild(b); }); body.appendChild(th); if (!isUnlocked(TRACKS[L.ti])) body.appendChild(el("div", "rc-note", "🔒 " + TRACKS[L.ti].name + ": " + lockText(TRACKS[L.ti]) + ". Admin: la puoi usare subito."));
+        var th = el("div", "lb-tr"); TRACKS.forEach(function (tr, i) { var b = el("button", "lb-t" + (L.ti === i ? " on" : "")); b.type = "button"; var im = el("img"); im.src = thumb(tr); b.appendChild(im); b.appendChild(el("span", "", (isUnlocked(tr) ? "" : "🔒 ") + tr.name)); b.addEventListener("click", function () { L.ti = i; lobby(); }); th.appendChild(b); }); body.appendChild(th); if (!isUnlocked(TRACKS[L.ti])) body.appendChild(el("div", "rc-note", "🔒 " + TRACKS[L.ti].name + " è da sbloccare (" + A.fmt(price(TRACKS[L.ti])) + " $SDG, dalla schermata Singolo)" + (A.isAdmin && A.isAdmin() ? ". Admin: la puoi usare subito." : "")));
         var lr = el("div", "lb-row"); lr.appendChild(el("span", "", "GIRI")); var c2 = el("div", "lb-chips"); [3, 5, 7, 10].forEach(function (n) { var b = el("button", "mp-gt" + (L.laps === n ? " on" : ""), String(n)); b.type = "button"; b.addEventListener("click", function () { L.laps = n; lobby(); }); c2.appendChild(b); }); lr.appendChild(c2); body.appendChild(lr);
         var tg = el("div", "lb-tg");
         [["obst", "💧", "Ostacoli", "Pozze d'acqua e olio"], ["pads", "⚡", "Boost a terra", "Pedane acceleranti"], ["slip", "💨", "Scia", "Stando dietro prendi velocità"], ["assist", "🤝", "Aiuto ultimi", "Chi è indietro va un po' più forte"], ["qual", "⏱", "Qualifica", "Giro lanciato che decide la griglia"]].forEach(function (o) {
           var r = el("button", "lb-tog" + (L[o[0]] ? " on" : "")); r.type = "button"; r.appendChild(el("i", "", o[1])); var d = el("div", "d"); d.appendChild(el("b", "", o[2])); d.appendChild(el("span", "", o[3])); r.appendChild(d); r.appendChild(el("u", "sw")); r.addEventListener("click", function () { L[o[0]] = !L[o[0]]; lobby(); }); tg.appendChild(r); });
         body.appendChild(tg);
         var wr = el("div", "lb-row"); wr.appendChild(el("span", "", "METEO")); var cw = el("div", "lb-chips"); [[0, "☀️ Sereno"], [1, "🌦 Leggera"], [2, "🌧 Forte"]].forEach(function (m) { var b = el("button", "mp-gt wide" + ((L.rain | 0) === m[0] ? " on" : ""), m[1]); b.type = "button"; b.addEventListener("click", function () { L.rain = m[0]; lobby(); }); cw.appendChild(b); }); wr.appendChild(cw); body.appendChild(wr);
-        var pr2 = el("div", "lb-row"); pr2.appendChild(el("span", "", "💰 MONTEPREMI $SDG")); var c3 = el("div", "lb-chips"); [0, 100, 250, 500].forEach(function (n) { var b = el("button", "mp-gt wide" + (L.prize === n ? " on" : ""), n ? String(n) : "NO"); b.type = "button"; b.addEventListener("click", function () { L.prize = n; lobby(); }); c3.appendChild(b); }); pr2.appendChild(c3); body.appendChild(pr2);
+        var hum = L.slots.filter(function (x) { return x.t === "friend" || x.t === "wait"; }).length > 0; if (!hum && L.prize) L.prize = 0;
+        var pr2 = el("div", "lb-row"); pr2.appendChild(el("span", "", "💰 PREMIO")); var c3 = el("div", "lb-chips"); [0, 500, 1000, 2000].forEach(function (n) { var b = el("button", "mp-gt wide" + (L.prize === n ? " on" : ""), n ? A.fmt(n) : "NO"); b.type = "button"; if (n && !hum) b.disabled = true; b.addEventListener("click", function () { L.prize = n; lobby(); }); c3.appendChild(b); }); pr2.appendChild(c3); body.appendChild(pr2);
+        body.appendChild(el("div", "rc-note", hum ? (L.prize ? "Pagati dal Banco: 1° " + A.fmt(L.prize) + " · 2° " + A.fmt(Math.round(L.prize * 0.75)) + " · 3° " + A.fmt(Math.round(L.prize * 0.5)) + " $SDG dal Banco" : "Scegli un premio per i primi tre classificati") : "Il premio si attiva solo se in lobby c'è almeno un giocatore vero (con i soli bot non c'è)."));
         var vr = el("div", "lb-row"); vr.appendChild(el("span", "", "VISIBILITÀ")); var c4 = el("div", "lb-chips"); ["Su invito", "Pubblica"].forEach(function (nm, n) { var b = el("button", "mp-gt wide" + (L.vis === n ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.vis = n; lobby(); }); c4.appendChild(b); }); vr.appendChild(c4); body.appendChild(vr);
       }
       var go = el("button", "mp-go lb-go", "▶ AVVIA GARA · " + L.slots.filter(function (x) { return x.t !== "wait"; }).length + " piloti" + (L.qual ? " · con qualifica" : "")); go.type = "button"; go.disabled = L.slots.filter(function (x) { return x.t !== "wait"; }).length < 2;
@@ -384,14 +404,16 @@
       root.appendChild(go); body.scrollTop = sct;
     }
     function inviteSheet() {
-      var L = LB, used = L.slots.map(function (x) { return x.name; }), sh = el("div", "lb-sheet"), bx = el("div", "lb-sbox"); bx.appendChild(el("b", "", "INVITA UN AMICO")); bx.appendChild(el("span", "", "Gli arriva un avviso discreto nella home. Nel prototipo accettano da soli."));
-      FRIENDS.filter(function (f) { return used.indexOf(f) < 0; }).forEach(function (f) { var r = el("div", "lb-fr"); r.appendChild(el("span", "", f)); var g = el("button", "lb-j", "INVITA"); g.type = "button"; g.addEventListener("click", function () { sh.remove(); if (L.slots.length >= 8) return; var sl = { t: "wait", name: f }; L.slots.push(sl); lobby(); setTimeout(function () { if (LB === L && L.slots.indexOf(sl) >= 0) { sl.t = "friend"; if (root.isConnected && root.classList.contains("lobby")) lobby(); } }, 1100); }); r.appendChild(g); bx.appendChild(r); });
-      var cl = el("button", "mp-go mp-alt", "CHIUDI"); cl.type = "button"; cl.addEventListener("click", function () { sh.remove(); }); bx.appendChild(cl); sh.appendChild(bx); root.appendChild(sh);
+      var L = LB; if (L.slots.length >= 8) return;
+      window.ArcadeMulti.friendSheet(L.slots.map(function (x) { return x.pid; }).filter(Boolean), function (f) {
+        if (L.slots.length >= 8) return; var sl = { t: "wait", name: f.name, style: f.style, pid: f.pid, human: true }; L.slots.push(sl); lobby();
+        setTimeout(function () { if (LB === L && L.slots.indexOf(sl) >= 0) { sl.t = "friend"; lobby(); } }, 1500);
+      });
     }
     var RO = lsGet("arc_race4_ro") || { rain: 0, obst: 1, pads: 1, slip: 1, assist: 0 };
     function tracks(mode) {
       root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; });
-      top(mode === "single" ? "SINGOLO" : "GARA RAPIDA", menu, "‹ Grand Prix");
+      var tpb = top(mode === "single" ? "SINGOLO" : "GARA RAPIDA", menu, "‹ Grand Prix"); if (A.isSandbox && A.isSandbox()) { try { tpb.appendChild(el("span", "rc-wal", "💰 " + A.fmt(wal()) + " (prova)")); } catch (e) {} }
       function chipRow(label, items, cur, fn) { var r = el("div", "rc-laps"); r.appendChild(el("span", "", label)); items.forEach(function (it) { var b = el("button", "mp-gt wide" + (cur(it[0]) ? " on" : ""), it[1]); b.type = "button"; b.addEventListener("click", function () { fn(it[0]); tracks(mode); }); r.appendChild(b); }); root.appendChild(r); }
       if (mode !== "single") {
         var lr = el("div", "rc-laps"); lr.appendChild(el("span", "", "GIRI"));
@@ -417,10 +439,19 @@
           c.appendChild(el("div", "rc-t", "Tuo record: " + fmt(best && best.t) + "  ·  Miglior giro: " + fmt(bl && bl.t)));
           var ab = absBest(tr); c.appendChild(el("div", "rc-t abs", "🏆 Giro più veloce di tutti: " + fmt(ab.t) + " (" + ab.n + ")"));
         } else c.appendChild(el("div", "rc-t", tr.theme === "city" ? "Circuito cittadino notturno" : tr.id === "zigzag" ? "Pista stretta con curve veloci" : tr.id === "canyon" ? "Canyon: curve larghe e veloci" : tr.id === "costa" ? "Lungomare con saliscendi di curve" : tr.id === "gp" ? "Lunga, di tutto un po'" : tr.id === "tornanti" ? "Con tornanti" : tr.jump ? "Con salti sul fiume" : "Con curve"));
-        if (lk) c.appendChild(el("div", "rc-lock", "🔒 Per sbloccarla: " + lockText(tr) + " · Admin: giocabile subito"));
+        if (lk) c.appendChild(el("div", "rc-lock", "🔒 Pista da sbloccare · " + A.fmt(price(tr)) + " $SDG" + (mode === "single" ? "" : " (nelle gare rapide vale solo se sbloccata)")));
+        else if (mode === "single" && price(tr)) c.appendChild(el("div", "rc-lock ok", "💰 Premio per ogni record: " + A.fmt(reward(tr)) + " $SDG"));
+        else if (mode === "single") c.appendChild(el("div", "rc-lock ok", "💰 Premio per ogni record: " + A.fmt(reward(tr)) + " $SDG"));
         if (mode === "single") { var bd = el("div", "rc-lb"); board(tr).slice(0, 3).forEach(function (r, i) { var row = el("div", "rc-lbr" + (r.me ? " me" : "")), nmE = el("span", "nm"); nmE.appendChild(el("i", "n p" + (i + 1), String(i + 1))); nmE.appendChild(document.createTextNode(r.n)); row.appendChild(nmE); row.appendChild(el("b", "", fmt(r.t))); bd.appendChild(row); }); c.appendChild(bd); }
         var go = el("button", "mp-go", "▶ " + (mode === "single" ? "GIOCA · 3 giri" : "GARA · " + RL + " giri")); go.type = "button";
-        go.addEventListener("click", function () { race(tr, mode, mode === "single" ? undefined : { rain: RO.rain, obst: !!RO.obst, pads: !!RO.pads, slip: !!RO.slip, assist: !!RO.assist }); }); c.appendChild(go); root.appendChild(c);
+        function startIt() { race(tr, mode, mode === "single" ? undefined : { rain: RO.rain, obst: !!RO.obst, pads: !!RO.pads, slip: !!RO.slip, assist: !!RO.assist }); }
+        if (lk) {
+          go.textContent = "🔓 SBLOCCA · " + A.fmt(price(tr)) + " $SDG"; go.className = "mp-go unl";
+          go.addEventListener("click", function () { if (go.dataset.ok) { buyTrack(tr, function (ok) { if (ok) tracks(mode); }); return; } go.dataset.ok = "1"; go.textContent = "CONFERMA · −" + A.fmt(price(tr)) + " $SDG"; setTimeout(function () { if (go.isConnected) { delete go.dataset.ok; go.textContent = "🔓 SBLOCCA · " + A.fmt(price(tr)) + " $SDG"; } }, 3500); });
+          c.appendChild(go);
+          if (A.isAdmin && A.isAdmin()) { var ga = el("button", "mp-go mp-alt", "▶ PROVA (admin)"); ga.type = "button"; ga.addEventListener("click", startIt); c.appendChild(ga); }
+        } else { go.addEventListener("click", startIt); c.appendChild(go); }
+        root.appendChild(c);
       });
     }
     function race(tr, mode, opts) {
@@ -509,7 +540,7 @@
       window.ArcadeBackHide = false; window.ArcadeBackHook = function () { if (state === "end") return false; pause(!paused); return true; }; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {}
       function say2(x, sec) { tip.textContent = x; msgT = sec || 1.6; }
       function finish() {
-        state = "end"; AU.sfx("fin"); var total = me.finT, rec = solo && (!best || total < best), box = el("div", "rc2-end res");
+        state = "end"; AU.sfx("fin"); var total = me.finT, rec = solo && (!best || total < best), recAll = solo && total < board(tr0)[0].t - 0.005, recPay = recAll ? payRec(tr0, total) : 0, box = el("div", "rc2-end res");
         if (qual) {
           var mine = me.finT - qT0; qres.push({ id: 0, name: "Tu", t: mine }); qres.sort(function (a, b) { return a.t - b.t; }); box.appendChild(el("b", "", "QUALIFICA · GRIGLIA DI PARTENZA")); var tb0 = el("div", "rc2-tbl");
           qres.forEach(function (q, i) { var r = el("div", "rr" + (q.id === 0 ? " me" : "")); r.appendChild(el("span", "pn", String(i + 1))); r.appendChild(el("span", "nm", q.name)); r.appendChild(el("span", "tt", fmt(q.t))); tb0.appendChild(r); }); box.appendChild(tb0);
@@ -530,11 +561,11 @@
           }
         }
         var rows = solo ? [me] : rank(), fl = 1e9; rows.forEach(function (c) { (c.lapTs || []).forEach(function (x) { if (x < fl) fl = x; }); });
-        if (solo) { var L = board(tr), pos = L.findIndex(function (r) { return r.me; }) + 1; box.appendChild(el("b", "", rec ? "🏆 NUOVO RECORD!" : "ARRIVO!")); box.appendChild(el("div", "rc-big", fmt(total))); box.appendChild(el("div", "rc-lap me", "In classifica sei " + pos + "° su " + L.length)); }
-        else { var p0 = rank().indexOf(me); box.appendChild(el("b", "", p0 === 0 ? "🏆 HAI VINTO!" : ORD[p0] + " POSTO")); if (opts.prize) box.appendChild(el("div", "rc-lap", p0 === 0 ? "Montepremi " + opts.prize + " $SDG (prototipo: non accreditato)" : "Montepremi " + opts.prize + " $SDG al vincitore")); }
+        if (solo) { var L = board(tr), pos = L.findIndex(function (r) { return r.me; }) + 1; box.appendChild(el("b", "", rec ? "🏆 NUOVO RECORD!" : "ARRIVO!")); box.appendChild(el("div", "rc-big", fmt(total))); box.appendChild(el("div", "rc-lap me", "In classifica sei " + pos + "° su " + L.length)); if (recPay) box.appendChild(el("div", "rc-lap me", "💰 Record della pista: +" + A.fmt(recPay) + " $SDG")); }
+        else { var p0 = rank().indexOf(me); box.appendChild(el("b", "", p0 === 0 ? "🏆 HAI VINTO!" : ORD[p0] + " POSTO")); if (opts.prize) { var pz = [opts.prize, Math.round(opts.prize * 0.75), Math.round(opts.prize * 0.5)][p0] || 0; box.appendChild(el("div", "rc-lap", pz ? "💰 Premio dal Banco: +" + A.fmt(pz) + " $SDG (prototipo: non accreditato)" : "Premi dal Banco: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)))); } }
         var tb = el("div", "rc2-tbl"), showLaps = laps <= 4;
         rows.forEach(function (c, i) {
-          var r = el("div", "rr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me ? "Tu" : c.name), tt = el("span", "tt", fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt);
+          var r = el("div", "rr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me && !opts.roster ? "Tu" : c.name), tt = el("span", "tt", fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt);
           var lp = el("span", "lp"), bst = Math.min.apply(null, c.lapTs && c.lapTs.length ? c.lapTs : [0]);
           (c.lapTs || []).forEach(function (x) { if (showLaps || x === bst) lp.appendChild(el("i", x <= fl + 0.0005 ? "fl" : "", (showLaps ? "" : "Migliore ") + fmt(x))); }); r.appendChild(lp); tb.appendChild(r);
         });
@@ -549,7 +580,7 @@
       function cm(wx, wy, wz) { var dx = wx - cax, dy = wy - cay, f = dx * ca + dy * sa, l = -dx * sa + dy * ca, hz = HC - wz; return [l, f * ST - hz * CT, f * CT + hz * ST]; }      // coordinate nella camera (l, u, profondità)
       function sp2(c) { return [W / 2 + c[0] / c[2] * FF, H / 2 - c[1] / c[2] * FF + H * 0.06, c[2]]; }
       function pr(wx, wy, wz) { var c = cm(wx, wy, wz); return c[2] < NEAR ? null : sp2(c); }
-      function quadS(a, b, c, d, col) { if (!a || !b || !c || !d) return; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.closePath(); ctx.fill(); }
+      function quadS(a, b, c, d, col) { if (!a || !b || !c || !d) return; var LM = W * 5, q4 = [a, b, c, d]; for (var gi = 0; gi < 4; gi++) if (q4[gi][0] < -LM || q4[gi][0] > W + LM || q4[gi][1] < -LM || q4[gi][1] > H + LM) return; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.closePath(); ctx.fill(); }
       function quad(a, b, c, d, col) {                                                                          // quadrilatero a terra ritagliato sul piano vicino: niente buchi ai bordi dello schermo
         var P4 = [a, b, c, d], o = [], i;
         for (i = 0; i < 4; i++) { var p = P4[i], q = P4[(i + 1) & 3], ip = p[2] >= NEAR, iq = q[2] >= NEAR; if (ip) o.push(p); if (ip !== iq) { var t = (NEAR - p[2]) / (q[2] - p[2]); o.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, NEAR]); } }
@@ -558,7 +589,7 @@
       function onScr(x, y, r) { var c = cm(x, y, 0), d = c[2]; if (d > 3400 || d < -r) return false; if (d < NEAR + r) return true; var m = r * FF / d + 30, sx = W / 2 + c[0] / d * FF, sy = H / 2 - c[1] / d * FF + H * 0.06; return sx > -m && sx < W + m && sy > -m && sy < H + m; }
       function box(x, y, hl, hw2, z0, h, ang, cTop, cA, cB) {                                                  // parallelepipedo orientato; hl = mezza lunghezza, hw2 = mezza larghezza
         var co = Math.cos(ang), si = Math.sin(ang), cs = [[hl, hw2], [hl, -hw2], [-hl, -hw2], [-hl, hw2]].map(function (p) { return [x + p[0] * co - p[1] * si, y + p[0] * si + p[1] * co]; });
-        var lo = cs.map(function (p) { return pr(p[0], p[1], z0 + ZO); }), hi = cs.map(function (p) { return pr(p[0], p[1], z0 + h + ZO); }); if (lo.some(function (q) { return !q; }) || hi.some(function (q) { return !q; })) return;
+        var lo = cs.map(function (p) { return pr(p[0], p[1], z0 + ZO); }), hi = cs.map(function (p) { return pr(p[0], p[1], z0 + h + ZO); }); if (lo.some(function (q) { return !q || q[2] < 55; }) || hi.some(function (q) { return !q || q[2] < 55; })) return;
         var faces = []; for (var i = 0; i < 4; i++) faces.push({ i: i, d: (lo[i][2] + lo[(i + 1) % 4][2]) / 2 }); faces.sort(function (p, q) { return q.d - p.d; });
         faces.forEach(function (fc, k) { var i = fc.i, j = (i + 1) % 4; quadS(lo[i], lo[j], hi[j], hi[i], (i % 2) ? cB : cA); });
         quadS(hi[0], hi[1], hi[2], hi[3], cTop);
@@ -595,6 +626,26 @@
         ZO = 0; ctx.globalAlpha = 1;
       }
       function shade(hex, k) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; r = Math.max(0, Math.min(255, Math.round(r * (1 + k)))); g = Math.max(0, Math.min(255, Math.round(g * (1 + k)))); b = Math.max(0, Math.min(255, Math.round(b * (1 + k)))); return "rgb(" + r + "," + g + "," + b + ")"; }
+      var WIN = ["#ffe39a", "#8ff3ff", "#ffb0e0"];
+      function bldg(bt) {                                                                                        // palazzo: facciate con finestre accese, fascia LED e tetto con bordo neon
+        var co = Math.cos(bt.ang), si = Math.sin(bt.ang), cs = [[bt.w, bt.d], [bt.w, -bt.d], [-bt.w, -bt.d], [-bt.w, bt.d]].map(function (p) { return [bt.x + p[0] * co - p[1] * si, bt.y + p[0] * si + p[1] * co]; });
+        var lo = cs.map(function (p) { return pr(p[0], p[1], 0); }), hi = cs.map(function (p) { return pr(p[0], p[1], bt.h); });
+        if (lo.some(function (q) { return !q || q[2] < 90; }) || hi.some(function (q) { return !q || q[2] < 90; })) return;
+        var base = tr.pal.tree[bt.c % 3], na = NEON[bt.a % 4], fl = []; for (var i = 0; i < 4; i++) fl.push({ i: i, d: (lo[i][2] + lo[(i + 1) % 4][2]) / 2 }); fl.sort(function (p, q) { return q.d - p.d; });
+        var near = lo[0][2] < 1500;
+        fl.forEach(function (fc, rank) {
+          var i = fc.i, j = (i + 1) % 4, shd = (i % 2) ? shade(base, -0.28) : shade(base, -0.1); quadS(lo[i], lo[j], hi[j], hi[i], shd);
+          if (rank < 2 && near) {                                                                                // solo le due facce rivolte alla camera
+            var fw = Math.hypot(cs[j][0] - cs[i][0], cs[j][1] - cs[i][1]), nc = Math.max(2, Math.round(fw / 15)), nr = Math.max(3, Math.round(bt.h / 20));
+            function F(u, v) { return [lo[i][0] * (1 - u) * (1 - v) + lo[j][0] * u * (1 - v) + hi[j][0] * u * v + hi[i][0] * (1 - u) * v, lo[i][1] * (1 - u) * (1 - v) + lo[j][1] * u * (1 - v) + hi[j][1] * u * v + hi[i][1] * (1 - u) * v, fc.d]; }
+            if (bt.band) { var v0 = 0.62, v1 = 0.7; quadS(F(0, v0), F(1, v0), F(1, v1), F(0, v1), na); }
+            if (fc.d < 1100) for (var r = 0; r < nr; r++) for (var c = 0; c < nc; c++) { var hv = hh(bt.seed + i * 53 + r * 17 + c * 5); if (hv < 0.38) continue; if (bt.band && r / nr > 0.58 && r / nr < 0.72) continue; var u0 = (c + 0.22) / nc, u1 = (c + 0.78) / nc, w0 = (r + 0.25) / nr, w1 = (r + 0.7) / nr; quadS(F(u0, w0), F(u1, w0), F(u1, w1), F(u0, w1), hv > 0.9 ? WIN[(bt.wc + 1) % 3] : (hv > 0.62 ? WIN[bt.wc % 3] : "#6f6aa6")); }
+          }
+        });
+        quadS(hi[0], hi[1], hi[2], hi[3], shade(base, 0.22));
+        ctx.strokeStyle = na; ctx.lineWidth = Math.max(1.2, 3.2 * FF / hi[0][2]); ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(hi[0][0], hi[0][1]); for (var q = 1; q < 4; q++) ctx.lineTo(hi[q][0], hi[q][1]); ctx.closePath(); ctx.stroke();
+        if (bt.roof === 1) box(bt.x, bt.y, bt.w * 0.3, bt.d * 0.3, bt.h, 10, bt.ang, "#9a98b8", "#6e6c90", "#585676"); else if (bt.roof === 2) { box(bt.x, bt.y, 1.6, 1.6, bt.h, 30, bt.ang, "#bdbbd8", "#8f8db0", "#78769a"); box(bt.x, bt.y, 3, 3, bt.h + 30, 5, bt.ang, "#ff3d5a", "#ff3d5a", "#b0203a"); }
+      }
       function drawGate() {                                                                                      // portale del traguardo: due piloni, trave con scacchi e scritta
         var P0 = tr.P[0], an = tr.ta[0], tx = Math.cos(an), ty = Math.sin(an), nx0 = tr.nx[0], ny0 = tr.ny[0], o = tr.hw + WALL + 14, zb = 74, zt = 100;
         function g3(l, f, z) { return pr(P0[0] + nx0 * l + tx * f, P0[1] + ny0 * l + ty * f, z); }
@@ -617,7 +668,7 @@
         var va = Math.atan2(me.vy, me.vx), tgtA = Math.hypot(me.vx, me.vy) > 50 ? Math.atan2(Math.sin(me.a) + Math.sin(va), Math.cos(me.a) + Math.cos(va)) : me.a, da = tgtA - camA; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; camA += da * 0.09;
         if (state === "intro") { var u = Math.min(0.9999, introT / INTRO), sn4 = Math.floor(u * 4), lv4 = u * 4 - sn4, fi = shots[sn4] - 12 + (sn4 === 3 ? 34 : 38) * lv4, j0 = Math.floor(fi + tr.N) % tr.N, j1 = (j0 + 1) % tr.N, fu = fi - Math.floor(fi), d1 = tr.ta[j1] - tr.ta[j0]; while (d1 > Math.PI) d1 -= 2 * Math.PI; while (d1 < -Math.PI) d1 += 2 * Math.PI; camx = tr.P[j0][0] + (tr.P[j1][0] - tr.P[j0][0]) * fu; camy = tr.P[j0][1] + (tr.P[j1][1] - tr.P[j0][1]) * fu; camA = tr.ta[j0] + d1 * fu; cv.style.opacity = lv4 < 0.12 ? 0.2 + lv4 * 6.5 : 1; } else if (cv.style.opacity !== "1") cv.style.opacity = "1";
         ca = Math.cos(camA); sa = Math.sin(camA); if (state !== "intro") { camx += (me.x - camx) * 0.25; camy += (me.y - camy) * 0.25; } var spd = state === "intro" ? 0.3 : Math.min(1, Math.hypot(me.vx, me.vy) / 600); cax = camx - ca * (DB + 40 * spd); cay = camy - sa * (DB + 40 * spd); FF = H * (FOC - 0.06 * spd + (me.boostT > 0 ? 0.05 : 0));
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = tr.pal.sky; ctx.fillRect(0, 0, W, H); ctx.fillStyle = tr.pal.g1; ctx.fillRect(0, H * 0.02, W, H);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = tr.pal.sky; ctx.fillRect(0, 0, W, H); ctx.fillStyle = tr.pal.bg || tr.pal.g1; ctx.fillRect(0, H * 0.02, W, H);
         var N = tr.N, hw = tr.hw, wl = hw + WALL, lim = wl + 300;
         var pt = function (i, o, z) { return cm(tr.P[i][0] + tr.nx[i] * o, tr.P[i][1] + tr.ny[i] * o, z || 0); };
         var vis = [];                                                                                                                       // si disegna TUTTA la pista che si vede (non una finestra di indici): niente pezzi che spariscono
@@ -635,6 +686,8 @@
             var dst = (i2 - i + N) % N, ko = 0, ka, kb, st2;                                                                           // erba, cordolo: strisce sempre della stessa lunghezza (4 e 2 campioni) a qualunque distanza, così non sfarfallano
             while (ko < dst) { ka = (i + ko) % N; st2 = Math.min(4 - (ka & 3), dst - ko); kb = (ka + st2) % N; quad(pt(ka, (hw + KERB) * sg), pt(ka, wl * sg), pt(kb, wl * sg), pt(kb, (hw + KERB) * sg), ((ka >> 2) & 1) === 0 ? tr.pal.g1 : tr.pal.g2); ko += st2; }
             ko = 0; while (ko < dst) { ka = (i + ko) % N; st2 = Math.min(2 - (ka & 1), dst - ko); kb = (ka + st2) % N; quad(pt(ka, hw * sg), pt(ka, (hw + KERB) * sg), pt(kb, (hw + KERB) * sg), pt(kb, hw * sg), ((ka >> 1) & 1) === 0 ? "#e0203f" : "#f4f4f6"); ko += st2; }
+            if (tr.pal.dots && st === 1) { for (var dk = 0; dk < dst; dk++) { var da = (i + dk) % N; for (var dq = 0; dq < 3; dq++) { var h1 = hh(da * 7 + dq * 131 + (sg > 0 ? 977 : 0) + (tr._ti != null ? tr._ti : (tr._ti = tIdx(tr))) * 31), h2 = hh(da * 13 + dq * 71 + 5), h3 = hh(da * 29 + dq * 17 + 9), dof = (hw + KERB + 4 + h1 * (WALL - KERB - 8)) * sg, dx0 = tr.P[da][0] + tr.nx[da] * dof + Math.cos(tr.ta[da]) * h2 * tr.sp, dy0 = tr.P[da][1] + tr.nx[da] * 0 + tr.ny[da] * dof + Math.sin(tr.ta[da]) * h2 * tr.sp, ds = 1.3 + h3 * 2.2; quad(cm(dx0 - ds, dy0 - ds, 0.5), cm(dx0 + ds, dy0 - ds, 0.5), cm(dx0 + ds, dy0 + ds, 0.5), cm(dx0 - ds, dy0 + ds, 0.5), tr.pal.dots[(da + dq) % tr.pal.dots.length]); } } }
+            if (tr.theme === "city") { ko = 0; while (ko < dst) { ka = (i + ko) % N; st2 = Math.min(4 - (ka & 3), dst - ko); kb = (ka + st2) % N; quad(pt(ka, (wl + 8) * sg), pt(ka, (wl + 100) * sg), pt(kb, (wl + 100) * sg), pt(kb, (wl + 8) * sg), ((ka >> 2) & 1) === 0 ? "#2e2d46" : "#35344f"); quad(pt(ka, (wl + 8) * sg), pt(ka, (wl + 13) * sg), pt(kb, (wl + 13) * sg), pt(kb, (wl + 8) * sg), "#8d8cb8"); ko += st2; } }
           });
           quad(pt(i, -hw), pt(i, hw), pt(i2, hw), pt(i2, -hw), alt4 ? tr.pal.road[0] : tr.pal.road[1]);
           if (!far) { var dsc = (i2 - i + N) % N, kc = 0; while (kc < dsc) { var qa = (i + kc) % N, q3 = Math.min(3 - (qa % 3), dsc - kc), qb = (qa + q3) % N; if ((Math.floor(qa / 3) & 1) === 0) quad(pt(qa, -2), pt(qa, 2), pt(qb, 2), pt(qb, -2), "rgba(255,255,255,.4)"); kc += q3; } }
@@ -660,7 +713,7 @@
             var wat = it.t === "water", seed = it.idx * 0.7, LY = wat ? [["#1e6fb8", 1, 0, 0], ["#3b98e0", 0.8, -0.06, 0.1], ["#8fd3ff", 0.46, -0.14, 0.2]] : [["#0b0a12", 1, 0, 0], ["#26233b", 0.74, -0.08, 0.1], ["rgba(120,110,210,.42)", 0.4, -0.16, 0.2]];
             LY.forEach(function (L) {                                                                                                         // sagoma irregolare (non un cerchio), allineata alla pista
               var pts = [], ok = true;
-              for (var q = 0; q < 18; q++) { var an = q / 18 * 6.2832, rr = (29 + 7 * Math.sin(3 * an + seed) + 4 * Math.sin(5 * an + 2 * seed) + 3 * Math.cos(2 * an + seed)) * L[1], pc = pq(Math.cos(an) * rr * 1.25 + L[2] * 30, Math.sin(an) * rr * 0.9, 0.5 + L[3]); if (pc[2] < NEAR) { ok = false; break; } pts.push(sp2(pc)); }
+              for (var q = 0; q < 18; q++) { var an = q / 18 * 6.2832, rr = (29 + 7 * Math.sin(3 * an + seed) + 4 * Math.sin(5 * an + 2 * seed) + 3 * Math.cos(2 * an + seed)) * L[1], pc = pq(Math.cos(an) * rr * 1.25 + L[2] * 30, Math.sin(an) * rr * 0.9, 0.5 + L[3]); if (pc[2] < 70) { ok = false; break; } pts.push(sp2(pc)); }
               if (!ok) return; ctx.fillStyle = L[0]; ctx.beginPath(); pts.forEach(function (p, q) { if (q) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }); ctx.closePath(); ctx.fill();
             });
             if (wat) { quad(pq(-18, -6, 0.8), pq(-4, -10, 0.8), pq(6, -4, 0.8), pq(-10, 2, 0.8), "rgba(255,255,255,.55)"); quad(pq(6, 8, 0.8), pq(14, 4, 0.8), pq(18, 9, 0.8), pq(9, 12, 0.8), "rgba(255,255,255,.4)"); }
@@ -684,6 +737,14 @@
         tr.deco.forEach(function (dc) { if (dc.t !== "pond" || !onScr(dc.x, dc.y, Math.max(dc.w, dc.h) * 1.3)) return; var cp = Math.cos(dc.a), sp3 = Math.sin(dc.a);
           function pw(a, b) { return cm(dc.x + a * cp - b * sp3, dc.y + a * sp3 + b * cp, 0.3); }
           quad(pw(-dc.w, -dc.h), pw(dc.w, -dc.h), pw(dc.w, dc.h), pw(-dc.w, dc.h), "#3aa6e8"); quad(pw(-dc.w * 0.7, -dc.h * 0.5), pw(dc.w * 0.2, -dc.h * 0.5), pw(dc.w * 0.2, -dc.h * 0.2), pw(-dc.w * 0.7, -dc.h * 0.2), "rgba(255,255,255,.35)"); });
+        if (tr.night) {                                                                                         // notte: sfondo scuro, la pista non è illuminata a giorno; pozze di luce sotto i lampioni e fari
+          var nk = tr.theme === "city" ? 1 : 0.6, ng = ctx.createLinearGradient(0, 0, 0, H); ng.addColorStop(0, "rgba(3,2,18," + (0.78 * nk) + ")"); ng.addColorStop(0.5, "rgba(3,2,18," + (0.4 * nk) + ")"); ng.addColorStop(1, "rgba(3,2,18," + (0.22 * nk) + ")"); ctx.fillStyle = ng; ctx.fillRect(0, 0, W, H);
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          function pool(wx, wy, rad, col, al) { var c0 = cm(wx, wy, 0); if (c0[2] < 80 || c0[2] > 1500) return; var q = sp2(c0), rs = rad * FF / c0[2], gr = ctx.createRadialGradient(q[0], q[1], 0, q[0], q[1], rs); gr.addColorStop(0, "rgba(" + col + "," + al + ")"); gr.addColorStop(1, "rgba(" + col + ",0)"); ctx.save(); ctx.translate(q[0], q[1]); ctx.scale(1, 0.62); ctx.translate(-q[0], -q[1]); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(q[0], q[1], rs, 0, 7); ctx.fill(); ctx.restore(); }
+          tr.deco.forEach(function (dc) { if (dc.t === "lamp" && onScr(dc.x, dc.y, 160)) pool(dc.x - Math.cos(tr.ta[0] * 0) * 0, dc.y, 150, dc.c % 3 === 0 ? "120,200,255" : "255,215,140", 0.34); });
+          { var fa = me.a; pool(me.x + Math.cos(fa) * 170, me.y + Math.sin(fa) * 170, 230, "255,244,210", 0.3); }
+          ctx.restore();
+        }
         var objs = []; tr.deco.forEach(function (dc) { if (dc.t === "pond" || !onScr(dc.x, dc.y, 30) || (dc.x - cax) * ca + (dc.y - cay) * sa > 900) return; objs.push({ d: (dc.x - cax) * ca + (dc.y - cay) * sa, dc: dc }); });
         tr.trees.forEach(function (tt) { if (!tt.sand && onScr(tt.x, tt.y, tt.s + 70) && (tt.x - cax) * ca + (tt.y - cay) * sa < 2300) objs.push({ d: (tt.x - cax) * ca + (tt.y - cay) * sa, t: tt }); });
         if (onScr(tr.P[0][0], tr.P[0][1], hw + 90)) objs.push({ d: (tr.P[0][0] - cax) * ca + (tr.P[0][1] - cay) * sa, gate: true });
@@ -694,8 +755,8 @@
         objs.forEach(function (o) {
           if (o.c) carBox(o.c);
           else if (o.gate) drawGate();
-          else if (o.dc) { var dc = o.dc; if (dc.t === "lamp") { box(dc.x, dc.y, 1.6, 1.6, 0, 34, camA, "#8a8fa8", "#5c6078", "#4a4e64"); box(dc.x, dc.y, 4, 4, 34, 38, camA, "#fff7b0", NEON[dc.c % 3 === 0 ? 2 : 1], NEON[dc.c % 3 === 0 ? 2 : 1]); } else if (dc.t === "flower") { box(dc.x, dc.y, 2, 2, 0, 5, camA, FLC[dc.c], shade(FLC[dc.c], -0.2), shade(FLC[dc.c], -0.35)); box(dc.x, dc.y, 1, 1, 0, 2, camA, "#2a8a30", "#1f6a28", "#1f6a28"); } else box(dc.x, dc.y, 7, 6, 0, 7, camA, "#b8bcc8", "#8a8e9c", "#6f7382"); }
-          else if (o.t.b) { var bt = o.t, bc = tr.pal.tree[bt.c % 3], na = NEON[bt.a % 4]; box(bt.x, bt.y, bt.w, bt.d, 0, bt.h, camA, shade(bc, 0.25), bc, shade(bc, -0.3)); box(bt.x, bt.y, bt.w + 0.8, bt.d + 0.8, bt.h * 0.55, bt.h * 0.62, camA, na, na, shade(na, -0.3)); box(bt.x, bt.y, bt.w * 0.6, bt.d * 0.6, bt.h, bt.h + 8, camA, na, shade(na, -0.2), shade(na, -0.35)); }
+          else if (o.dc) { var dc = o.dc; if (dc.t === "lamp") { box(dc.x, dc.y, 1.4, 1.4, 0, 46, camA, "#8a8fa8", "#5c6078", "#4a4e64"); box(dc.x, dc.y, 4.5, 4.5, 46, 5, camA, "#fff7b0", NEON[dc.c % 3 === 0 ? 2 : 1], NEON[dc.c % 3 === 0 ? 2 : 1]); } else if (dc.t === "flower") { box(dc.x, dc.y, 2, 2, 0, 5, camA, FLC[dc.c], shade(FLC[dc.c], -0.2), shade(FLC[dc.c], -0.35)); box(dc.x, dc.y, 1, 1, 0, 2, camA, "#2a8a30", "#1f6a28", "#1f6a28"); } else box(dc.x, dc.y, 7, 6, 0, 7, camA, "#b8bcc8", "#8a8e9c", "#6f7382"); }
+          else if (o.t.b) bldg(o.t);
           else { var tt = o.t, tc = tr.pal.tree[tt.c % 3]; if (o.d < 1100) box(tt.x, tt.y, tt.s / 5, tt.s / 5, 0, tt.h * 0.45, camA, "#8a5a2b", "#6a421c", "#573612"); box(tt.x, tt.y, tt.s / 2, tt.s / 2, tt.h * 0.3, tt.h * 0.85, camA, tc, shade(tc, -0.35), shade(tc, -0.2)); }
         });
         (state === "run" ? cars.concat(allG()) : cars).forEach(function (c) {                                                                  // etichette: nome sopra le auto lontane / freccia ai bordi se fuori vista
@@ -774,7 +835,7 @@
             if (c.fin) { c.vx *= 0.99; c.vy *= 0.99; return; }
             if (k === 0) { if (window.__RACE_AUTO) { var pa = pilot(tr, c, 0, 1.2); inp.l = !!pa.l; inp.r = !!pa.r; } step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (t >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
             if (c.blink > 0) c.blink -= DT;
-            if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { AU.sfx("lap"); lapT.push(t - lapStart); if (!opts.qual && lapT.length > 1) { var bb = lsGet("arc_race4b_" + tr.id); if (!bb || !bb.t || lapT[lapT.length - 1] < bb.t) lsSet("arc_race4b_" + tr.id, { t: lapT[lapT.length - 1] }); } if (solo && !opts.qual) { var nx0 = TRACKS[tIdx(tr0) + 1]; if (nx0 && !isUnlocked(nx0) && lapT[lapT.length - 1] < lapTarget(tr0)) { lsSet("arc_race4u_" + nx0.id, 1); say2("🔓 PISTA SBLOCCATA: " + nx0.name, 3); } } lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
+            if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { AU.sfx("lap"); lapT.push(t - lapStart); if (!opts.qual && lapT.length > 1) { var lt = lapT[lapT.length - 1]; if (solo && lt < absBest(tr0).t - 0.005) { var rw = payRec(tr0, lt); say2("🏆 RECORD DEL GIRO +" + A.fmt(rw) + " $SDG", 3); AU.sfx("fin"); } var bb = lsGet("arc_race4b_" + tr.id); if (!bb || !bb.t || lt < bb.t) lsSet("arc_race4b_" + tr.id, { t: lt }); } lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
             if (c.prog >= tr.N * laps) { c.fin = true; c.finT = t; }
           });
           cars.forEach(function (c) { var pp = Math.floor(c.prog); while (c.hp < pp) { c.hp++; if (c.hp + 60 >= 0 && c.hp + 60 < c.hist.length) c.hist[c.hp + 60] = t; } });      // quando ogni auto è passata da ogni punto: serve per i distacchi in secondi

@@ -41,6 +41,15 @@
       return names().filter(function (p) { return p.id !== "bot"; }).map(function (p) { return { pid: p.id, name: p.name, style: p.style || {}, online: false }; });
     });
   }
+  function myName() { var n = A.me && A.me() && A.me().name; if (!n) { try { var u = window.Telegram.WebApp.initDataUnsafe.user; n = u && (u.first_name || u.username); } catch (e) {} } return n || "Tu"; }
+  // invito a un amico offline: avviso prima, poi tag nel gruppo su Telegram
+  function offlineAsk(f, ok) {
+    var sh = el("div", "fr-sheet"), bx = el("div", "fr-sbox"); bx.appendChild(el("b", "", f.name + " è offline"));
+    bx.appendChild(el("div", "pg-me", "Se lo inviti, verrà taggato nel gruppo su Telegram (con il suo @username) e potrà entrare quando vede il messaggio."));
+    var a = el("button", "mp-go", "📣 INVITA E TAGGA"), b = el("button", "mp-go mp-alt", "ANNULLA"); a.type = b.type = "button";
+    a.addEventListener("click", function () { sh.remove(); ok(); }); b.addEventListener("click", function () { sh.remove(); });
+    bx.appendChild(a); bx.appendChild(b); sh.appendChild(bx); document.body.appendChild(sh);
+  }
   function friendSheet(exclude, pick) {
     var sh = el("div", "fr-sheet"), bx = el("div", "fr-sbox"); bx.appendChild(el("b", "", "SCEGLI UN AMICO")); var lst = el("div", "fr-list"); bx.appendChild(lst); lst.appendChild(el("div", "pg-empty", "Carico…"));
     var cl = el("button", "mp-go mp-alt", "CHIUDI"); cl.type = "button"; cl.addEventListener("click", function () { sh.remove(); }); bx.appendChild(cl); sh.appendChild(bx); sh.addEventListener("click", function (e) { if (e.target === sh) sh.remove(); }); document.body.appendChild(sh);
@@ -50,7 +59,7 @@
       L.forEach(function (f) {
         var r = el("button", "fr-r" + (f.online ? " on" : "")); r.type = "button"; var av = el("div", "avatar rav"); A.styleAvatar(av, f.style || {}, (f.name || "?").charAt(0).toUpperCase()); r.appendChild(av);
         var n = el("div", "nm"); n.appendChild(A.nameEl(f.name, f.style || {})); r.appendChild(n); r.appendChild(el("span", "st", f.online ? "● online" : "offline"));
-        r.addEventListener("click", function () { sh.remove(); pick(f); }); lst.appendChild(r);
+        r.addEventListener("click", function () { sh.remove(); if (f.online) pick(f); else offlineAsk(f, function () { pick(f); }); }); lst.appendChild(r);
       });
     });
   }
@@ -92,9 +101,8 @@
   // ---- lobby di un tavolo: posti (tu, amici invitati, bot) + regole + AVVIA. Stessa schermata che userà il server.
   function tableLobby(k) {
     fit(true); epoch++; body.innerHTML = ""; var T = TBL[k]; backBar(T.name.toUpperCase(), tables);
-    var L = st.tl && st.tl.k === k ? st.tl : (st.tl = { k: k, code: "SDG-" + Math.random().toString(36).slice(2, 6).toUpperCase(), seats: [{ t: "me" }, null, null, null], buy: 0, rich: false, mode: "4s", target: st.scTarget == null ? 11 : st.scTarget });
+    var L = st.tl && st.tl.k === k ? st.tl : (st.tl = { k: k, hands: 0, seats: [{ t: "me" }, null, null, null], buy: 0, rich: false, mode: "4s", target: st.scTarget == null ? 11 : st.scTarget });
     var wallet = walletNow();
-    var top = el("div", "tl-code"); top.appendChild(el("span", "", "CODICE TAVOLO")); top.appendChild(el("b", "", L.code)); var sh = el("button", "tl-share", "🔗 CONDIVIDI"); sh.type = "button"; sh.addEventListener("click", function () { A.toast("Nel gioco vero invii il codice a chi vuoi"); }); top.appendChild(sh); body.appendChild(top);
     var seatsE = el("div", "tl-seats"); body.appendChild(seatsE);
     var rules = el("div", "mp-card tl-rules"); body.appendChild(rules);
     var go = el("div", "mp-end dl-go"); body.appendChild(go);
@@ -109,8 +117,8 @@
           c.appendChild(el("div", "tl-no", "Posto " + (i + 1))); var r = el("div", "tl-btns"); var a = el("button", "", "👥 INVITA"), b = el("button", "alt", "🤖 BOT"); a.type = b.type = "button";
           a.addEventListener("click", function () { invite(i); }); b.addEventListener("click", function () { addBot(i); }); r.appendChild(a); r.appendChild(b); c.appendChild(r);
         } else {
-          var av = el("div", "avatar rav"); if (x.t === "bot") av.textContent = "🤖"; else A.styleAvatar(av, x.t === "me" ? ((A.me && A.me().style) || {}) : (x.style || {}), (x.t === "me" ? "T" : (x.name || "?").charAt(0).toUpperCase())); c.appendChild(av);
-          var nm = el("div", "tl-nm"); if (x.t === "me" || x.t === "bot") nm.appendChild(el("span", "", x.t === "me" ? "Tu" : x.name)); else nm.appendChild(A.nameEl(x.name, x.style || {}));
+          var av = el("div", "avatar rav"); if (x.t === "bot") av.textContent = "🤖"; else A.styleAvatar(av, x.t === "me" ? ((A.me && A.me().style) || {}) : (x.style || {}), (x.t === "me" ? myName().charAt(0).toUpperCase() : (x.name || "?").charAt(0).toUpperCase())); c.appendChild(av);
+          var nm = el("div", "tl-nm"); if (x.t === "me") nm.appendChild(A.nameEl(myName(), (A.me && A.me().style) || {})); else if (x.t === "bot") nm.appendChild(el("span", "", x.name)); else nm.appendChild(A.nameEl(x.name, x.style || {}));
           nm.appendChild(el("small", "", x.t === "me" ? "HOST" : x.t === "bot" ? "bot" : x.t === "wait" ? "invitato…" : "pronto ✓")); c.appendChild(nm);
           if (x.t !== "me") { var rm = el("button", "tl-x", "✕"); rm.type = "button"; rm.addEventListener("click", function () { L.seats[i] = null; paint(); }); c.appendChild(rm); }
         }
@@ -120,13 +128,15 @@
     function paintRules() {
       rules.innerHTML = ""; var n = count();
       if (k === "pk") {
-        rules.appendChild(el("div", "mp-sec", "REGOLE · BUY-IN"));
+        rules.appendChild(el("div", "mp-sec", "REGOLE · POKER"));
         var steps = L.rich ? [1000, 2000, 5000] : [100, 200, 500], opts = steps.filter(function (v) { return v <= wallet; }); if (!opts.length && wallet > 0 && !L.rich) opts = [wallet];
         if (opts.indexOf(L.buy) < 0) L.buy = opts[0] || 0;
-        rules.appendChild(el("div", "pg-me", "Saldo " + A.fmt(wallet) + " $SDG · ante " + A.fmt(L.rich ? 50 : 5) + " a mano"));
-        var r1 = el("div", "mp-rowc"), r2 = el("div", "mp-rowc"); rules.appendChild(r1); rules.appendChild(r2);
-        if (opts.length) chips(r1, opts.map(function (v) { return [v, A.fmt(v)]; }), L.buy, function (it) { L.buy = it[0]; paintRules(); paintGo(); }); else rules.appendChild(el("div", "pg-me", L.rich ? "Servono almeno 1.000 $SDG per il tavolo ricco." : "Non hai $SDG per sederti."));
-        chips(r2, [[0, "Normale"], [1, "💎 Ricco (×10)"]], L.rich ? 1 : 0, function (it) { L.rich = !!it[0]; L.buy = 0; paintRules(); paintGo(); });
+        function row(lab) { var r = el("div", "tl-row"); r.appendChild(el("span", "", lab)); var c = el("div", "mp-rowc"); r.appendChild(c); rules.appendChild(r); return c; }
+        var r1 = row("Buy-in"), r2 = row("Tavolo"), r5 = row("Mani");
+        if (opts.length) chips(r1, opts.map(function (v) { return [v, A.fmt(v)]; }), L.buy, function (it) { L.buy = it[0]; paintRules(); paintGo(); }); else r1.appendChild(el("span", "tl-warn", L.rich ? "Servono 1.000 $SDG" : "Nessun $SDG"));
+        chips(r2, [[0, "Normale"], [1, "💎 Ricco ×10"]], L.rich ? 1 : 0, function (it) { L.rich = !!it[0]; L.buy = 0; paintRules(); paintGo(); });
+        chips(r5, [[0, "∞"], [5, "5"], [10, "10"], [20, "20"]], L.hands, function (it) { L.hands = it[0]; paintRules(); });
+        rules.appendChild(el("div", "tl-info", "Saldo " + A.fmt(wallet) + " $SDG · ante " + A.fmt(L.rich ? 50 : 5) + " a mano"));
       } else if (k === "bj") {
         rules.appendChild(el("div", "mp-sec", "REGOLE"));
         rules.appendChild(el("div", "pg-me", "Ognuno punta a ogni mano e gioca contro il banco. Vince chi si avvicina di più a 21 senza sballare."));
@@ -143,7 +153,7 @@
       go.innerHTML = ""; var n = count(), ok = n >= 2 && !(k === "pk" && !L.buy), b = el("button", "mp-go", n < 2 ? "AGGIUNGI UN GIOCATORE" : "▶ AVVIA"); b.type = "button"; b.disabled = !ok;
       b.addEventListener("click", function () {
         var bots = Math.max(1, count() - 1);
-        if (k === "pk") pkTable(bots, { buy: L.buy, wallet: wallet - L.buy, u: L.rich ? 50 : 5 }); else if (k === "bj") bjTable(bots); else scopaTable(count() > 2 ? L.mode : "2", L.target);
+        if (k === "pk") pkTable(bots, { buy: L.buy, wallet: wallet - L.buy, u: L.rich ? 50 : 5, hands: L.hands }); else if (k === "bj") bjTable(bots); else scopaTable(count() > 2 ? L.mode : "2", L.target);
       }); go.appendChild(b);
     }
     function paint() { paintSeats(); paintRules(); paintGo(); }
@@ -192,7 +202,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   function duel() {
     fit(true);
     epoch++; var E = epoch, need = Math.floor(st.rounds / 2) + 1, me = 0, op = 0, rd = 1;
-    body.innerHTML = ""; var c = el("div", "mp-card"); body.appendChild(c);
+    body.innerHTML = ""; var c = el("div", "mp-card mp-duel dg-" + st.game); body.appendChild(c);
     var head = el("div", "mp-sec"), vs = el("div", "mp-vs"), msg = el("div", "pg-me", ""), area = el("div", "mp-area");
     var a = el("div"), b = el("div"), sa = el("div", "big", "0"), sb = el("div", "big", "0");
     a.appendChild(sa); a.appendChild(el("small", "", "Tu")); b.appendChild(sb); b.appendChild(el("small", "", st.opp.name)); vs.appendChild(a); vs.appendChild(b);
@@ -291,16 +301,16 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       var split = el("div", "mx-split"), O = panel("opp", st.opp.name), M = panel("me", "Tu"), hint = el("div", "mx-hint", "");
       split.appendChild(O.p); split.appendChild(M.p); area.appendChild(split); area.appendChild(hint);
       O.cup.classList.add("auto"); O.cup.style.animation = "none";
-      say(msg, "Tocca il bussolotto per lanciare (o tienilo premuto per agitarlo di più)");
-      hint.textContent = "👇 tocca o tieni premuto il tuo bussolotto";
+      say(msg, "Tocca il bussolotto per lanciare");
+      hint.textContent = "";
       return new Promise(function (res) {
         var t0 = 0, iv = 0, done = false;
         function stop() { clearInterval(iv); iv = 0; }
         function down(ev) {
-          if (done || t0) return; ev.preventDefault(); t0 = Date.now(); M.cup.classList.add("hold"); hint.textContent = "Agita… rilascia per lanciare";
+          if (done || t0) return; ev.preventDefault(); t0 = Date.now(); M.cup.classList.add("hold"); hint.textContent = "";
           snd("tick"); iv = setInterval(function () { if (!alive(E)) return stop(); snd("creak", Math.random()); A.haptic("light"); }, 140);
         }
-        function up() { if (!t0 || done) return; var held = Date.now() - t0; t0 = 0; done = true; hint.textContent = "Agito…"; setTimeout(function () { if (!alive(E)) return; stop(); M.cup.classList.remove("hold"); go(); }, Math.max(0, 700 - held)); }
+        function up() { if (!t0 || done) return; var held = Date.now() - t0; t0 = 0; done = true; hint.textContent = ""; setTimeout(function () { if (!alive(E)) return; stop(); M.cup.classList.remove("hold"); go(); }, Math.max(0, 700 - held)); }
         function go() {
           hint.textContent = ""; M.p.classList.add("act");
           var mv = [1 + rnd(6), 1 + rnd(6)], ov = [1 + rnd(6), 1 + rnd(6)];
@@ -389,7 +399,6 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         box.appendChild(tm); box.appendChild(list); box.appendChild(disp); box.appendChild(kb); area.appendChild(box);
         function show() { disp.textContent = word || "scrivi la parola in comune…"; disp.classList.toggle("ph", !word); }
         show();
-        say(msg, "Indovina la parola in comune prima di " + st.opp.name + " (meno indizi = più bello)");
         function finish(r, txt) { if (over) return; over = true; kb.classList.add("off"); say(msg, txt, r > 0 ? "mp-win" : (r < 0 ? "mp-lose" : "")); list.appendChild(el("div", "gh-sol", "🔑 " + sol)); wait(1500).then(function () { res(r); }); }
         function reveal() { if (over || !alive(E)) return; shown++; list.appendChild(el("div", "gh-c", cl[shown - 1].toUpperCase())); list.scrollTop = list.scrollHeight; snd("chip");
           if (shown === botAt && botOk) return wait(1200 + rnd(1800)).then(function () { if (!over && alive(E)) finish(-1, st.opp.name + " ha indovinato: " + sol); });
@@ -769,7 +778,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     var felt = el("div", "mx-felt pk"), shoe = el("div", "mx-shoe"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea");
     shoe.style.cssText = "right:46%;top:46%;width:1px;height:1px;opacity:0;box-shadow:none"; 
     c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
-    var deck, board, pot, cur, dealer = 0;
+    var deck, board, pot, cur, dealer = 0, hn = 0;
     function paint(show) {
       felt.innerHTML = ""; felt.appendChild(shoe);
       var mid = el("div", "pk-mid"), prow = el("div", "pk-pot"), heap = el("span", "heap"), cm = el("div", "mx-cs pk-board");
@@ -862,13 +871,16 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       paint(true); var mw = win.indexOf(P[0]) >= 0;
       banner(felt, mw ? "HAI VINTO!" : (win[0].name.replace("🤖 ", "") + " VINCE"), "Piatto " + A.fmt(pot * u) + " $SDG" + (L.length > 1 && win[0].v != null ? " · " + CATN[catOf(win[0].v)] : " · tutti gli altri hanno foldato"), mw ? "win" : "lose");
       say(msg, mw ? "Hai vinto il piatto di " + A.fmt(pot * u) + " $SDG!" : (P[0].fold ? "Hai foldato — vince " + win[0].name : "Vince " + win[0].name + " (" + A.fmt(pot * u) + " $SDG)"), mw ? "mp-win" : "mp-lose"); A.haptic(mw ? "ok" : "light"); snd(mw ? "win" : "lose");
-      area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); });
-      var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a1); en.appendChild(a2);
+      area.innerHTML = ""; var en = el("div", "mp-end"); area.appendChild(en); hn++;
+      var fin = cfg.hands && hn >= cfg.hands;
+      if (fin) { var diff = P[0].stack * u - cfg.buy; say(msg, "Fine del tavolo dopo " + cfg.hands + " mani: " + (diff > 0 ? "+" : "") + A.fmt(diff) + " $SDG (simulato)", diff > 0 ? "mp-win" : (diff < 0 ? "mp-lose" : "")); }
+      else { var a1 = el("button", "mp-go", "RIGIOCA" + (cfg.hands ? " · mano " + (hn + 1) + "/" + cfg.hands : "")); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); }); en.appendChild(a1); }
+      var a2 = el("button", "mp-go mp-alt", "LOBBY"); a2.type = "button"; a2.addEventListener("click", lobby); en.appendChild(a2);
     }
     hand();
   }
 
-  window.ArcadeMulti = { load: function () {
+  window.ArcadeMulti = { friendSheet: function (ex, pick) { friendSheet(ex || [], pick); }, myName: function () { return myName(); }, load: function () {
     if (!(A.multiOn && A.multiOn())) { soon(); return; }
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
   } };
