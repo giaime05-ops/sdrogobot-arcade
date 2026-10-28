@@ -772,7 +772,7 @@
           if (!solo && !qual) aero(tr, cars, opts);
           cars.forEach(function (c, k) {
             if (c.fin) { c.vx *= 0.99; c.vy *= 0.99; return; }
-            if (k === 0) { step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (t >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
+            if (k === 0) { if (window.__RACE_AUTO) { var pa = pilot(tr, c, 0, 1.2); inp.l = !!pa.l; inp.r = !!pa.r; } step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (t >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
             if (c.blink > 0) c.blink -= DT;
             if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { AU.sfx("lap"); lapT.push(t - lapStart); if (!opts.qual && lapT.length > 1) { var bb = lsGet("arc_race4b_" + tr.id); if (!bb || !bb.t || lapT[lapT.length - 1] < bb.t) lsSet("arc_race4b_" + tr.id, { t: lapT[lapT.length - 1] }); } if (solo && !opts.qual) { var nx0 = TRACKS[tIdx(tr0) + 1]; if (nx0 && !isUnlocked(nx0) && lapT[lapT.length - 1] < lapTarget(tr0)) { lsSet("arc_race4u_" + nx0.id, 1); say2("🔓 PISTA SBLOCCATA: " + nx0.name, 3); } } lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
             if (c.prog >= tr.N * laps) { c.fin = true; c.finT = t; }
