@@ -380,9 +380,10 @@
       var mk = el("button", "rc-hero h4 slim"); mk.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[3]); mk.appendChild(im); mk.appendChild(el("div", "sh")); var tx = el("div", "tx"); tx.appendChild(el("i", "", "＋")); var bx = el("div", "bx"); bx.appendChild(el("b", "", "CREA LOBBY")); bx.appendChild(el("span", "", "Scegli pista, giri, regole, bot e invita i tuoi amici")); tx.appendChild(bx); mk.appendChild(tx);
       mk.addEventListener("click", function () { LB = newLobby(); lobby(); }); root.appendChild(mk);
       root.appendChild(el("div", "rc-sec", "LOBBY APERTE"));
-      var op = [["Marco", 2, 3, 4], ["Spoleto", 4, 5, 6], ["Gabbo", 0, 3, 2], ["albe", 5, 7, 3]];
+      var op = A.isSandbox() ? [["Marco", 2, 3, 4], ["Spoleto", 4, 5, 6], ["Gabbo", 0, 3, 2], ["albe", 5, 7, 3]] : [];                       // lobby di esempio: solo nell'account di prova
+      if (!op.length) root.appendChild(el("div", "rc-note", "Nessuna lobby aperta al momento: creane una tu e invita gli amici."));
       op.forEach(function (o) { var r = el("div", "lb-open"), im2 = el("img"); im2.src = thumb(TRACKS[o[1]]); r.appendChild(im2); var d = el("div", "d"); d.appendChild(el("b", "", "Lobby di " + o[0])); d.appendChild(el("span", "", TRACKS[o[1]].name + " · " + o[2] + " giri")); r.appendChild(d); r.appendChild(el("em", "", o[3] + "/8")); var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.toast("Prototipo: le lobby aperte arriveranno col server vero"); }); r.appendChild(g); root.appendChild(r); });
-      root.appendChild(el("div", "rc-note", "Qui vedrai le lobby pubbliche dei tuoi amici e di tutti. Per ora sono esempi: la lobby che crei tu funziona davvero, con bot e amici finti."));
+      if (A.isSandbox()) root.appendChild(el("div", "rc-note", "Qui vedrai le lobby pubbliche dei tuoi amici e di tutti. Per ora sono esempi: la lobby che crei tu funziona davvero, con bot e amici finti."));
     }
     function palette() {                                                                                               // fumetto con gli 8 colori: quelli già presi sono bloccati
       var L = LB, cols = lbCols(L), taken = cols.filter(function (c, i) { return i > 0; }), ov = el("div", "lb-pal-ov"), bx = el("div", "lb-pal");
