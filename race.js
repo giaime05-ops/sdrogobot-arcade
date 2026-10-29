@@ -556,7 +556,7 @@
       var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); if (opts.rain) { var rq = 0; itl = itl.filter(function () { return rq++ % 2 === 0; }); } tr = Object.assign({}, tr, { items: itl, rain: opts.rain ? (opts.rain === true ? 1 : opts.rain) : 0 });
       var solo = mode === "single", laps = qual ? 1 : (solo ? 3 : (opts.laps || RL)), full = el("div", "rc2"), cv = el("canvas", "rc2-cv"), hud = el("div", "rc2-hud"), cd = el("div", "rc2-cd"), tip = el("div", "rc2-tip");
       var left = el("div", "rc2-pad l"), right = el("div", "rc2-pad r"), rev = el("div", "rc2-rev"), rfill = el("i"), bbar = el("div", "rc2-boost"), bfill = el("i"); rev.appendChild(rfill); bbar.appendChild(bfill);
-      var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : 4.4;
+      var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : 8;
       gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small></small><b></b><span></span>"; intro.children[0].textContent = qual ? "🏁 SESSIONE UFFICIALE 🏁" : (opts.grid ? "🏆 GRAN PREMIO 🏆" : "CIRCUITO"); intro.children[1].textContent = qual ? "QUALIFICA" : (opts.grid ? "GARA" : tr.name); intro.children[2].textContent = qual ? "⏱ " + tr.name.toUpperCase() + " · 1 GIRO LANCIATO · DECIDE LA GRIGLIA" : (solo ? "CONTRO IL TEMPO" : (opts.grid ? "🏎 " + tr.name.toUpperCase() : "GARA")) + " · " + laps + " GIRI" + (opts.grid ? " · SI PARTE DALLA GRIGLIA" : ""); if (qual) intro.classList.add("qual");
       var tower = el("div", "rc2-tower"), twc = 0, xb = el("button", "rc2-x", "⏸"); xb.type = "button"; var sec = el("div", "rc2-sec"), lapb = el("div", "rc2-lapb");
       full.appendChild(cv); if (opts.rain) full.appendChild(el("div", "rc2-rain" + (opts.rain > 1 ? " heavy" : ""))); full.appendChild(hud); full.appendChild(cd); full.appendChild(tip); full.appendChild(left); full.appendChild(right); full.appendChild(bbar); full.appendChild(xb); full.appendChild(sec); full.appendChild(lapb); full.appendChild(gasb); full.appendChild(lch); full.appendChild(intro); if (!solo && !qual) full.appendChild(tower); document.body.appendChild(full);
@@ -753,10 +753,15 @@
       }
       function shade(hex, k) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; r = Math.max(0, Math.min(255, Math.round(r * (1 + k)))); g = Math.max(0, Math.min(255, Math.round(g * (1 + k)))); b = Math.max(0, Math.min(255, Math.round(b * (1 + k)))); return "rgb(" + r + "," + g + "," + b + ")"; }
       var WIN = ["#ffe39a", "#8ff3ff", "#ffb0e0"];
+      function onScrH(x, y, r, h) {                                         // palazzi alti: basta che si veda la base, la metà o il tetto (prima sparivano quando la base usciva dallo schermo)
+        if (onScr(x, y, r)) return true;
+        for (var q = 1; q <= 2; q++) { var c = cm(x, y, h * q / 2), d = c[2]; if (d > 3400 || d < 40) continue; var m = r * FF / d + 30, sx = W / 2 + c[0] / d * FF, sy = H / 2 - c[1] / d * FF + H * 0.06; if (sx > -m && sx < W + m && sy > -m && sy < H + m) return true; }
+        return false;
+      }
       function bldg(bt) {                                                                                        // palazzo: facciate con finestre accese, fascia LED e tetto con bordo neon
         var co = Math.cos(bt.ang), si = Math.sin(bt.ang), cs = [[bt.w, bt.d], [bt.w, -bt.d], [-bt.w, -bt.d], [-bt.w, bt.d]].map(function (p) { return [bt.x + p[0] * co - p[1] * si, bt.y + p[0] * si + p[1] * co]; });
         var lo = cs.map(function (p) { return pr(p[0], p[1], 0); }), hi = cs.map(function (p) { return pr(p[0], p[1], bt.h); });
-        if (lo.some(function (q) { return !q || q[2] < 90; }) || hi.some(function (q) { return !q || q[2] < 90; })) return;
+        if (lo.some(function (q) { return !q || q[2] < 40; }) || hi.some(function (q) { return !q || q[2] < 40; })) return;
         var base = tr.pal.tree[bt.c % 3], na = NEON[bt.a % 4], fl = []; for (var i = 0; i < 4; i++) fl.push({ i: i, d: (lo[i][2] + lo[(i + 1) % 4][2]) / 2 }); fl.sort(function (p, q) { return q.d - p.d; });
         var near = lo[0][2] < 1500;
         fl.forEach(function (fc, rank) {
@@ -790,10 +795,23 @@
           quad(gp(-21, -15), gp(-21, 15), gp(-18, 15), gp(-18, -15), "rgba(255,255,255,.85)"); quad(gp(-21, -15), gp(14, -15), gp(14, -12.5), gp(-21, -12.5), "rgba(255,255,255,.85)"); quad(gp(-21, 12.5), gp(14, 12.5), gp(14, 15), gp(-21, 15), "rgba(255,255,255,.85)");
           var tp = pr(P0[0] + tx * (cf - 4) + nx0 * cl, P0[1] + ty * (cf - 4) + ny0 * cl, 0.7); if (tp && tp[2] < 900) { ctx.font = "400 " + Math.round(Math.max(9, 26 * FF / tp[2])) + "px Bungee,Rajdhani,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillText(String(sl + 1), tp[0], tp[1]); ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; } }
       }
-      function draw() {
+      var pcx = camx, pcy = camy, pcA = camA;
+      function vis() { return cars.concat(typeof gl !== "undefined" && gl ? gl : [], typeof qgh !== "undefined" && qgh ? qgh : []); }
+      function lerpA(a0, a1, u) { var d = a1 - a0; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a0 + d * u; }
+      function drawI(al) {                                                // disegna lo stato "tra" due passi di fisica (interpolazione): movimento fluido a 60, 90 o 120 Hz. La fisica non cambia.
+        al = Math.max(0, Math.min(1, al)); var V = vis(), sv = V.map(function (c) { return [c.x, c.y, c.a]; }), cs = [camx, camy, camA], it0 = introT;
+        V.forEach(function (c) { if (c.px !== undefined && !c.fin) { c.x = c.px + (c.x - c.px) * al; c.y = c.py + (c.y - c.py) * al; c.a = lerpA(c.pa, c.a, al); } });
+        camx = pcx + (camx - pcx) * al; camy = pcy + (camy - pcy) * al; camA = lerpA(pcA, camA, al); if (state === "intro") introT += al * DT;
+        if (window.__RDBG) window.__RDBG.push([performance.now(), me.x, me.y, camx, camy, camA]);
+        try { draw(); } finally { V.forEach(function (c, i) { c.x = sv[i][0]; c.y = sv[i][1]; c.a = sv[i][2]; }); camx = cs[0]; camy = cs[1]; camA = cs[2]; introT = it0; }
+      }
+      function camStep() {                                                // la camera si muove insieme alla fisica (60 passi/s), non a ogni disegno: così non dipende dagli Hz dello schermo
         var va = Math.atan2(me.vy, me.vx), tgtA = Math.hypot(me.vx, me.vy) > 50 ? Math.atan2(Math.sin(me.a) + Math.sin(va), Math.cos(me.a) + Math.cos(va)) : me.a, da = tgtA - camA; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; camA += da * 0.09;
-        if (state === "intro") { var u = Math.min(0.9999, introT / INTRO), sn4 = Math.floor(u * 4), lv4 = u * 4 - sn4, fi = shots[sn4] - 12 + (sn4 === 3 ? 34 : 38) * lv4, j0 = Math.floor(fi + tr.N) % tr.N, j1 = (j0 + 1) % tr.N, fu = fi - Math.floor(fi), d1 = tr.ta[j1] - tr.ta[j0]; while (d1 > Math.PI) d1 -= 2 * Math.PI; while (d1 < -Math.PI) d1 += 2 * Math.PI; camx = tr.P[j0][0] + (tr.P[j1][0] - tr.P[j0][0]) * fu; camy = tr.P[j0][1] + (tr.P[j1][1] - tr.P[j0][1]) * fu; camA = tr.ta[j0] + d1 * fu; cv.style.opacity = lv4 < 0.12 ? 0.2 + lv4 * 6.5 : 1; } else if (cv.style.opacity !== "1") cv.style.opacity = "1";
-        ca = Math.cos(camA); sa = Math.sin(camA); if (state !== "intro") { camx += (me.x - camx) * 0.25; camy += (me.y - camy) * 0.25; } var spd = state === "intro" ? 0.3 : Math.min(1, Math.hypot(me.vx, me.vy) / 600); cax = camx - ca * (DB + 40 * spd); cay = camy - sa * (DB + 40 * spd); FF = H * (FOC - 0.06 * spd + (me.boostT > 0 ? 0.05 : 0));
+        if (state !== "intro") { camx += (me.x - camx) * 0.25; camy += (me.y - camy) * 0.25; }
+      }
+      function draw() {
+        if (state === "intro") { var u = Math.min(0.9999, introT / INTRO), sn4 = Math.floor(u * 4), lv4 = u * 4 - sn4, pp4 = lv4 * 0.7 + lv4 * lv4 * (3 - 2 * lv4) * 0.3, yaw4 = (sn4 % 2 ? -1 : 1) * (0.55 - 0.3 * pp4), fi = shots[sn4] - 6 + 12 * pp4, j0 = Math.floor(fi + tr.N) % tr.N, j1 = (j0 + 1) % tr.N, fu = fi - Math.floor(fi), d1 = tr.ta[j1] - tr.ta[j0]; while (d1 > Math.PI) d1 -= 2 * Math.PI; while (d1 < -Math.PI) d1 += 2 * Math.PI; camx = tr.P[j0][0] + (tr.P[j1][0] - tr.P[j0][0]) * fu; camy = tr.P[j0][1] + (tr.P[j1][1] - tr.P[j0][1]) * fu; camA = tr.ta[j0] + d1 * fu + yaw4; cv.style.opacity = lv4 < 0.1 ? 0.15 + lv4 * 8.5 : (lv4 > 0.92 ? 0.15 + (1 - lv4) * 10.6 : 1); } else if (cv.style.opacity !== "1") cv.style.opacity = "1";
+        ca = Math.cos(camA); sa = Math.sin(camA); var spd = state === "intro" ? 0.3 : Math.min(1, Math.hypot(me.vx, me.vy) / 600); cax = camx - ca * (DB + 40 * spd); cay = camy - sa * (DB + 40 * spd); FF = H * (FOC - 0.06 * spd + (me.boostT > 0 ? 0.05 : 0));
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = tr.pal.sky; ctx.fillRect(0, 0, W, H); ctx.fillStyle = tr.pal.bg || tr.pal.g1; ctx.fillRect(0, H * 0.02, W, H);
         var N = tr.N, hw = tr.hw, wl = hw + WALL, lim = wl + 300;
         var pt = function (i, o, z) { return cm(tr.P[i][0] + tr.nx[i] * o, tr.P[i][1] + tr.ny[i] * o, z || 0); };
@@ -872,7 +890,7 @@
           ctx.restore();
         }
         var objs = []; tr.deco.forEach(function (dc) { if (dc.t === "pond" || !onScr(dc.x, dc.y, 30) || (dc.x - cax) * ca + (dc.y - cay) * sa > 900) return; objs.push({ d: (dc.x - cax) * ca + (dc.y - cay) * sa, dc: dc }); });
-        tr.trees.forEach(function (tt) { if (!tt.sand && onScr(tt.x, tt.y, tt.s + 70) && (tt.x - cax) * ca + (tt.y - cay) * sa < 2300) objs.push({ d: (tt.x - cax) * ca + (tt.y - cay) * sa, t: tt }); });
+        tr.trees.forEach(function (tt) { if (!tt.sand && (tt.b ? onScrH(tt.x, tt.y, tt.s + 70, tt.h) : onScr(tt.x, tt.y, tt.s + 70)) && (tt.x - cax) * ca + (tt.y - cay) * sa < (tt.b ? 3000 : 2300)) objs.push({ d: (tt.x - cax) * ca + (tt.y - cay) * sa, t: tt }); });
         if (onScr(tr.P[0][0], tr.P[0][1], hw + 90)) objs.push({ d: (tr.P[0][0] - cax) * ca + (tr.P[0][1] - cay) * sa, gate: true });
         cars.forEach(function (c) { objs.push({ d: (c.x - cax) * ca + (c.y - cay) * sa, c: c }); }); if (state === "run") allG().forEach(function (g) { objs.push({ d: (g.x - cax) * ca + (g.y - cay) * sa, c: g }); });
         objs.sort(function (a, b) { return b.d - a.d; });
@@ -937,14 +955,15 @@
         if (msgT > 0) { msgT -= 1 / 60; if (msgT <= 0) tip.textContent = ""; }
       }
       function respawn() {
-        var k = me.idx, a = tr.ta[k]; me.x = tr.P[k][0]; me.y = tr.P[k][1]; me.a = a; me.vx = Math.cos(a) * 60; me.vy = Math.sin(a) * 60; me.offT = 0; me.spin = 0; me.blink = 1; say2("Rimesso in pista", 1.4);
+        var k = me.idx, a = tr.ta[k]; me.x = tr.P[k][0]; me.y = tr.P[k][1]; me.a = a; me.vx = Math.cos(a) * 60; me.vy = Math.sin(a) * 60; me.offT = 0; me.spin = 0; me.blink = 1; me.px = me.x; me.py = me.y; me.pa = me.a; say2("Rimesso in pista", 1.4);
       }
       function frame(now) {
         if (done || !full.isConnected) { stop(); return; }
-        if (paused) { last = now; draw(); raf = requestAnimationFrame(frame); return; }
+        if (paused) { last = now; drawI(1); raf = requestAnimationFrame(frame); return; }
         acc += Math.min(0.1, (now - last) / 1000); last = now;
         while (acc >= DT) {
           acc -= DT;
+          vis().forEach(function (c) { c.px = c.x; c.py = c.y; c.pa = c.a; }); pcx = camx; pcy = camy; pcA = camA; camStep();
           if (state === "intro") { introT += DT; if (introT >= INTRO) { state = "count"; cT = 0; t = 0; } continue; }
           if (state === "count") {
             cT += DT; var nl = cT < 0.8 ? 0 : Math.min(3, Math.floor((cT - 0.8) / 0.8) + 1); if (nl !== lastNl) { lastNl = nl; if (nl) AU.sfx("beep"); }
@@ -982,7 +1001,7 @@
           if (!solo) crash(cars); t += DT;
           if (me.fin) { finish(); break; }
         }
-        draw(); hudDraw(); raf = requestAnimationFrame(frame);
+        drawI(acc / DT); hudDraw(); raf = requestAnimationFrame(frame);
       }
       if (RMT) {                                                                                                  // sincronizzazione online: ~6 volte al secondo mando la mia posizione e ricevo quelle degli altri
         var rSend = function () {
