@@ -792,7 +792,7 @@
           if (recPay) recLn.textContent = "💰 Record della pista: +" + A.fmt(recPay) + " $SDG"; else if (laps !== 3) recLn.textContent = "Il record vale solo sui 3 giri";
           if (!isSbx() && laps === 3 && (rec || recAll)) {
             var gs = grec.length > 6000 ? grec.filter(function (v, i) { return Math.floor(i / 3) % 2 === 0; }) : grec;
-            A.api("/api/race/record", "POST", { track: tr0.id, t: Math.round(total * 1000), g: recAll ? gs : null }).then(function (j) {
+            A.api("/api/race/record", "POST", { track: tr0.id, t: Math.round(total * 1000), g: gs }).then(function (j) {
               if (j && j.success) { if (j.reward) recLn.textContent = "💰 Record della pista: +" + A.fmt(j.reward) + " $SDG"; else if (j.record) recLn.textContent = "Record della pista battuto (premio non pagato: limite giornaliero raggiunto)"; else if (j.pos) recLn.textContent = "In classifica sei " + j.pos + "° su " + j.of; tr0._absG = null; SRV.ok = false; try { A.refreshMe(); } catch (e) {} }
             }).catch(function () {});
           }
