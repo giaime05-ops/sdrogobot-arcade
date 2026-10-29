@@ -381,7 +381,12 @@
     // ---------------- lobby (prototipo) ----------------
     var LB = null, FRIENDS = ["Marco", "Spoleto", "maicol", "Lorenzo", "albe", "Gabbo"];
     function myNm() { try { return window.ArcadeMulti.myName(); } catch (e) { return "Tu"; } }
-    function lbCols(L) { var me = (L.col | 0) % 8, rest = [0, 1, 2, 3, 4, 5, 6, 7].filter(function (q) { return q !== me; }), a = [], n = 0; L.slots.forEach(function (x, i) { a.push(COLS[i === 0 ? me : rest[n++]]); }); return a; }
+    function lbCols(L) {                                                                                           // colori: l'host ha il suo; gli altri tengono quello scelto (se libero), altrimenti il primo libero
+      var me = (L.col | 0) % 8, used = {}, idx = [me], sl = L.slots, i, nx = 0; used[me] = 1;
+      for (i = 1; i < sl.length; i++) { var c = sl[i].col; if (c != null && c >= 0 && c < 8 && !used[c]) { used[c] = 1; idx[i] = c; } }
+      for (i = 1; i < sl.length; i++) if (idx[i] == null) { while (used[nx] && nx < 7) nx++; used[nx] = 1; idx[i] = nx; }
+      return idx.map(function (c) { return COLS[c]; });
+    }
     function newLobby() { return { col: 0, ti: 1, laps: 3, diff: 3, vis: 1, tab: 0, obst: true, pads: true, slip: true, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
     function lobbyHub() {
       act("gp_lobby");
@@ -474,7 +479,7 @@
     function rmPush() { var L = LB; if (L && L.rm && real()) A.api("/api/room/cfg", "POST", { id: L.rm, cfg: rmCfg(L) }).catch(function () {}); }
     function lbFromRoom(room) {                                                                                    // ricostruisce la lobby dell'host da quella sul server (rientro dopo aver chiuso l'app)
       var L = newLobby(), c = room.cfg || {}, x = c.x || {}; L.rm = room.id; L.ti = Math.max(0, TRACKS.findIndex(function (t) { return t.id === c.track; })); L.laps = c.laps || 3; L.prize = c.prize | 0; L.rain = x.rain | 0; L.obst = !!x.obst; L.pads = !!x.pads; L.slip = !!x.slip; L.qual = !!x.qual; L.vis = x.vis === 0 ? 0 : 1; L.col = x.hcol | 0;
-      room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready }); }); return L;
+      room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready, col: p.col }); }); return L;
     }
     function rmWatch() {                                                                                            // l'host segue la stanza: chi entra (anche senza invito), chi esce, chi è online / pronto
       var L = LB; if (!L || !L.rm || L._pt) return; var busy = 0;
@@ -486,15 +491,14 @@
           if (j && j.gone) { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; lobby(); return; }
           if (!j || !j.success || !j.room) return; var rm = j.room;
           if (rm.status !== "lobby") { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; lobby(); return; }
-          var sig = rm.players.map(function (p) { return p.uid + (p.online ? "o" : "x") + (p.ready ? "r" : "-"); }).join(",") + "|" + L.slots.length;
-          rm.players.forEach(function (p) {
+                    rm.players.forEach(function (p) {
             if (p.uid === rm.me) return; var sl = L.slots.filter(function (q) { return q.uid === p.uid || (q.pid && q.pid === p.pid && q.t !== "bot"); })[0];
             if (!sl) { if (L.slots.length >= 8) return; sl = { t: "friend", name: p.name, style: p.style, pid: p.pid, human: true }; L.slots.push(sl); A.haptic("ok"); }
             else if (sl.t === "wait") { sl.t = "friend"; A.haptic("ok"); }
-            sl.uid = p.uid; sl.on = p.online; sl.rdy = p.ready;
+            sl.uid = p.uid; sl.on = p.online; sl.rdy = p.ready; sl.col = p.col;
           });
           L.slots = L.slots.filter(function (sl) { return sl.t !== "friend" || !sl.uid || rm.players.some(function (p) { return p.uid === sl.uid; }); });
-          var sig2 = rm.players.map(function (p) { return p.uid + (p.online ? "o" : "x") + (p.ready ? "r" : "-"); }).join(",") + "|" + L.slots.length;
+          var sig2 = rm.players.map(function (p) { return p.uid + (p.online ? "o" : "x") + (p.ready ? "r" : "-") + (p.col == null ? "" : p.col); }).join(",") + "|" + L.slots.length;
           if (sig2 !== L._sig) { L._sig = sig2; if (LB === L) lobby(); }
         }).catch(function () { busy = 0; });
       }, 1200);
@@ -518,10 +522,17 @@
       function paint(rm) {
         lastRm = rm; var t2 = TRACKS.filter(function (t) { return t.id === rm.cfg.track; })[0] || trk; info.innerHTML = ""; info.appendChild(el("b", "", "🏁 " + t2.name)); var xx = rm.cfg.x || {}; info.appendChild(el("span", "", rm.cfg.laps + " giri" + (xx.qual ? " · con qualifica" : "") + (rm.cfg.prize ? " · premio " + A.fmt(rm.cfg.prize) + " $SDG" : "") + " · " + ["sereno", "leggera", "forte"][xx.rain | 0] + (xx.obst ? " · ostacoli" : "") + (xx.pads ? " · boost" : "") + (xx.slip ? " · scia" : "")));
         list.innerHTML = ""; var cols = lbCols({ col: xx.hcol | 0, slots: rm.players }), mp = rm.players.filter(function (p) { return p.uid === rm.me; })[0]; if (mp) myRdy = !!mp.ready;
-        rm.players.forEach(function (p, i) { var r = el("div", "lb-slot"); r.appendChild(el("u", "", String(i + 1))); var d = el("i", "dot"); d.style.background = cols[i]; r.appendChild(d); var nn = el("span", "n"); nn.appendChild(A.nameEl(p.name, p.style || {})); r.appendChild(nn);
+        rm.players.forEach(function (p, i) { var r = el("div", "lb-slot"); r.appendChild(el("u", "", String(i + 1))); var mine = p.uid === rm.me, d = el(mine ? "button" : "i", "dot" + (mine ? " pick" : "")); d.style.background = cols[i]; if (mine) { d.type = "button"; d.addEventListener("click", function () { guestPalette(rm, cols); }); } r.appendChild(d); var nn = el("span", "n"); nn.appendChild(A.nameEl(p.name, p.style || {})); r.appendChild(nn);
           var st = p.uid === rm.host ? ["me", "LEADER"] : (p.online === false ? ["off", "OFFLINE"] : (p.ready ? ["rdy", p.uid === rm.me ? "TU · PRONTO" : "PRONTO"] : ["on", p.uid === rm.me ? "TU" : "ONLINE"])); r.appendChild(el("em", st[0], st[1])); list.appendChild(r); });
         rb.classList.toggle("on", myRdy); rb.textContent = myRdy ? "✔ PRONTO · tocca per annullare" : "✔ SONO PRONTO";
         note.textContent = rm.away ? "⚠ L'host è uscito: la lobby si chiude fra " + rm.away + " s se non rientra" : (myRdy ? "Sei pronto: aspetta che l'host avvii la gara…" : "Tocca PRONTO quando vuoi partire: l'host può avviare solo se sono tutti pronti");
+      }
+      function guestPalette(rm, cols) {                                                                              // l'ospite sceglie il colore della sua auto (quelli degli altri sono bloccati)
+        var mi = rm.players.findIndex(function (p) { return p.uid === rm.me; }), taken = cols.filter(function (c, i) { return i !== mi; }), ov = el("div", "lb-pal-ov"), bx = el("div", "lb-pal"), gr = el("div", "lb-cols");
+        bx.appendChild(el("b", "", "COLORE DELLA TUA AUTO"));
+        COLS.forEach(function (cl, n) { var b = el("button", "lb-col" + (cols[mi] === cl ? " on" : "") + (taken.indexOf(cl) >= 0 ? " busy" : "")); b.type = "button"; b.style.background = cl; if (taken.indexOf(cl) >= 0) b.appendChild(el("u", "", "✕"));
+          b.addEventListener("click", function () { if (taken.indexOf(cl) >= 0) { A.toast("Colore già occupato da un altro pilota"); return; } ov.remove(); A.api("/api/room/color", "POST", { id: room.id, col: n }).then(function (k) { if (k && k.success) paint(k.room); }).catch(function () {}); }); gr.appendChild(b); });
+        bx.appendChild(gr); bx.appendChild(el("span", "lb-pal-n", "Quelli con ✕ sono già presi")); ov.appendChild(bx); ov.addEventListener("click", function (e) { if (e.target === ov) ov.remove(); }); root.appendChild(ov);
       }
       paint(room);
       var pt = setInterval(function () {
@@ -671,11 +682,12 @@
       (function () { for (var i = 0; i < tr.N; i++) { var a = tr.P[i], b = tr.P[(i + 1) % tr.N]; SPC += Math.hypot(b[0] - a[0], b[1] - a[1]); } SPC = Math.max(1, SPC / tr.N); })();
       function srvNow() { return performance.now() / 1000 + RMT.off; }
       function remStep(c) {                                                                                     // auto di un altro giocatore: posizione stimata "adesso" (ultimo campione + velocità × età), poi si avvicina morbida
-        var sm = c.sm; if (!sm) return; var age = Math.max(0, Math.min(0.4, srvNow() - sm.ts + 0.04)), w = 0;      // età del campione sull'orologio del server (non dipende da quanto va veloce la fisica di ognuno)
+        var sm = c.sm; if (!sm) return; var age = Math.max(0, Math.min(0.45, srvNow() - sm.ts)), w = 0;      // età del campione = ora del server adesso − ora del server quando l'ha mandato chi guida (include rete e attese)
         if (c.sp && sm.tt > c.sp.tt) { var d0 = sm.a - c.sp.a; d0 = Math.atan2(Math.sin(d0), Math.cos(d0)); w = Math.max(-4, Math.min(4, d0 / ((sm.tt - c.sp.tt) / 1000))); }
-        var tx = sm.x + sm.vx * age, ty = sm.y + sm.vy * age, ta = sm.a + w * age;
-        if (Math.hypot(tx - c.x, ty - c.y) > 220) { c.x = tx; c.y = ty; } else { c.x += (tx - c.x) * 0.4; c.y += (ty - c.y) * 0.4; }
-        var d1 = ta - c.a; d1 = Math.atan2(Math.sin(d1), Math.cos(d1)); c.a += d1 * 0.4; c.vx = sm.vx; c.vy = sm.vy;
+        var th = w * age / 2, cth = Math.cos(th), sth = Math.sin(th), tx = sm.x + (sm.vx * cth - sm.vy * sth) * age, ty = sm.y + (sm.vx * sth + sm.vy * cth) * age, ta = sm.a + w * age;      // la velocità ruota con la curva
+        
+        if (Math.hypot(tx - c.x, ty - c.y) > 220) { c.x = tx; c.y = ty; } else { c.x += (tx - c.x) * 0.45; c.y += (ty - c.y) * 0.45; }
+        var d1 = ta - c.a; d1 = Math.atan2(Math.sin(d1), Math.cos(d1)); c.a += d1 * 0.45; c.vx = sm.vx; c.vy = sm.vy;
         c.prog = sm.pr / 10 + age * Math.hypot(sm.vx, sm.vy) / SPC; c.idx = ((Math.floor(c.prog) % tr.N) + tr.N) % tr.N;
       }
       if (window.__RACE_DEBUG) window.__RACE_DEBUG({ me: me, tr: tr, cars: cars, inp: inp });
@@ -695,7 +707,7 @@
       xb.addEventListener("click", function () { pause(!paused); });
       window.ArcadeBackHide = false; window.ArcadeBackHook = function () { if (state === "end") return false; pause(!paused); return true; }; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {}
       function say2(x, sec) { tip.textContent = x; msgT = sec || 1.6; }
-      var RT = 0, rSince = RMT ? (RMT.since || 0) : 0, rBusy = false, rBusyT = 0, finGo = false, finT0 = 0, wbox = null, wtbl = null, resLn = null;
+      var RT = 0, rSince = RMT ? (RMT.since || 0) : 0, rInfl = 0, rBusyT = 0, finGo = false, finT0 = 0, wbox = null, wtbl = null, resLn = null;
       function qualOnline() {                                                                                    // qualifica online: tutti hanno fatto il giro insieme; la griglia la decidono i tempi, poi parte la gara sincronizzata
         RMT.wantQ = Math.round((me.finT - qT0) * 1000) / 1000; var qb = el("div", "rc2-end res"), t0 = performance.now(), fin2 = false; full.appendChild(qb);
         (function tick() {
@@ -1097,23 +1109,23 @@
         RMT.sy = RMT.sy || {}; RMT.pl = RMT.pl || [];
         var barrierOK = function () { var rl = (RMT.sy.rdy && RMT.sy.rdy[PH]) || []; return RMT.pl.filter(function (p) { return p.online !== false; }).every(function (p) { return rl.indexOf(p.uid) >= 0; }) || performance.now() - waitT0 > 25000; };
         var rSend = function () {
-          if (done) return; if (rBusy && performance.now() - rBusyT < 3500) return; rBusy = true; rBusyT = performance.now();
+          if (done) return; if (rInfl >= 3 && performance.now() - rBusyT < 3500) return; if (rInfl >= 3) rInfl = 0; rInfl++; rBusyT = performance.now();      // fino a 3 richieste in volo: con rete lenta non si dimezza la frequenza di invio
           var sy = RMT.sy, ev = null, tS = performance.now();
           if (state === "wait") { var rl = (sy.rdy && sy.rdy[PH]) || []; if (rl.indexOf(RMT.uid) < 0) ev = { k: "rdy", ph: PH }; else if (!(sy.go && sy.go[PH] != null) && barrierOK()) ev = { k: "go", ph: PH }; }
           else if (RMT.wantQ !== undefined && !(sy.q && sy.q[RMT.uid] != null)) ev = { k: "q", qt: RMT.wantQ };
           else if (RMT.wantGrid && !sy.grid) ev = { k: "grid", g: RMT.wantGrid };
-          else if ((state === "run" || state === "end") && !qual) ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0, tt: Math.round(t * 1000) };
+          else if ((state === "run" || state === "end") && !qual) ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0, tt: Math.round(t * 1000), ss: RMT.rtt < 1e8 ? Math.round(srvNow() * 1000) / 1000 : 0, lt: (me.lapTs || []).map(function (q) { return Math.round(q * 1000); }) };
           A.api("/api/room/sync", "POST", { id: RMT.id, since: rSince, ev: ev || undefined }).then(function (j) {
-            rBusy = false; if (!j || !j.success) return; var rt = performance.now() - tS; rSince = j.n; RMT.since = j.n;
+            rInfl = Math.max(0, rInfl - 1); if (!j || !j.success) return; var rt = performance.now() - tS, skip = Math.max(0, rSince - (j.from != null ? j.from : rSince)); if (j.n > rSince) rSince = j.n; RMT.since = rSince;
             if (j.room) { if (j.room.st && rt < RMT.rtt && rt < 1500) { RMT.rtt = rt; RMT.off = j.room.st - (tS + rt / 2) / 1000; } RMT.sy = j.room.sy || RMT.sy; RMT.pl = j.room.players || RMT.pl; }
-            (j.events || []).forEach(function (e) {
+            (j.events || []).slice(skip).forEach(function (e) {
               if (e.k !== "p" || e.u === RMT.uid) return; var c = null; cars.forEach(function (q) { if (q.remote === e.u) c = q; }); if (!c) return;
-              var smp = { ts: e.t || srvNow(), tt: e.tt || 0, x: e.x, y: e.y, a: e.a / 100, vx: e.vx, vy: e.vy, pr: e.pr }; if (c.sm && smp.tt < c.sm.tt) return;
-              if (!c.sm) { c.x = smp.x; c.y = smp.y; c.a = smp.a; } c.sp = c.sm; c.sm = smp; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d;
+              var smp = { ts: e.ss || ((e.t || srvNow()) - 0.08), tt: e.tt || 0, x: e.x, y: e.y, a: e.a / 100, vx: e.vx, vy: e.vy, pr: e.pr }; if (c.sm && smp.tt < c.sm.tt) return;
+              if (!c.sm) { c.x = smp.x; c.y = smp.y; c.a = smp.a; } c.sp = c.sm; c.sm = smp; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d; if (e.lt) c.lapTs = e.lt.map(function (q) { return q / 1000; });
               if (e.f && (!c.fin || c.dnf)) { c.fin = true; c.dnf = false; c.finT = e.f / 1000; }
             });
             if (j.room && j.room.result && resLn && !resLn._d) { resLn._d = 1; var py = (j.room.result.pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} }
-          }).catch(function () { rBusy = false; });
+          }).catch(function () { rInfl = Math.max(0, rInfl - 1); });
         };
         RT = setInterval(rSend, 100);
       }
