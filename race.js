@@ -368,7 +368,10 @@
       var c = el("button", "rc-hero " + cls); c.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[tri]); im.alt = ""; c.appendChild(im); c.appendChild(el("div", "sh"));
       var tx = el("div", "tx"); tx.appendChild(el("i", "", ico)); var bx = el("div", "bx"); bx.appendChild(el("b", "", ttl)); bx.appendChild(el("span", "", sub)); tx.appendChild(bx); c.appendChild(tx); c.appendChild(el("em", "", tag)); c.addEventListener("click", fn); root.appendChild(c); return c;
     }
+    var lastAct = {};
+    function act(k) { try { if (!real() || (lastAct[k] && Date.now() - lastAct[k] < 15000)) return; lastAct[k] = Date.now(); A.api("/api/act", "POST", { a: k }).catch(function () {}); } catch (e) {} }
     function menu() {
+      act("gp");
       root.innerHTML = ""; root.className = "rc-root home"; hook(function () { exitAll(); return true; });
       top("GRAND PRIX", exitAll, "‹ Multi");
       hero("h1", 0, "👤", "SINGOLO", "Contro il tempo, col fantasma del tuo record e le classifiche", TRACKS.length + " PISTE", function () { tracks("single"); });
@@ -381,6 +384,7 @@
     function lbCols(L) { var me = (L.col | 0) % 8, rest = [0, 1, 2, 3, 4, 5, 6, 7].filter(function (q) { return q !== me; }), a = [], n = 0; L.slots.forEach(function (x, i) { a.push(COLS[i === 0 ? me : rest[n++]]); }); return a; }
     function newLobby() { return { col: 0, ti: 1, laps: 3, diff: 3, vis: 0, tab: 0, obst: true, pads: true, slip: true, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
     function lobbyHub() {
+      act("gp_lobby");
       root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; });
       top("LOBBY", menu, "‹ Grand Prix");
       var mk = el("button", "rc-hero h4 slim"); mk.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[3]); mk.appendChild(im); mk.appendChild(el("div", "sh")); var tx = el("div", "tx"); tx.appendChild(el("i", "", "＋")); var bx = el("div", "bx"); bx.appendChild(el("b", "", "CREA LOBBY")); bx.appendChild(el("span", "", "Scegli pista, giri, regole, bot e invita i tuoi amici")); tx.appendChild(bx); mk.appendChild(tx);
@@ -546,12 +550,13 @@
           go.textContent = "🔓 SBLOCCA · " + A.fmt(price(tr)) + " $SDG"; go.className = "mp-go unl";
           go.addEventListener("click", function () { if (go.dataset.ok) { buyTrack(tr, function (ok) { if (ok) tracks(mode); }); return; } go.dataset.ok = "1"; go.textContent = "CONFERMA · −" + A.fmt(price(tr)) + " $SDG"; setTimeout(function () { if (go.isConnected) { delete go.dataset.ok; go.textContent = "🔓 SBLOCCA · " + A.fmt(price(tr)) + " $SDG"; } }, 3500); });
           c.appendChild(go);
-          if (A.isAdmin && A.isAdmin()) { var ga = el("button", "mp-go mp-alt", "▶ PROVA (admin)"); ga.type = "button"; ga.addEventListener("click", startIt); c.appendChild(ga); }
+          if (A.isSandbox && A.isSandbox()) { var ga = el("button", "mp-go mp-alt", "▶ PROVA (admin)"); ga.type = "button"; ga.addEventListener("click", startIt); c.appendChild(ga); }
         } else { go.addEventListener("click", startIt); c.appendChild(go); }
         root.appendChild(c);
       });
     }
     function race(tr, mode, opts) {
+      act("gara:" + mode + ":" + tr.id);
       opts = opts || {}; var tr0 = tr, qual = !!opts.qualPhase, nCar = mode === "single" ? 1 : (qual ? (opts.n || 4) : (opts.n || 4));
       var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); if (opts.rain) { var rq = 0; itl = itl.filter(function () { return rq++ % 2 === 0; }); } tr = Object.assign({}, tr, { items: itl, rain: opts.rain ? (opts.rain === true ? 1 : opts.rain) : 0 });
       var solo = mode === "single", laps = qual ? 1 : (solo ? 3 : (opts.laps || RL)), full = el("div", "rc2"), cv = el("canvas", "rc2-cv"), hud = el("div", "rc2-hud"), cd = el("div", "rc2-cd"), tip = el("div", "rc2-tip");
@@ -701,7 +706,7 @@
       }
       // ---------- proiezione: camera alta dietro l'auto, inclinata verso il basso ----------
       var TH = 42 * Math.PI / 180, CT = Math.cos(TH), ST = Math.sin(TH), DB = 205, HC = 250, FOC = 1.08;
-      var cax = 0, cay = 0, ca = 0, sa = 0, FF = 0, ZO = 0;
+      var cax = 0, cay = 0, ca = 0, sa = 0, FF = 0, ZO = 0, QL = 1, qEma = 4;
       var NEAR = 14;
       function cm(wx, wy, wz) { var dx = wx - cax, dy = wy - cay, f = dx * ca + dy * sa, l = -dx * sa + dy * ca, hz = HC - wz; return [l, f * ST - hz * CT, f * CT + hz * ST]; }      // coordinate nella camera (l, u, profondità)
       function sp2(c) { return [W / 2 + c[0] / c[2] * FF, H / 2 - c[1] / c[2] * FF + H * 0.06, c[2]]; }
@@ -717,7 +722,8 @@
         var co = Math.cos(ang), si = Math.sin(ang), cs = [[hl, hw2], [hl, -hw2], [-hl, -hw2], [-hl, hw2]].map(function (p) { return [x + p[0] * co - p[1] * si, y + p[0] * si + p[1] * co]; });
         var lo = cs.map(function (p) { return pr(p[0], p[1], z0 + ZO); }), hi = cs.map(function (p) { return pr(p[0], p[1], z0 + h + ZO); }); if (lo.some(function (q) { return !q || q[2] < 55; }) || hi.some(function (q) { return !q || q[2] < 55; })) return;
         var faces = []; for (var i = 0; i < 4; i++) faces.push({ i: i, d: (lo[i][2] + lo[(i + 1) % 4][2]) / 2 }); faces.sort(function (p, q) { return q.d - p.d; });
-        faces.forEach(function (fc, k) { var i = fc.i, j = (i + 1) % 4; quadS(lo[i], lo[j], hi[j], hi[i], (i % 2) ? cB : cA); });
+        var nx4 = [co, si, -co, -si], ny4 = [si, -co, -si, co];                                                   // normali esterne dei 4 lati: le facce di dietro sono coperte da quelle davanti, non si disegnano (stesso risultato, meno riempimenti)
+        faces.forEach(function (fc, k) { var i = fc.i, j = (i + 1) % 4; if ((cax - (cs[i][0] + cs[j][0]) / 2) * nx4[i] + (cay - (cs[i][1] + cs[j][1]) / 2) * ny4[i] <= 0) return; quadS(lo[i], lo[j], hi[j], hi[i], (i % 2) ? cB : cA); });
         quadS(hi[0], hi[1], hi[2], hi[3], cTop);
       }
       var SC = 1.3;
@@ -816,11 +822,11 @@
         var N = tr.N, hw = tr.hw, wl = hw + WALL, lim = wl + 300;
         var pt = function (i, o, z) { return cm(tr.P[i][0] + tr.nx[i] * o, tr.P[i][1] + tr.ny[i] * o, z || 0); };
         var vis = [];                                                                                                                       // si disegna TUTTA la pista che si vede (non una finestra di indici): niente pezzi che spariscono
-        for (var i0 = 0; i0 < N; i0++) { var c0 = cm(tr.P[i0][0], tr.P[i0][1], 0), d0 = c0[2]; if (d0 > 3000) continue; if (d0 > NEAR + 120) { var m0 = lim * FF / d0 + 40, sx0 = W / 2 + c0[0] / d0 * FF, sy0 = H / 2 - c0[1] / d0 * FF + H * 0.06; if (sx0 < -m0 || sx0 > W + m0 || sy0 < -m0 || sy0 > H + m0) continue; } else if (d0 < -lim) continue; if (d0 > 600 && (i0 & (d0 > 1400 ? 3 : 1))) continue; vis.push([i0, d0]); }
+        for (var i0 = 0; i0 < N; i0++) { var c0 = cm(tr.P[i0][0], tr.P[i0][1], 0), d0 = c0[2]; if (d0 > 3000) continue; if (d0 > NEAR + 120) { var m0 = lim * FF / d0 + 40, sx0 = W / 2 + c0[0] / d0 * FF, sy0 = H / 2 - c0[1] / d0 * FF + H * 0.06; if (sx0 < -m0 || sx0 > W + m0 || sy0 < -m0 || sy0 > H + m0) continue; } else if (d0 < -lim) continue; if (d0 > 600 * QL && (i0 & (d0 > 1400 * QL ? 3 : 1))) continue; vis.push([i0, d0]); }
         var inc = {}; vis.forEach(function (q) { inc[q[0]] = 1; });
         vis.sort(function (a, b) { return b[1] - a[1]; });
         for (var vj = 0; vj < vis.length; vj++) {
-          var i = vis[vj][0], st = vis[vj][1] > 1400 ? 4 : (vis[vj][1] > 600 ? 2 : 1), far = st === 4, i2 = (i + st) % N, alt = ((i >> 1) & 1) === 0, alt4 = ((i >> 2) & 1) === 0; for (var nq = 1; nq <= 4; nq++) if (inc[(i + nq) % N]) { i2 = (i + nq) % N; break; }
+          var i = vis[vj][0], st = vis[vj][1] > 1400 * QL ? 4 : (vis[vj][1] > 600 * QL ? 2 : 1), far = st === 4, i2 = (i + st) % N, alt = ((i >> 1) & 1) === 0, alt4 = ((i >> 2) & 1) === 0; for (var nq = 1; nq <= 4; nq++) if (inc[(i + nq) % N]) { i2 = (i + nq) % N; break; }
           if (tr.gap[i]) {                                                                                                                  // fiumiciattolo: sotto la rampa c'è il vuoto
             quad(pt(i, -(wl + 280)), pt(i, wl + 280), pt(i2, wl + 280), pt(i2, -(wl + 280)), alt ? "#2f96d8" : "#3aa6e8"); quad(pt(i, -wl, 0.2), pt(i, wl, 0.2), pt(i2, wl, 0.2), pt(i2, -wl, 0.2), alt ? "#1f7fc0" : "#2a8cd0");
             if (i % 3 === 0) quad(pt(i, -hw * 0.6, 0.4), pt(i, hw * 0.1, 0.4), pt(i2, hw * 0.1, 0.4), pt(i2, -hw * 0.6, 0.4), "rgba(255,255,255,.22)");
@@ -889,8 +895,8 @@
           { var fa = me.a; pool(me.x + Math.cos(fa) * 170, me.y + Math.sin(fa) * 170, 230, "255,244,210", 0.3); }
           ctx.restore();
         }
-        var objs = []; tr.deco.forEach(function (dc) { if (dc.t === "pond" || !onScr(dc.x, dc.y, 30) || (dc.x - cax) * ca + (dc.y - cay) * sa > 900) return; objs.push({ d: (dc.x - cax) * ca + (dc.y - cay) * sa, dc: dc }); });
-        tr.trees.forEach(function (tt) { if (!tt.sand && (tt.b ? onScrH(tt.x, tt.y, tt.s + 70, tt.h) : onScr(tt.x, tt.y, tt.s + 70)) && (tt.x - cax) * ca + (tt.y - cay) * sa < (tt.b ? 3000 : 2300)) objs.push({ d: (tt.x - cax) * ca + (tt.y - cay) * sa, t: tt }); });
+        var objs = []; tr.deco.forEach(function (dc) { if (dc.t === "pond" || !onScr(dc.x, dc.y, 30) || (dc.x - cax) * ca + (dc.y - cay) * sa > 900 * QL) return; objs.push({ d: (dc.x - cax) * ca + (dc.y - cay) * sa, dc: dc }); });
+        tr.trees.forEach(function (tt) { if (!tt.sand && (tt.b ? onScrH(tt.x, tt.y, tt.s + 70, tt.h) : onScr(tt.x, tt.y, tt.s + 70)) && (tt.x - cax) * ca + (tt.y - cay) * sa < (tt.b ? 3000 : 2300) * QL) objs.push({ d: (tt.x - cax) * ca + (tt.y - cay) * sa, t: tt }); });
         if (onScr(tr.P[0][0], tr.P[0][1], hw + 90)) objs.push({ d: (tr.P[0][0] - cax) * ca + (tr.P[0][1] - cay) * sa, gate: true });
         cars.forEach(function (c) { objs.push({ d: (c.x - cax) * ca + (c.y - cay) * sa, c: c }); }); if (state === "run") allG().forEach(function (g) { objs.push({ d: (g.x - cax) * ca + (g.y - cay) * sa, c: g }); });
         objs.sort(function (a, b) { return b.d - a.d; });
@@ -1001,7 +1007,9 @@
           if (!solo) crash(cars); t += DT;
           if (me.fin) { finish(); break; }
         }
-        drawI(acc / DT); hudDraw(); raf = requestAnimationFrame(frame);
+        var tq0 = performance.now(); drawI(acc / DT); hudDraw(); var tq = performance.now() - tq0;
+        if (tq < 60) { qEma += (tq - qEma) * 0.05; if (qEma > 9 && QL > 0.62) QL = 0.62; else if (qEma < 6 && QL < 1) QL = 1; }   // qualità adattiva: se disegnare costa troppo, si accorcia la distanza di visuale (la fisica non cambia)
+        raf = requestAnimationFrame(frame);
       }
       if (RMT) {                                                                                                  // sincronizzazione online: ~6 volte al secondo mando la mia posizione e ricevo quelle degli altri
         var rSend = function () {

@@ -70,7 +70,10 @@
     qz: '<svg viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"><text x="106" y="96" font-size="110" font-weight="900" fill="#fff" opacity=".9" font-family="Bungee,sans-serif">?</text><text x="170" y="52" font-size="48" font-weight="900" fill="#ffd23b" font-family="Bungee,sans-serif">?</text><text x="76" y="40" font-size="34" font-weight="900" fill="#2ee6c0" font-family="Bungee,sans-serif">?</text></svg>'
   };
   // ---- home del multiplayer: grandi riquadri, uno per sezione
+  var lastAct = {};
+  function act(k) { try { if (!isReal() || (lastAct[k] && Date.now() - lastAct[k] < 15000)) return; lastAct[k] = Date.now(); A.api("/api/act", "POST", { a: k }).catch(function () {}); } catch (e) {} }
   function lobby() {
+    act("multi");
     dropTl(); netClose(); fit(true); epoch++; body.innerHTML = "";
     if (A.isSandbox && A.isSandbox()) body.appendChild(el("div", "pg-me", "🛠️ Prototipo (solo admin): gli avversari sono simulati"));
     body.appendChild(invBox());
@@ -92,6 +95,7 @@
   };
   function dropTl() { var L = st.tl; if (L && L.rm && !L.started) { A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); } if (L && L._pt) { clearInterval(L._pt); L._pt = 0; } st.tl = null; }
   function tables() {
+    act("tavoli");
     if (st.tl && st.tl.rm && !st.tl.started) dropTl(); netClose(); fit(true); epoch++; body.innerHTML = ""; backBar("TAVOLI"); body.appendChild(invBox());
     var g = el("div", "mp-hub tbl-list"); body.appendChild(g);
     ["pk", "bj", "sc"].forEach(function (k) {
@@ -208,7 +212,8 @@
 var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGradient id="rvg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9cfdb"/><stop offset=".5" stop-color="#7b8394"/><stop offset="1" stop-color="#3a3f4c"/></linearGradient><linearGradient id="rvw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a2c"/><stop offset="1" stop-color="#4a2a12"/></linearGradient></defs><rect x="70" y="21" width="106" height="12" rx="2" fill="url(#rvg)"/><rect x="70" y="18" width="106" height="3.5" fill="#dfe4ee"/><rect x="168" y="14" width="6" height="6" fill="#aab1c0"/><path d="M28 20H72V47H46L28 38Z" fill="url(#rvg)"/><rect x="50" y="15" width="28" height="31" rx="4" fill="#5b6272" stroke="#2b2f3a" stroke-width="1.5"/><g stroke="#2b2f3a" stroke-width="1.5"><path d="M58 17V44M66 17V44M74 17V44"/></g><path d="M28 20L19 10H31L36 20Z" fill="#3a3f4c"/><path d="M30 37L50 46L45 87H20Z" fill="url(#rvw)" stroke="#2a1608" stroke-width="1.5"/><path d="M48 47Q62 68 80 47" fill="none" stroke="#7b8394" stroke-width="3.5"/><path d="M62 48L66 58" stroke="#c9cfdb" stroke-width="3"/></svg>';
   var ICON = { srf: "✊", dadi: "🎲", hl: "⬆️", tris: "❌", quiz: "🧠", ghig: "🪓", rou: "🎡", rr: REV };
   var GMETA = { srf: ["✊", "Sasso Carta Forbici", "Al meglio dei round"], dadi: ["🎲", "Dadi", "Agita e lancia il bussolotto"], hl: ["⬆️", "Alto / Basso", "La prossima carta è più alta?"], tris: ["❌", "Tris", "Tre in fila vince"], ghig: ["🪓", "Ghigliottina", "Indovina la parola"], rr: ["🔫", "Roulette Russa", "Un colpo solo nel tamburo"] };
-  function duels() {                                                                                            // 1) si sceglie il gioco: schede grandi e colorate
+  function duels() {
+    act("sfide");                                                                                            // 1) si sceglie il gioco: schede grandi e colorate
     netClose(); fit(true); epoch++; body.innerHTML = ""; backBar("SFIDE 1v1");
     body.appendChild(el("div", "dl-hint", "Scegli il gioco"));
     var g = el("div", "dl-grid"); body.appendChild(g);
@@ -1201,5 +1206,16 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   window.ArcadeMulti = { friendSheet: function (ex, pick) { friendSheet(ex || [], pick); }, myName: function () { return myName(); }, load: function () {
     if (!(A.multiOn && A.multiOn())) { soon(); return; }
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
-  } };
+  }, openGP: function () { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); return true; } };
+  // link diretto dal gruppo (t.me/…?startapp=grandprix): apre subito il Grand Prix, già col tuo account
+  (function () {
+    var sp = ""; try { sp = String((window.Telegram.WebApp.initDataUnsafe || {}).start_param || ""); } catch (e) {}
+    if (!sp) { try { sp = new URLSearchParams(location.search).get("go") || ""; } catch (e) {} }
+    if (sp !== "grandprix") return;
+    var tries = 0, iv = setInterval(function () {
+      if (++tries > 40) return clearInterval(iv);
+      if (!(A.multiOn && A.multiOn()) || !(A.me && A.me()) || !document.querySelector(".tab[data-tab=mp]")) return;
+      clearInterval(iv); document.querySelector(".tab[data-tab=mp]").click(); setTimeout(function () { window.ArcadeMulti.openGP(); }, 250);
+    }, 300);
+  })();
 })();
