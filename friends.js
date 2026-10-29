@@ -10,7 +10,7 @@
   var dot = el("i", "frdot"); dot.hidden = true; btn.appendChild(dot);
   var hb = gear.parentNode;
   if (!hb.classList.contains("hbtns")) { hb = el("div", "hbtns"); gear.parentNode.insertBefore(hb, gear); hb.appendChild(gear); }
-  hb.appendChild(btn);
+  hb.appendChild(btn); hb.classList.add("has");
 
   var list = [], told = {}, timer = 0, box = null;
   function ago(s) { return s < 60 ? "ora" : s < 3600 ? Math.floor(s / 60) + " min fa" : s < 86400 ? Math.floor(s / 3600) + " h fa" : Math.floor(s / 86400) + " g fa"; }
@@ -31,7 +31,7 @@
     if (!bub) { bub = el("div", "frbub"); bub.style.visibility = "hidden"; bub.addEventListener("click", open); document.body.appendChild(bub); } if (!bubRaf) { var lp = function () { placeBub(); bubRaf = bub ? requestAnimationFrame(lp) : 0; }; bubRaf = requestAnimationFrame(lp); }
     var nm0 = names[bi % names.length]; bi++;
     if (!bub._n) { bub.textContent = ""; bub._n = el("span", "nm"); bub.appendChild(bub._n); bub.appendChild(document.createTextNode(" è online")); }
-    bub._n.textContent = nm0; bub._n.classList.remove("swap"); void bub._n.offsetWidth; bub._n.classList.add("swap"); placeBub();
+    bub._n.textContent = nm0; bub._n.classList.remove("swap"); if (names.length > 1) { void bub._n.offsetWidth; bub._n.classList.add("swap"); } placeBub();   // un solo online: il nome sta fermo
   }
   function setNames(n) {
     var same = n.join("|") === names.join("|"); names = n;
@@ -39,7 +39,8 @@
     clearInterval(bt); if (names.length > 1) bt = setInterval(showName, 3200);
   }
   function poll() {
-    if (!A.multiOn()) { btn.hidden = true; setNames([]); return; }
+    try { localStorage.setItem("arc_mo", A.multiOn() ? "1" : "0"); } catch (e) {}
+    if (!A.multiOn()) { btn.hidden = true; document.documentElement.classList.remove("mo"); setNames([]); return; }
     btn.hidden = false;
     A.api("/api/social/friends").then(function (j) {
       list = j.friends || [];

@@ -200,7 +200,8 @@
         return A.api("/api/room/start", "POST", { id: L.rm });
       }).catch(function (x) { L.started = false; A.toast((x && x.message) || "Non riesco ad avviare"); tlWatch(); });
     }
-    function paint() { paintSeats(); paintRules(); lockMoney(); paintGo(); }
+    function pushCfg() { if (!L.rm || L.started) return; clearTimeout(L._pc); L._pc = setTimeout(function () { var c0 = tlCfg(); A.api("/api/room/cfg", "POST", { id: L.rm, cfg: { hands: c0.hands || 0, x: c0.x } }).catch(function () {}); }, 350); }
+    function paint() { paintSeats(); paintRules(); lockMoney(); paintGo(); pushCfg(); }
     paint();
   }
   // ---- sfide 1v1, tutto in una schermata
@@ -322,7 +323,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     if (!isReal()) return;
     A.api("/api/room/mine", "GET").then(function (j) {
       if (!j || !j.success || !box.isConnected) return; box.innerHTML = "";
-      (j.rooms || []).filter(function (r) { return r.game !== "race" && r.host !== r.me; }).forEach(function (r) {
+      (j.rooms || []).filter(function (r) { return r.game !== "race" && r.host !== r.me && !(r.players || []).some(function (q) { return q.uid === r.me; }); }).forEach(function (r) {
         var row = el("div", "lb-open"), d = el("div", "d"), hn = (r.players[0] || {}).name || "un amico", gname = (GNAME[r.game] || (TBL[r.game === "poker" ? "pk" : r.game === "bj" ? "bj" : "sc"] || {}).name || r.game);
         d.appendChild(el("b", "", "Invito di " + hn)); d.appendChild(el("span", "", gname + (r.cfg.stake ? " · puntata " + A.fmt(r.cfg.stake) + " $SDG" : ""))); row.appendChild(d);
         var g = el("button", "lb-j", "ENTRA"); g.type = "button";
@@ -347,7 +348,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     var nm = { poker: "POKER TEXAS", bj: "BLACKJACK", scopa: "SCOPA" }[game];
     var c = el("div", "mp-card"); body.appendChild(c); c.appendChild(el("div", "mp-sec", nm + " · TAVOLO DI " + String(h.name || "").toUpperCase()));
     var info = el("div", "pg-me", ""); c.appendChild(info); var seats = el("div", "pg-me", ""); c.appendChild(seats);
-    info.textContent = (game === "poker" ? "Buy-in " + A.fmt(cfg.stake) + " $SDG · ante " + A.fmt(x.u || 5) + " · " + (cfg.hands || 10) + " mani" : game === "bj" ? "Puntata " + A.fmt(x.bet || 50) + " a mano · buy-in " + A.fmt(cfg.stake) + " $SDG · " + (cfg.hands || 10) + " mani" : "Posta " + A.fmt(cfg.stake) + " $SDG a testa" + (x.tgt ? " · a " + x.tgt + " punti" : " · una mano")) + " — già trattenuti dal tuo saldo";
+    function paintInfo(rm) { var cfg = rm.cfg || {}, x = cfg.x || {};
+    info.textContent = (game === "poker" ? "Buy-in " + A.fmt(cfg.stake) + " $SDG · ante " + A.fmt(x.u || 5) + " · " + (cfg.hands || 10) + " mani" : game === "bj" ? "Puntata " + A.fmt(x.bet || 50) + " a mano · buy-in " + A.fmt(cfg.stake) + " $SDG · " + (cfg.hands || 10) + " mani" : "Posta " + A.fmt(cfg.stake) + " $SDG a testa" + (x.tgt ? " · a " + x.tgt + " punti" : " · una mano")) + " — già trattenuti dal tuo saldo"; }
+    paintInfo(room);
     var rw = el("div", "mp-end"), cn = el("button", "mp-go mp-alt", "ESCI (puntata restituita)"); cn.type = "button"; rw.appendChild(cn); c.appendChild(rw);
     var N = netOpen(room, function () { if (alive(E)) runTable(game); }), host0 = room.host;
     function leave(msg) { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); netClose(); if (msg) A.toast(msg); tables(); }
@@ -355,7 +358,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     var iv = setInterval(function () {
       if (!alive(E) || NET !== N) return clearInterval(iv);
       if (N.gone) { clearInterval(iv); return leave("Il tavolo è stato chiuso"); }
-      var v = N.view || room; seats.textContent = "Seduti: " + (v.players || []).map(function (p) { return p.name; }).join(", ") + " — attendi che l'host avvii";
+      var v = N.view || room; paintInfo(v); seats.textContent = "Seduti: " + (v.players || []).map(function (p) { return p.name; }).join(", ") + " — l'host sta preparando il tavolo, attendi il via";
       if (v.host && v.host !== host0 && !N.started) { clearInterval(iv); leave("L'host ha lasciato il tavolo: puntata restituita"); }
     }, 800);
   }
@@ -369,11 +372,16 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   // schermata d'attesa: chi ha creato la stanza avvia appena l'invitato è dentro; l'invitato aspetta il via
   function waitStart(room, txt, isHost) {
     fit(false); epoch++; var E = epoch; body.innerHTML = ""; var c = el("div", "mp-card"); c.appendChild(el("div", "mp-sec", isHost ? "SFIDA INVIATA A " + st.opp.name.toUpperCase() : "SFIDA DI " + st.opp.name.toUpperCase()));
-    c.appendChild(el("div", "pg-me", txt)); var rw = el("div", "mp-end"), cn = el("button", "mp-go mp-alt", "ANNULLA"); cn.type = "button"; rw.appendChild(cn); c.appendChild(rw); body.appendChild(c);
+    var inf = el("div", "pg-me", ""), pls = el("div", "pg-me", ""); c.appendChild(inf); c.appendChild(pls); c.appendChild(el("div", "pg-me", txt));
+    function paintLobby(rm) { var cf = rm.cfg || {}; inf.textContent = (GNAME[rm.game] || rm.game) + " · puntata " + (cf.stake ? A.fmt(cf.stake) + " $SDG" : "nessuna") + ((cf.x || {}).rounds ? " · al meglio di " + (cf.x || {}).rounds : "");
+      pls.textContent = "Nella lobby: " + (rm.players || []).map(function (p) { return p.name + (p.uid === rm.host ? " (host)" : ""); }).join(" · "); }
+    paintLobby(room);
+    var rw = el("div", "mp-end"), cn = el("button", "mp-go mp-alt", "ANNULLA"); cn.type = "button"; rw.appendChild(cn); c.appendChild(rw); body.appendChild(c);
     var N = netOpen(room, function () { if (alive(E)) duel(); }), t0 = Date.now(), started = false;
     cn.addEventListener("click", function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); netClose(); (DUELS[room.game] ? duels : tables)(); });
     var iv = setInterval(function () {
       if (!alive(E) || !NET || NET !== N) return clearInterval(iv);
+      if (N.view) paintLobby(N.view);
       if (N.gone) { clearInterval(iv); A.toast("La stanza è stata chiusa"); netClose(); return DUELS[room.game] ? duels() : tables(); }
       if (isHost && !started && N.view && (N.view.players || []).length >= 2) { started = true; A.api("/api/room/start", "POST", { id: room.id }).catch(function () { started = false; }); }
       if (isHost && Date.now() - t0 > 180000) { clearInterval(iv); A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); netClose(); A.toast("Nessuna risposta: puntata restituita"); (DUELS[room.game] ? duels : tables)(); }
