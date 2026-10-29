@@ -382,7 +382,7 @@
     var LB = null, FRIENDS = ["Marco", "Spoleto", "maicol", "Lorenzo", "albe", "Gabbo"];
     function myNm() { try { return window.ArcadeMulti.myName(); } catch (e) { return "Tu"; } }
     function lbCols(L) { var me = (L.col | 0) % 8, rest = [0, 1, 2, 3, 4, 5, 6, 7].filter(function (q) { return q !== me; }), a = [], n = 0; L.slots.forEach(function (x, i) { a.push(COLS[i === 0 ? me : rest[n++]]); }); return a; }
-    function newLobby() { return { col: 0, ti: 1, laps: 3, diff: 3, vis: 0, tab: 0, obst: true, pads: true, slip: true, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
+    function newLobby() { return { col: 0, ti: 1, laps: 3, diff: 3, vis: 1, tab: 0, obst: true, pads: true, slip: true, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
     function lobbyHub() {
       act("gp_lobby");
       root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; });
@@ -390,9 +390,29 @@
       var mk = el("button", "rc-hero h4 slim"); mk.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[3]); mk.appendChild(im); mk.appendChild(el("div", "sh")); var tx = el("div", "tx"); tx.appendChild(el("i", "", "＋")); var bx = el("div", "bx"); bx.appendChild(el("b", "", "CREA LOBBY")); bx.appendChild(el("span", "", "Scegli pista, giri, regole, bot e invita i tuoi amici")); tx.appendChild(bx); mk.appendChild(tx);
       mk.addEventListener("click", function () { LB = newLobby(); lobby(); }); root.appendChild(mk);
       root.appendChild(el("div", "rc-sec", "LOBBY APERTE"));
-      if (real()) { var invBox = el("div", "gl-inv"); root.appendChild(invBox); A.api("/api/room/mine", "GET").then(function (j) { if (!j || !j.success || !root.isConnected) return; (j.rooms || []).filter(function (r) { return r.game === "race" && !(r.players || []).some(function (q) { return q.uid === r.me; }); }).forEach(function (r) { var t3 = TRACKS.filter(function (t) { return t.id === r.cfg.track; })[0] || TRACKS[1], row = el("div", "lb-open"), im3 = el("img"); im3.src = thumb(t3); row.appendChild(im3); var d = el("div", "d"); d.appendChild(el("b", "", "Lobby di " + ((r.players[0] || {}).name || "un amico"))); d.appendChild(el("span", "", t3.name + " · " + r.cfg.laps + " giri" + (r.cfg.prize ? " · premio " + A.fmt(r.cfg.prize) : ""))); row.appendChild(d); row.appendChild(el("em", "", r.players.length + "/8")); var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.api("/api/room/join", "POST", { id: r.id }).then(function (k) { if (k && k.success) guestLobby(k.room); else A.toast((k && k.error) || "Non riesco a entrare"); }); }); row.appendChild(g); invBox.appendChild(row); }); }).catch(function () {}); }
+      if (real()) {
+        var invBox = el("div", "gl-inv"); root.appendChild(invBox);
+        var hubT = 0, paintHub = function (open, mine) {
+          invBox.innerHTML = ""; var seen = {}, rows = 0;
+          (mine || []).filter(function (r) { return r.game === "race" && r.host === r.me && r.status === "lobby"; }).forEach(function (r) {   // la mia lobby ancora aperta: si rientra
+            seen[r.id] = 1; rows++; var row = el("div", "lb-open mine"), d = el("div", "d"); d.appendChild(el("b", "", "↩ La tua lobby è ancora aperta")); d.appendChild(el("span", "", r.players.length + " piloti" + (r.away ? " · si chiude fra " + r.away + " s" : ""))); row.appendChild(el("i", "lbi", "🏁")); row.appendChild(d);
+            var g = el("button", "lb-j", "RIENTRA"); g.type = "button"; g.addEventListener("click", function () { A.api("/api/room/rejoin", "POST", { id: r.id }).then(function (k) { if (k && k.success) { if (!LB || LB.rm !== r.id) LB = lbFromRoom(k.room); LB.grace = 0; lobby(); } else A.toast((k && k.error) || "La lobby non c'è più"); }).catch(function (e) { A.toast((e && e.message) || "La lobby non c'è più"); }); }); row.appendChild(g); invBox.appendChild(row); });
+          (open || []).concat((mine || []).filter(function (r) { return r.game === "race" && !(r.players || []).some(function (q) { return q.uid === r.me; }); })).forEach(function (r) {
+            if (seen[r.id]) return; seen[r.id] = 1; rows++;
+            var t3 = TRACKS.filter(function (t) { return t.id === r.cfg.track; })[0] || TRACKS[1], row = el("div", "lb-open"), im3 = el("img"); im3.src = thumb(t3); row.appendChild(im3); var d = el("div", "d"), hp = r.players.filter(function (q) { return q.uid === r.host; })[0] || r.players[0] || {};
+            d.appendChild(el("b", "", "Lobby di " + (hp.name || "un amico"))); d.appendChild(el("span", "", t3.name + " · " + r.cfg.laps + " giri" + ((r.cfg.x || {}).qual ? " · qualifica" : "") + (r.cfg.prize ? " · premio " + A.fmt(r.cfg.prize) : ""))); row.appendChild(d); row.appendChild(el("em", "", r.players.length + "/" + (r.cfg.max || 8)));
+            var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.api("/api/room/join", "POST", { id: r.id }).then(function (k) { if (k && k.success) guestLobby(k.room); else A.toast((k && k.error) || "Non riesco a entrare"); }).catch(function (e) { A.toast((e && e.message) || "Non riesco a entrare"); }); }); row.appendChild(g); invBox.appendChild(row); });
+          if (!rows) invBox.appendChild(el("div", "rc-note", "Nessuna lobby aperta al momento: creane una tu, la vedranno tutti."));
+        }, loadHub = function () {
+          if (!root.isConnected || !invBox.isConnected) { clearInterval(hubT); return; }
+          Promise.all([A.api("/api/room/open", "GET").catch(function () { return null; }), A.api("/api/room/mine", "GET").catch(function () { return null; })]).then(function (a) {
+            if (!root.isConnected || !invBox.isConnected) return; paintHub(a[0] && a[0].success ? a[0].rooms : [], a[1] && a[1].success ? a[1].rooms : []);
+          });
+        };
+        loadHub(); hubT = setInterval(loadHub, 3000);
+      }
       var op = A.isSandbox() ? [["Marco", 2, 3, 4], ["Spoleto", 4, 5, 6], ["Gabbo", 0, 3, 2], ["albe", 5, 7, 3]] : [];                       // lobby di esempio: solo nell'account di prova
-      if (!op.length) root.appendChild(el("div", "rc-note", "Nessuna lobby aperta al momento: creane una tu e invita gli amici."));
+      if (!op.length && !real()) root.appendChild(el("div", "rc-note", "Nessuna lobby aperta al momento: creane una tu e invita gli amici."));
       op.forEach(function (o) { var r = el("div", "lb-open"), im2 = el("img"); im2.src = thumb(TRACKS[o[1]]); r.appendChild(im2); var d = el("div", "d"); d.appendChild(el("b", "", "Lobby di " + o[0])); d.appendChild(el("span", "", TRACKS[o[1]].name + " · " + o[2] + " giri")); r.appendChild(d); r.appendChild(el("em", "", o[3] + "/8")); var g = el("button", "lb-j", "ENTRA"); g.type = "button"; g.addEventListener("click", function () { A.toast("Prototipo: le lobby aperte arriveranno col server vero"); }); r.appendChild(g); root.appendChild(r); });
       if (A.isSandbox()) root.appendChild(el("div", "rc-note", "Qui vedrai le lobby pubbliche dei tuoi amici e di tutti. Per ora sono esempi: la lobby che crei tu funziona davvero, con bot e amici finti."));
     }
@@ -404,14 +424,14 @@
       bx.appendChild(gr); bx.appendChild(el("span", "lb-pal-n", "Quelli con ✕ sono già presi")); ov.appendChild(bx); ov.addEventListener("click", function (e) { if (e.target === ov) ov.remove(); }); root.appendChild(ov);
     }
     function lobby(reset) {
-      var L = LB, sc0 = !reset && root.querySelector(".lb-body"), sct = sc0 ? sc0.scrollTop : 0; root.innerHTML = ""; root.className = "rc-root lobby"; var exitL = function () { if (real() && L.rm) { A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); L.rm = 0; if (L._pt) { clearInterval(L._pt); L._pt = 0; } } lobbyHub(); }; hook(function () { exitL(); return true; });   // l'host che esce chiude la lobby: gli inviti spariscono
+      var L = LB, sc0 = !reset && root.querySelector(".lb-body"), sct = sc0 ? sc0.scrollTop : 0; root.innerHTML = ""; root.className = "rc-root lobby"; var exitL = function () { if (real() && L.rm) { A.api("/api/room/leave", "POST", { id: L.rm, grace: 1 }).catch(function () {}); if (L._pt) { clearInterval(L._pt); L._pt = 0; } L.grace = Date.now() + 15000; setTimeout(function () { if (LB === L && L.grace && Date.now() >= L.grace - 200) { LB = null; } }, 15500); } lobbyHub(); }; hook(function () { exitL(); return true; });   // l'host che esce chiude la lobby: gli inviti spariscono
       var tp = top("LOBBY", exitL, "‹ Esci");
       var tabs = el("div", "lb-tabs"); ["👥 GIOCATORI " + L.slots.length + "/8", "🛠 PISTA & REGOLE"].forEach(function (nm, i) { var b = el("button", "lb-tab" + (L.tab === i ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.tab = i; lobby(true); }); tabs.appendChild(b); }); root.appendChild(tabs);
       var body = el("div", "lb-body"); root.appendChild(body);
       if (L.tab === 0) {
         var list = el("div", "lb-slots");
         for (var i = 0; i < 8; i++) { (function (i) { var sl = L.slots[i], r = el("div", "lb-slot" + (sl ? "" : " free")); r.appendChild(el("u", "", String(i + 1))); var dot = el(sl && sl.t === "me" ? "button" : "i", "dot" + (sl && sl.t === "me" ? " pick" : "")); dot.style.background = sl ? lbCols(L)[i] : "transparent"; if (sl && sl.t === "me") { dot.type = "button"; dot.addEventListener("click", function () { palette(); }); } r.appendChild(dot);
-          if (!sl) { r.appendChild(el("span", "n", "libero")); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); r.appendChild(el("em", sl.t, sl.t === "me" ? "LEADER" : (sl.t === "bot" ? "BOT · " + DIFF[L.diff].n : (sl.t === "wait" ? "invito inviato…" : "AMICO")))); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
+          if (!sl) { r.appendChild(el("span", "n", "libero")); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); var stt = sl.t === "me" ? ["me", "LEADER"] : (sl.t === "bot" ? ["bot", "BOT · " + DIFF[L.diff].n] : (sl.t === "wait" ? ["wait", "INVITATO…"] : (sl.on === false ? ["off", "OFFLINE"] : (sl.rdy ? ["rdy", "PRONTO"] : ["on", "ONLINE"])))); r.appendChild(el("em", stt[0], stt[1])); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { if (sl.uid && real() && L.rm) A.api("/api/room/kick", "POST", { id: L.rm, uid: sl.uid }).catch(function () {}); L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
           list.appendChild(r); })(i); }
         body.appendChild(list);
         var ab = el("div", "lb-acts"); var full = L.slots.length >= 8;
@@ -431,67 +451,89 @@
         body.appendChild(el("div", "rc-note", hum ? (L.prize ? "Pagati dal Banco: 1° " + A.fmt(L.prize) + " · 2° " + A.fmt(Math.round(L.prize * 0.75)) + " · 3° " + A.fmt(Math.round(L.prize * 0.5)) + " $SDG dal Banco" : "Scegli un premio per i primi tre classificati") : "Il premio si attiva solo se in lobby c'è almeno un giocatore vero (con i soli bot non c'è)."));
         var vr = el("div", "lb-row"); vr.appendChild(el("span", "", "VISIBILITÀ")); var c4 = el("div", "lb-chips"); ["Su invito", "Pubblica"].forEach(function (nm, n) { var b = el("button", "mp-gt wide" + (L.vis === n ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.vis = n; lobby(); }); c4.appendChild(b); }); vr.appendChild(c4); body.appendChild(vr);
       }
-      var go = el("button", "mp-go lb-go", "▶ AVVIA GARA · " + L.slots.filter(function (x) { return x.t !== "wait"; }).length + " piloti" + (L.qual ? " · con qualifica" : "")); go.type = "button"; go.disabled = L.slots.filter(function (x) { return x.t !== "wait"; }).length < 2;
-      if (go.disabled) go.textContent = "Servono almeno 2 piloti: aggiungi un bot o invita un amico";
+      var actN = L.slots.filter(function (x) { return x.t !== "wait"; }).length, frs = L.slots.filter(function (x) { return x.t === "friend"; }), pend = frs.filter(function (x) { return x.on !== false && !x.rdy; });
+      var go = el("button", "mp-go lb-go", "▶ AVVIA GARA · " + actN + " piloti" + (L.qual ? " · con qualifica" : "")); go.type = "button"; go.disabled = actN < 2 || pend.length > 0;
+      if (actN < 2) go.textContent = "Servono almeno 2 piloti: aggiungi un bot o invita un amico"; else if (pend.length) go.textContent = "In attesa che siano pronti: " + pend.slice(0, 3).map(function (x) { return x.name; }).join(", ");
       go.addEventListener("click", function () {
         var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: lbCols({ col: L.col, slots: act })[i] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, rain: L.rain, qual: L.qual, prize: L.prize, back: lobby };
         if (L.qual) o.qualPhase = true;
         var hum = L.slots.filter(function (x) { return x.t === "friend" && x.uid; });
-        if (real() && L.rm && hum.length) { A.api("/api/room/start", "POST", { id: L.rm }).then(function (j) { if (j && j.success) { clearInterval(L._pt); L._pt = 0; runRoom(j.room, function () { LB = L; lobby(); }); } else A.toast((j && j.error) || "Non riesco ad avviare"); }).catch(function () { A.toast("Server non raggiungibile"); }); return; }
+        if (real() && L.rm && hum.length) { A.api("/api/room/start", "POST", { id: L.rm }).then(function (j) { if (j && j.success) { clearInterval(L._pt); L._pt = 0; runRoom(j.room, function () { L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; LB = L; lobby(); }); } else A.toast((j && j.error) || "Non riesco ad avviare"); }).catch(function () { A.toast("Server non raggiungibile"); }); return; }
+        if (real() && L.rm) { A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); if (L._pt) { clearInterval(L._pt); L._pt = 0; } L.rm = 0; L._ens = 0; }   // gara solo con bot: la lobby online si chiude
         race(TRACKS[L.ti], "race", o);
       });
-      root.appendChild(go); body.scrollTop = sct; if (real() && L.rm) { rmPush(); rmWatch(); }
+      root.appendChild(go); body.scrollTop = sct; if (real()) { if (!L.rm) { if (!L._ens) { L._ens = 1; rmEnsure(function (ok) { if (ok && LB === L) { rmPush(); rmWatch(); } else L._ens = 0; }); } } else { rmPush(); rmWatch(); } }
     }
     // ---------- stanze online (account vero): invito dal server, lobby condivisa, auto degli altri in tempo reale ----------
     function real() { return !isSbx(); }
-    function rmCfg(L) { return { track: TRACKS[L.ti].id, laps: L.laps, prize: L.prize | 0, max: 8, x: { rain: L.rain | 0, obst: L.obst ? 1 : 0, pads: L.pads ? 1 : 0, slip: L.slip ? 1 : 0, hcol: L.col | 0 } }; }
+    function rmCfg(L) { return { track: TRACKS[L.ti].id, laps: L.laps, prize: L.prize | 0, max: 8, x: { rain: L.rain | 0, obst: L.obst ? 1 : 0, pads: L.pads ? 1 : 0, slip: L.slip ? 1 : 0, qual: L.qual ? 1 : 0, vis: L.vis ? 1 : 0, hcol: L.col | 0 } }; }
     function rmEnsure(cb) {
       var L = LB; if (L.rm) return cb(true);
       A.api("/api/room/create", "POST", { game: "race", cfg: rmCfg(L) }).then(function (j) { if (j && j.success) { L.rm = j.room.id; cb(true); } else { A.toast((j && j.error) || "Impossibile creare la lobby online"); cb(false); } }).catch(function () { A.toast("Server non raggiungibile"); cb(false); });
     }
     function rmPush() { var L = LB; if (L && L.rm && real()) A.api("/api/room/cfg", "POST", { id: L.rm, cfg: rmCfg(L) }).catch(function () {}); }
-    function rmWatch() {                                                                                            // l'host controlla chi è entrato o uscito
-      var L = LB; if (!L || !L.rm || L._pt) return;
+    function lbFromRoom(room) {                                                                                    // ricostruisce la lobby dell'host da quella sul server (rientro dopo aver chiuso l'app)
+      var L = newLobby(), c = room.cfg || {}, x = c.x || {}; L.rm = room.id; L.ti = Math.max(0, TRACKS.findIndex(function (t) { return t.id === c.track; })); L.laps = c.laps || 3; L.prize = c.prize | 0; L.rain = x.rain | 0; L.obst = !!x.obst; L.pads = !!x.pads; L.slip = !!x.slip; L.qual = !!x.qual; L.vis = x.vis === 0 ? 0 : 1; L.col = x.hcol | 0;
+      room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready }); }); return L;
+    }
+    function rmWatch() {                                                                                            // l'host segue la stanza: chi entra (anche senza invito), chi esce, chi è online / pronto
+      var L = LB; if (!L || !L.rm || L._pt) return; var busy = 0;
       L._pt = setInterval(function () {
         if (LB !== L || !root.isConnected || !root.querySelector(".lb-body")) { clearInterval(L._pt); L._pt = 0; return; }
+        if (busy && Date.now() - busy < 4000) return; busy = Date.now();
         A.api("/api/room/sync", "POST", { id: L.rm, since: 1e9 }).then(function (j) {
-          if (!j || !j.success || !j.room) return; var ch = false;
-          L.slots.slice().forEach(function (sl) {
-            if (!sl.pid) return; var p = j.room.players.filter(function (q) { return q.pid === sl.pid; })[0];
-            if (p && sl.t === "wait") { sl.t = "friend"; sl.uid = p.uid; ch = true; A.haptic("ok"); }
-            else if (!p && sl.t === "friend") { L.slots.splice(L.slots.indexOf(sl), 1); ch = true; }
+          busy = 0; if (LB !== L || !L.rm) return;
+          if (j && j.gone) { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; lobby(); return; }
+          if (!j || !j.success || !j.room) return; var rm = j.room;
+          if (rm.status !== "lobby") { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; lobby(); return; }
+          var sig = rm.players.map(function (p) { return p.uid + (p.online ? "o" : "x") + (p.ready ? "r" : "-"); }).join(",") + "|" + L.slots.length;
+          rm.players.forEach(function (p) {
+            if (p.uid === rm.me) return; var sl = L.slots.filter(function (q) { return q.uid === p.uid || (q.pid && q.pid === p.pid && q.t !== "bot"); })[0];
+            if (!sl) { if (L.slots.length >= 8) return; sl = { t: "friend", name: p.name, style: p.style, pid: p.pid, human: true }; L.slots.push(sl); A.haptic("ok"); }
+            else if (sl.t === "wait") { sl.t = "friend"; A.haptic("ok"); }
+            sl.uid = p.uid; sl.on = p.online; sl.rdy = p.ready;
           });
-          if (ch && LB === L) lobby();
-        }).catch(function () {});
-      }, 1500);
+          L.slots = L.slots.filter(function (sl) { return sl.t !== "friend" || !sl.uid || rm.players.some(function (p) { return p.uid === sl.uid; }); });
+          var sig2 = rm.players.map(function (p) { return p.uid + (p.online ? "o" : "x") + (p.ready ? "r" : "-"); }).join(",") + "|" + L.slots.length;
+          if (sig2 !== L._sig) { L._sig = sig2; if (LB === L) lobby(); }
+        }).catch(function () { busy = 0; });
+      }, 1200);
     }
-    function runRoom(room, back) {                                                                                 // parte la gara online: stessa pista, stesso ordine in griglia per tutti
-      var ps = room.players, mei = Math.max(0, ps.findIndex(function (p) { return p.uid === room.me; })), x = room.cfg.x || {}, cols = lbCols({ col: x.hcol | 0, slots: ps });
-      var order = [mei].concat(ps.map(function (p, i) { return i; }).filter(function (i) { return i !== mei; }));
-      var roster = order.map(function (i) { return { name: ps[i].name, col: cols[i], uid: ps[i].uid }; }), grid = [], map = {};
-      order.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
+    function runRoom(room, back, order, n0) {                                                                      // parte la gara online: stessa pista, stesso ordine in griglia per tutti
+      var ps = order ? order.map(function (u) { return room.players.filter(function (p) { return p.uid === u; })[0] || { uid: u, name: "Pilota" }; }) : room.players, x = room.cfg.x || {};
+      var mei = Math.max(0, ps.findIndex(function (p) { return p.uid === room.me; })), cols = lbCols({ col: x.hcol | 0, slots: ps });
+      var ord = [mei].concat(ps.map(function (p, i) { return i; }).filter(function (i) { return i !== mei; }));
+      var roster = ord.map(function (i) { return { name: ps[i].name, col: cols[i], uid: ps[i].uid }; }), grid = [], map = {};
+      ord.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
       var tr = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1]; build(tr);
-      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, room: { id: room.id, uid: room.me, map: map }, back: back || lobbyHub });
+      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, room: { id: room.id, uid: room.me, map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || lobbyHub });
     }
-    function guestLobby(room) {                                                                                    // lobby di chi è stato invitato: aspetta che l'host avvii
-      root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1];
+    function guestLobby(room) {                                                                                    // lobby di chi è entrato (invitato o dalla lista pubblica): segna PRONTO e aspetta che l'host avvii
+      root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1], busy = 0, myRdy = false, lastRm = room;
       function leave() { alive = false; clearInterval(pt); A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); }
       hook(function () { leave(); return true; }); top("LOBBY", leave, "‹ Esci");
-      var info = el("div", "mp-card gl-info"); root.appendChild(info); var list = el("div", "lb-slots"); root.appendChild(list); root.appendChild(el("div", "rc-note", "In attesa che l'host avvii la gara…"));
+      var info = el("div", "mp-card gl-info"); root.appendChild(info); var list = el("div", "lb-slots"); root.appendChild(list); var note = el("div", "rc-note", ""); root.appendChild(note);
+      var rb = el("button", "mp-go lb-go", "✔ SONO PRONTO"); rb.type = "button"; root.appendChild(rb);
+      rb.addEventListener("click", function () { myRdy = !myRdy; rb.classList.toggle("on", myRdy); rb.textContent = myRdy ? "✔ PRONTO · tocca per annullare" : "✔ SONO PRONTO"; A.haptic("light"); A.api("/api/room/ready", "POST", { id: room.id, ready: myRdy }).then(function (k) { if (k && k.success) paint(k.room); }).catch(function () {}); });
       function paint(rm) {
-        var t2 = TRACKS.filter(function (t) { return t.id === rm.cfg.track; })[0] || trk; info.innerHTML = ""; info.appendChild(el("b", "", "🏁 " + t2.name)); var xx = rm.cfg.x || {}; info.appendChild(el("span", "", rm.cfg.laps + " giri" + (rm.cfg.prize ? " · premio " + A.fmt(rm.cfg.prize) + " $SDG" : "") + " · " + ["sereno", "leggera", "forte"][xx.rain | 0] + (xx.obst ? " · ostacoli" : "") + (xx.pads ? " · boost" : "") + (xx.slip ? " · scia" : "")));
-        list.innerHTML = ""; var cols = lbCols({ col: (rm.cfg.x || {}).hcol | 0, slots: rm.players });
-        rm.players.forEach(function (p, i) { var r = el("div", "lb-slot"); r.appendChild(el("u", "", String(i + 1))); var d = el("i", "dot"); d.style.background = cols[i]; r.appendChild(d); var nn = el("span", "n"); nn.appendChild(A.nameEl(p.name, p.style || {})); r.appendChild(nn); r.appendChild(el("em", p.uid === rm.host ? "me" : "friend", p.uid === rm.host ? "HOST" : (p.uid === rm.me ? "TU" : "PILOTA"))); list.appendChild(r); });
+        lastRm = rm; var t2 = TRACKS.filter(function (t) { return t.id === rm.cfg.track; })[0] || trk; info.innerHTML = ""; info.appendChild(el("b", "", "🏁 " + t2.name)); var xx = rm.cfg.x || {}; info.appendChild(el("span", "", rm.cfg.laps + " giri" + (xx.qual ? " · con qualifica" : "") + (rm.cfg.prize ? " · premio " + A.fmt(rm.cfg.prize) + " $SDG" : "") + " · " + ["sereno", "leggera", "forte"][xx.rain | 0] + (xx.obst ? " · ostacoli" : "") + (xx.pads ? " · boost" : "") + (xx.slip ? " · scia" : "")));
+        list.innerHTML = ""; var cols = lbCols({ col: xx.hcol | 0, slots: rm.players }), mp = rm.players.filter(function (p) { return p.uid === rm.me; })[0]; if (mp) myRdy = !!mp.ready;
+        rm.players.forEach(function (p, i) { var r = el("div", "lb-slot"); r.appendChild(el("u", "", String(i + 1))); var d = el("i", "dot"); d.style.background = cols[i]; r.appendChild(d); var nn = el("span", "n"); nn.appendChild(A.nameEl(p.name, p.style || {})); r.appendChild(nn);
+          var st = p.uid === rm.host ? ["me", "LEADER"] : (p.online === false ? ["off", "OFFLINE"] : (p.ready ? ["rdy", p.uid === rm.me ? "TU · PRONTO" : "PRONTO"] : ["on", p.uid === rm.me ? "TU" : "ONLINE"])); r.appendChild(el("em", st[0], st[1])); list.appendChild(r); });
+        rb.classList.toggle("on", myRdy); rb.textContent = myRdy ? "✔ PRONTO · tocca per annullare" : "✔ SONO PRONTO";
+        note.textContent = rm.away ? "⚠ L'host è uscito: la lobby si chiude fra " + rm.away + " s se non rientra" : (myRdy ? "Sei pronto: aspetta che l'host avvii la gara…" : "Tocca PRONTO quando vuoi partire: l'host può avviare solo se sono tutti pronti");
       }
-      paint(room); var busy = false;
+      paint(room);
       var pt = setInterval(function () {
-        if (!alive || !root.isConnected) { clearInterval(pt); return; } if (busy) return; busy = true;
+        if (!alive || !root.isConnected) { clearInterval(pt); return; } if (busy && Date.now() - busy < 4000) return; busy = Date.now();
         A.api("/api/room/sync", "POST", { id: room.id, since: since }).then(function (j) {
-          busy = false; if (!alive || !j) return;
+          busy = 0; if (!alive || !j) return;
           if (j.gone) { alive = false; clearInterval(pt); A.toast("La lobby è stata chiusa"); lobbyHub(); return; }
-          if (!j.success) return; since = j.n; paint(j.room);
-          if ((j.events || []).some(function (e) { return e.k === "start"; })) { alive = false; clearInterval(pt); runRoom(j.room, lobbyHub); }
-        }).catch(function () { busy = false; });
+          if (!j.success) { if (/stanza/i.test(j.error || "")) { alive = false; clearInterval(pt); A.toast("Sei stato tolto dalla lobby"); lobbyHub(); } return; }
+          since = j.n; paint(j.room);
+          var st = (j.events || []).filter(function (e) { return e.k === "start"; })[0];
+          if (st || j.room.status === "run") { alive = false; clearInterval(pt); runRoom(j.room, lobbyHub, st ? st.order : null, j.n); }
+        }).catch(function (e) { busy = 0; if (e && e.status === 403 && alive) { alive = false; clearInterval(pt); A.toast("Sei stato tolto dalla lobby"); lobbyHub(); } });
       }, 800);
     }
     function inviteSheet() {
@@ -503,7 +545,7 @@
           return;
         }
         var sl = { t: "wait", name: f.name, style: f.style, pid: f.pid, human: true }; L.slots.push(sl); lobby();
-        setTimeout(function () { if (LB === L && L.slots.indexOf(sl) >= 0) { sl.t = "friend"; lobby(); } }, 1500);
+        setTimeout(function () { if (LB === L && L.slots.indexOf(sl) >= 0) { sl.t = "friend"; sl.on = true; lobby(); setTimeout(function () { if (LB === L && L.slots.indexOf(sl) >= 0) { sl.rdy = true; lobby(); } }, 1800); } }, 1500);
       });
     }
     var RO = lsGet("arc_race4_ro") || { rain: 0, obst: 1, pads: 1, slip: 1, assist: 0 };
@@ -561,7 +603,7 @@
       var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); if (opts.rain) { var rq = 0; itl = itl.filter(function () { return rq++ % 2 === 0; }); } tr = Object.assign({}, tr, { items: itl, rain: opts.rain ? (opts.rain === true ? 1 : opts.rain) : 0 });
       var solo = mode === "single", laps = qual ? 1 : (solo ? 3 : (opts.laps || RL)), full = el("div", "rc2"), cv = el("canvas", "rc2-cv"), hud = el("div", "rc2-hud"), cd = el("div", "rc2-cd"), tip = el("div", "rc2-tip");
       var left = el("div", "rc2-pad l"), right = el("div", "rc2-pad r"), rev = el("div", "rc2-rev"), rfill = el("i"), bbar = el("div", "rc2-boost"), bfill = el("i"); rev.appendChild(rfill); bbar.appendChild(bfill);
-      var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : 8;
+      var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : (opts.afterQual ? 4 : 8);
       gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small></small><b></b><span></span>"; intro.children[0].textContent = qual ? "🏁 SESSIONE UFFICIALE 🏁" : (opts.grid ? "🏆 GRAN PREMIO 🏆" : "CIRCUITO"); intro.children[1].textContent = qual ? "QUALIFICA" : (opts.grid ? "GARA" : tr.name); intro.children[2].textContent = qual ? "⏱ " + tr.name.toUpperCase() + " · 1 GIRO LANCIATO · DECIDE LA GRIGLIA" : (solo ? "CONTRO IL TEMPO" : (opts.grid ? "🏎 " + tr.name.toUpperCase() : "GARA")) + " · " + laps + " GIRI" + (opts.grid ? " · SI PARTE DALLA GRIGLIA" : ""); if (qual) intro.classList.add("qual");
       var tower = el("div", "rc2-tower"), twc = 0, xb = el("button", "rc2-x", "⏸"); xb.type = "button"; var sec = el("div", "rc2-sec"), lapb = el("div", "rc2-lapb");
       full.appendChild(cv); if (opts.rain) full.appendChild(el("div", "rc2-rain" + (opts.rain > 1 ? " heavy" : ""))); full.appendChild(hud); full.appendChild(cd); full.appendChild(tip); full.appendChild(left); full.appendChild(right); full.appendChild(bbar); full.appendChild(xb); full.appendChild(sec); full.appendChild(lapb); full.appendChild(gasb); full.appendChild(lch); full.appendChild(intro); if (!solo && !qual) full.appendChild(tower); document.body.appendChild(full);
@@ -578,7 +620,7 @@
       mk(left, "◀", "l", "dir"); mk(right, "▶", "r", "dir");
       function gon(e) { e.preventDefault(); holdG = true; gasb.classList.add("on"); } function goff(e) { e.preventDefault(); holdG = false; gasb.classList.remove("on"); }
       gasb.addEventListener("pointerdown", gon); gasb.addEventListener("pointerup", goff); gasb.addEventListener("pointercancel", goff); gasb.addEventListener("pointerleave", goff); gasb.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-      full.addEventListener("pointerdown", function () { if (state === "intro" && introT > 0.6) introT = INTRO; });
+      full.addEventListener("pointerdown", function () { if (state === "intro" && introT > 0.6 && !opts.room) introT = INTRO; });
       function kd(e, v) { var k = e.key; if (k === " " || k === "ArrowUp") { holdG = v; gasb.classList.toggle("on", v); } if (k === "ArrowLeft" || k === "a") inp.l = v; else if (k === "ArrowRight" || k === "d") inp.r = v; }
       var kdown = function (e) { kd(e, true); }, kup = function (e) { kd(e, false); };
       window.addEventListener("keydown", kdown); window.addEventListener("keyup", kup);
@@ -599,8 +641,9 @@
       cars.forEach(function (c) { c.hist = new Float32Array(tr.N * laps + 160); c.hist.fill(-1); c.hp = Math.floor(c.prog) - 1; });
       var best = (myRec(tr) || {}).t || 0, state = opts.noIntro ? "count" : "intro", cT = 0, t = 0, acc = 0, last = performance.now(), raf = 0, done = false, camA = me.a, camx = me.x, camy = me.y, revv = 0, botDelay = [0, 0.12, 0.2, 0.3, 0.38, 0.46, 0.54, 0.62], lapT = [], lapStart = qual ? 1e9 : 0, msgT = 0, lapB = null, lapS = null, prevAt = -99, mmK = "", wrongT = 0;
       var qgh = [], qres = [], qT0 = -1;
+      var RM0 = !!opts.room;
       if (qual) { var k0 = tr.N - 14; me.x = tr.P[k0][0]; me.y = tr.P[k0][1]; me.a = tr.ta[k0]; me.vx = 0; me.vy = 0; me.idx = k0; me.prog = -14; me.slot = 0;
-        for (var qk = 1; qk < nCar; qk++) { var rs0 = opts.roster && opts.roster[qk], qs = qualSim(tr, sk[qk], vmv ? vmv[qk] : 1, offs[qk] * 0.5); qres.push({ id: qk, name: rs0 ? rs0.name : NAMES[qk % NAMES.length], t: qs.t }); qgh.push({ x: qs.path[0], y: qs.path[1], a: qs.path[2], col: rs0 ? rs0.col : COLS[qk % COLS.length], name: rs0 ? rs0.name : NAMES[qk % NAMES.length], ghost: true, hit: 0, path: qs.path }); } }
+        for (var qk = 1; qk < (RM0 ? 1 : nCar); qk++) { var rs0 = opts.roster && opts.roster[qk], qs = qualSim(tr, sk[qk], vmv ? vmv[qk] : 1, offs[qk] * 0.5); qres.push({ id: qk, name: rs0 ? rs0.name : NAMES[qk % NAMES.length], t: qs.t }); qgh.push({ x: qs.path[0], y: qs.path[1], a: qs.path[2], col: rs0 ? rs0.col : COLS[qk % COLS.length], name: rs0 ? rs0.name : NAMES[qk % NAMES.length], ghost: true, hit: 0, path: qs.path }); } }
       var AU = (window.ArcadeAudio || {}).race || { begin: function () {}, end: function () {}, engine: function () {}, sfx: function () {}, set: function () {} }, SN = (function () { var q = lsGet("arc_race4_snd"); if (!q || q.v !== 2) { q = { v: 2, sfx: 0.7, music: 0.5 }; lsSet("arc_race4_snd", q); } return q; })(), pBoost = false, pHit = false, pSpin = false, lastNl = 0;
       AU.begin({ rain: opts.rain, sfx: SN.sfx, music: SN.music });
       var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 0 }, gl = [], grec = [], gtick = 0;
@@ -624,7 +667,17 @@
         if (!sbest[sIdx] || tm < sbest[sIdx]) { sbest[sIdx] = tm; if (solo) lsSet(PF() + "s_" + tr.id, sbest); }
         secPrev[sIdx] = tm; secLast[sIdx] = ref ? tm - ref : 0; secCols[sIdx] = col;
       }
-      var GO = 3.4, trail = [], curSeg = null;
+      var GO = 3.4, trail = [], curSeg = null, PH = qual ? "qual" : "race", waitT0 = 0, SPC = 0;
+      (function () { for (var i = 0; i < tr.N; i++) { var a = tr.P[i], b = tr.P[(i + 1) % tr.N]; SPC += Math.hypot(b[0] - a[0], b[1] - a[1]); } SPC = Math.max(1, SPC / tr.N); })();
+      function srvNow() { return performance.now() / 1000 + RMT.off; }
+      function remStep(c) {                                                                                     // auto di un altro giocatore: posizione stimata "adesso" (ultimo campione + velocità × età), poi si avvicina morbida
+        var sm = c.sm; if (!sm) return; var age = Math.max(0, Math.min(0.4, srvNow() - sm.ts + 0.04)), w = 0;      // età del campione sull'orologio del server (non dipende da quanto va veloce la fisica di ognuno)
+        if (c.sp && sm.tt > c.sp.tt) { var d0 = sm.a - c.sp.a; d0 = Math.atan2(Math.sin(d0), Math.cos(d0)); w = Math.max(-4, Math.min(4, d0 / ((sm.tt - c.sp.tt) / 1000))); }
+        var tx = sm.x + sm.vx * age, ty = sm.y + sm.vy * age, ta = sm.a + w * age;
+        if (Math.hypot(tx - c.x, ty - c.y) > 220) { c.x = tx; c.y = ty; } else { c.x += (tx - c.x) * 0.4; c.y += (ty - c.y) * 0.4; }
+        var d1 = ta - c.a; d1 = Math.atan2(Math.sin(d1), Math.cos(d1)); c.a += d1 * 0.4; c.vx = sm.vx; c.vy = sm.vy;
+        c.prog = sm.pr / 10 + age * Math.hypot(sm.vx, sm.vy) / SPC; c.idx = ((Math.floor(c.prog) % tr.N) + tr.N) % tr.N;
+      }
       if (window.__RACE_DEBUG) window.__RACE_DEBUG({ me: me, tr: tr, cars: cars, inp: inp });
       function pastLine(c) { var a = tr.ta[0]; return (c.x - tr.P[0][0]) * Math.cos(a) + (c.y - tr.P[0][1]) * Math.sin(a) >= 0 || c.prog >= tr.N * laps + 4; }
       function rank() { return cars.slice().sort(function (a, b) { return (b.fin ? 1e6 - b.finT : b.prog) - (a.fin ? 1e6 - a.finT : a.prog); }); }
@@ -642,11 +695,38 @@
       xb.addEventListener("click", function () { pause(!paused); });
       window.ArcadeBackHide = false; window.ArcadeBackHook = function () { if (state === "end") return false; pause(!paused); return true; }; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {}
       function say2(x, sec) { tip.textContent = x; msgT = sec || 1.6; }
-      var RT = 0, rSince = 0, rBusy = false, finGo = false, finT0 = 0, wbox = null, resLn = null;
+      var RT = 0, rSince = RMT ? (RMT.since || 0) : 0, rBusy = false, rBusyT = 0, finGo = false, finT0 = 0, wbox = null, wtbl = null, resLn = null;
+      function qualOnline() {                                                                                    // qualifica online: tutti hanno fatto il giro insieme; la griglia la decidono i tempi, poi parte la gara sincronizzata
+        RMT.wantQ = Math.round((me.finT - qT0) * 1000) / 1000; var qb = el("div", "rc2-end res"), t0 = performance.now(), fin2 = false; full.appendChild(qb);
+        (function tick() {
+          if (done || fin2) return; var sy = RMT.sy || {}, qm = sy.q || {}, pl = RMT.pl || [], on = pl.filter(function (p) { return p.online !== false; });
+          var rows = pl.slice().sort(function (a, b) { return (qm[a.uid] != null ? qm[a.uid] : 1e9) - (qm[b.uid] != null ? qm[b.uid] : 1e9); });
+          qb.innerHTML = ""; qb.appendChild(el("b", "", "QUALIFICA · GRIGLIA DI PARTENZA")); var tb0 = el("div", "rc2-tbl");
+          rows.forEach(function (p, i) { var r = el("div", "rr" + (p.uid === RMT.uid ? " me" : "")); r.appendChild(el("span", "pn", qm[p.uid] != null ? String(i + 1) : "·")); r.appendChild(el("span", "nm", p.uid === RMT.uid ? "Tu" : p.name)); r.appendChild(el("span", "tt" + (qm[p.uid] != null ? "" : " lv"), qm[p.uid] != null ? fmt(qm[p.uid]) : (p.online === false ? "assente" : "in pista…"))); tb0.appendChild(r); });
+          qb.appendChild(tb0);
+          if (!sy.grid && (on.every(function (p) { return qm[p.uid] != null; }) || performance.now() - t0 > 90000)) RMT.wantGrid = rows.filter(function (p) { return qm[p.uid] != null; }).concat(rows.filter(function (p) { return qm[p.uid] == null; })).map(function (p) { return p.uid; });
+          if (sy.grid) {
+            fin2 = true; qb.appendChild(el("div", "rc-lap", "🏁 La gara parte tra poco: tutti insieme, in griglia"));
+            setTimeout(function () {
+              if (done) return; var ukey = {}; ukey[RMT.uid] = 0; Object.keys(RMT.map).forEach(function (k) { ukey[RMT.map[k]] = +k; }); var g = [];
+              sy.grid.forEach(function (u) { if (ukey[u] != null && g.indexOf(ukey[u]) < 0) g.push(ukey[u]); }); for (var k = 0; k < (opts.n || 4); k++) if (g.indexOf(k) < 0) g.push(k);
+              RMT.wantQ = undefined; RMT.wantGrid = null; stop(true); race(tr0, "race", Object.assign({}, opts, { qualPhase: false, afterQual: true, grid: g }));
+            }, 3800); return;
+          }
+          setTimeout(tick, 300);
+        })();
+      }
       function finish() {
-        if (RMT && !finGo) { state = "end"; if (!finT0) { finT0 = performance.now(); AU.sfx("fin"); wbox = el("div", "rc2-end"); wbox.appendChild(el("b", "", "🏁 ARRIVATO!")); wbox.appendChild(el("div", "rc-lap", "Aspetto gli altri piloti…")); full.appendChild(wbox); }
-          if (!done && cars.some(function (c) { return c.remote && !c.fin; }) && performance.now() - finT0 < 30000) { setTimeout(finish, 300); return; } finGo = true; if (wbox) wbox.remove(); }
+        if (RMT && !finGo && !qual) {
+          state = "end";
+          if (!finT0) { finT0 = performance.now(); AU.sfx("fin"); wbox = el("div", "rc2-end wait"); wbox.appendChild(el("b", "", "🏁 ARRIVATO!")); wbox.appendChild(el("div", "rc-lap", "Aspetto gli altri piloti: classifica in diretta")); wtbl = el("div", "rc2-tbl wl"); wbox.appendChild(wtbl); full.appendChild(wbox); }
+          var pl0 = RMT.pl || []; cars.forEach(function (c) { if (c.remote && !c.fin) { var pp0 = pl0.filter(function (x) { return x.uid === c.remote; })[0]; c.gone = !pp0 || pp0.online === false; } });   // chi è sparito (app chiusa / rete persa) non si aspetta
+          wtbl.innerHTML = ""; rank().forEach(function (c, i) { var r = el("div", "rr" + (c === me ? " me" : "")); r.appendChild(el("span", "pn", String(i + 1))); r.appendChild(el("span", "nm", c === me && !opts.roster ? "Tu" : c.name)); r.appendChild(el("span", "tt" + (c.fin ? "" : (c.gone ? " dn" : " lv")), c.fin ? fmt(c.finT) : (c.gone ? "ritirato?" : "in gara · giro " + Math.min(laps, c.lap || 1) + "/" + laps))); wtbl.appendChild(r); });
+          if (!done && cars.some(function (c) { return c.remote && !c.fin && !c.gone; }) && performance.now() - finT0 < 300000) { setTimeout(finish, 250); return; }
+          cars.forEach(function (c) { if (c.remote && !c.fin) { c.fin = true; c.dnf = true; c.finT = 9000 + Math.max(0, tr.N * laps - c.prog) / 1000; } });
+          finGo = true; if (wbox) wbox.remove(); }
         state = "end"; if (!RMT) AU.sfx("fin"); var total = me.finT, rec = solo && (!best || total < best), ar0 = absRec(tr0), recAll = solo && laps === 3 && (!ar0 || total < ar0.t - 0.005), recPay = recAll && isSbx() ? payRec(tr0, total) : 0, box = el("div", "rc2-end res");
+        if (qual && RMT) { qualOnline(); return; }
         if (qual) {
           var mine = me.finT - qT0; qres.push({ id: 0, name: "Tu", t: mine }); qres.sort(function (a, b) { return a.t - b.t; }); box.appendChild(el("b", "", "QUALIFICA · GRIGLIA DI PARTENZA")); var tb0 = el("div", "rc2-tbl");
           qres.forEach(function (q, i) { var r = el("div", "rr" + (q.id === 0 ? " me" : "")); r.appendChild(el("span", "pn", String(i + 1))); r.appendChild(el("span", "nm", q.name)); r.appendChild(el("span", "tt", fmt(q.t))); tb0.appendChild(r); }); box.appendChild(tb0);
@@ -673,7 +753,7 @@
           if (!isSbx() && laps === 3 && (rec || recAll)) {
             var gs = grec.length > 6000 ? grec.filter(function (v, i) { return Math.floor(i / 3) % 2 === 0; }) : grec;
             A.api("/api/race/record", "POST", { track: tr0.id, t: Math.round(total * 1000), g: recAll ? gs : null }).then(function (j) {
-              if (j && j.success) { if (j.reward) recLn.textContent = "💰 Record della pista: +" + A.fmt(j.reward) + " $SDG"; else if (j.record) recLn.textContent = "Record della pista (premio solo se migliori di 0,3 s il tuo)"; else if (j.pos) recLn.textContent = "In classifica sei " + j.pos + "° su " + j.of; tr0._absG = null; SRV.ok = false; try { A.refreshMe(); } catch (e) {} }
+              if (j && j.success) { if (j.reward) recLn.textContent = "💰 Record della pista: +" + A.fmt(j.reward) + " $SDG"; else if (j.record) recLn.textContent = "Record della pista battuto (premio non pagato: limite giornaliero raggiunto)"; else if (j.pos) recLn.textContent = "In classifica sei " + j.pos + "° su " + j.of; tr0._absG = null; SRV.ok = false; try { A.refreshMe(); } catch (e) {} }
             }).catch(function () {});
           }
         }
@@ -687,7 +767,7 @@
         }
         var tb = el("div", "rc2-tbl"), showLaps = laps <= 4;
         rows.forEach(function (c, i) {
-          var r = el("div", "rr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me && !opts.roster ? "Tu" : c.name), tt = el("span", "tt", fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt);
+          var r = el("div", "rr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me && !opts.roster ? "Tu" : c.name), tt = el("span", "tt", c.dnf ? "RITIRATO" : fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt);
           var lp = el("span", "lp"), bst = Math.min.apply(null, c.lapTs && c.lapTs.length ? c.lapTs : [0]);
           (c.lapTs || []).forEach(function (x) { if (showLaps || x === bst) lp.appendChild(el("i", x <= fl + 0.0005 ? "fl" : "", (showLaps ? "" : "Migliore ") + fmt(x))); }); r.appendChild(lp); tb.appendChild(r);
         });
@@ -695,7 +775,7 @@
         var pod = null, tgl = null;
         if (!solo && rows.length >= 2) {                                                                                  // schermata 1: podio con le auto dei primi tre
           pod = el("div", "rc2-pod"); var ord = rows.length >= 3 ? [1, 0, 2] : [1, 0];
-          ord.forEach(function (ri) { var c = rows[ri], col = el("div", "pdc p" + (ri + 1)); if (ri === 0) col.appendChild(el("em", "cup", "🏆")); var car = el("i", "pcar"); car.style.background = c.col; col.appendChild(car); col.appendChild(el("span", "pnm" + (c === me ? " me" : ""), c === me && !opts.roster ? "Tu" : c.name)); col.appendChild(el("span", "ptm", fmt(c.finT))); col.appendChild(el("div", "pst", String(ri + 1))); pod.appendChild(col); });
+          ord.forEach(function (ri) { var c = rows[ri], col = el("div", "pdc p" + (ri + 1)); if (ri === 0) col.appendChild(el("em", "cup", "🏆")); var car = el("i", "pcar"); car.style.background = c.col; col.appendChild(car); col.appendChild(el("span", "pnm" + (c === me ? " me" : ""), c === me && !opts.roster ? "Tu" : c.name)); col.appendChild(el("span", "ptm", c.dnf ? "RIT." : fmt(c.finT))); col.appendChild(el("div", "pst", String(ri + 1))); pod.appendChild(col); });
           box.appendChild(pod); pg2.style.display = "none";
           tgl = el("button", "mp-go mp-alt2", "TEMPI SUL GIRO ›"); tgl.type = "button"; var onPod = true;
           tgl.addEventListener("click", function () { onPod = !onPod; pod.style.display = onPod ? "" : "none"; pg2.style.display = onPod ? "none" : ""; tgl.textContent = onPod ? "TEMPI SUL GIRO ›" : "‹ PODIO"; });
@@ -933,6 +1013,7 @@
       }
       function hudDraw() {
         full.className = "rc2" + (state === "intro" ? " intro" : "") + (state === "count" ? " cnt" : "") + (paused ? " paus" : "") + (me.tw > 0 ? " slip" : "") + (qual ? " qual" : "") + (state === "run" && t < 0.6 ? " gol" : ""); if (state === "count") { lchF.style.height = Math.min(100, rev2 * 100) + "%"; lchF.className = rev2 > 1 ? "bad" : (rev2 >= 0.72 ? "ok" : ""); } if (state === "intro") intro.style.display = ""; else if (intro.style.display !== "none") intro.style.display = "none";
+        if (state === "wait") { var rl2 = (RMT.sy.rdy && RMT.sy.rdy[PH]) || []; tip.textContent = "⏳ In attesa degli altri piloti… " + rl2.length + "/" + Math.max(rl2.length, (RMT.pl || []).filter(function (p) { return p.online !== false; }).length) + " pronti"; msgT = 1; }
         var pos = rank().indexOf(me), v = Math.round(Math.hypot(me.vx, me.vy) * 0.5), curLap = Math.min(me.lap, laps);
         hud.innerHTML = (solo || qual ? "" : "<b class='p'>" + ORD[pos] + "</b>") + "<span>GIRO " + curLap + "/" + laps + "</span><span>" + v + " km/h</span>" + "";
         { var vs = Math.hypot(me.vx, me.vy) / 520, cnt = state === "count" || state === "intro"; AU.engine(paused || state === "end" ? -1 : (cnt ? Math.min(1, rev2) * 0.7 : vs), me.boostT > 0, !!me.dd && !paused, me.off && !paused, cnt || paused);
@@ -970,12 +1051,16 @@
         while (acc >= DT) {
           acc -= DT;
           vis().forEach(function (c) { c.px = c.x; c.py = c.y; c.pa = c.a; }); pcx = camx; pcy = camy; pcA = camA; camStep();
-          if (state === "intro") { introT += DT; if (introT >= INTRO) { state = "count"; cT = 0; t = 0; } continue; }
+          if (state === "intro") { introT += DT; if (introT >= INTRO) { if (RMT) { state = "wait"; waitT0 = performance.now(); } else { state = "count"; cT = 0; t = 0; } } continue; }
+          if (state === "wait") { var G1 = RMT.sy && RMT.sy.go && RMT.sy.go[PH]; if (G1 != null && RMT.rtt < 1e8 && srvNow() >= G1) { state = "count"; cT = srvNow() - G1; t = 0; } continue; }
+          if (state === "end" && RMT && !finGo) {                                                                    // ho tagliato il traguardo ma gli altri corrono ancora: auto, minimappa e classifica restano vivi
+            t += DT; cars.forEach(function (c) { if (c.remote) remStep(c); else if (c.fin) { c.vx *= 0.97; c.vy *= 0.97; } }); cars.forEach(function (c) { var pp = Math.floor(c.prog); while (c.hp < pp) { c.hp++; if (c.hp + 60 >= 0 && c.hp + 60 < c.hist.length) c.hist[c.hp + 60] = t; } }); continue;
+          }
           if (state === "count") {
-            cT += DT; var nl = cT < 0.8 ? 0 : Math.min(3, Math.floor((cT - 0.8) / 0.8) + 1); if (nl !== lastNl) { lastNl = nl; if (nl) AU.sfx("beep"); }
+            if (RMT && RMT.sy && RMT.sy.go && RMT.sy.go[PH] != null) cT = srvNow() - RMT.sy.go[PH]; else cT += DT; var nl = cT < 0.8 ? 0 : Math.min(3, Math.floor((cT - 0.8) / 0.8) + 1); if (nl !== lastNl) { lastNl = nl; if (nl) AU.sfx("beep"); }
             if (!qual) rev2 = holdG ? Math.min(1.3, rev2 + 0.55 * DT) : Math.max(0, rev2 - 0.9 * DT); if (rev2 > 1.1) flooded = true;
             cd.textContent = cT >= GO ? "🟢" : (nl ? "🔴".repeat(nl) : ""); if (cT < GO) { tip.textContent = window.innerHeight > window.innerWidth ? "↻ Gira il telefono (rotazione automatica attiva, o tocca l'icona di rotazione in basso)" : (qual ? "QUALIFICA · al VIA partirai già lanciato: un solo giro, senza pozze né pedane" : "Tieni premuto ACCELERA dal 2° semaforo: barra nella zona verde al VIA = partenza perfetta"); msgT = 9; }
-            if (cT >= GO) { state = "run"; t = 0; AU.sfx("beep", true); setTimeout(function () { cd.textContent = ""; }, 700); var r2 = rev2, lm = "VIA!";
+            if (cT >= GO) { state = "run"; t = RMT ? Math.max(0, cT - GO) : 0; AU.sfx("beep", true); setTimeout(function () { cd.textContent = ""; }, 700); var r2 = rev2, lm = "VIA!";
               if (qual) { me.vx = Math.cos(me.a) * 380; me.vy = Math.sin(me.a) * 380; lm = "VIA! Giro di qualifica"; } else if (flooded || r2 > 1.0) { me.stall = 0.5; lm = "TROPPO GAS! Partenza persa"; A.haptic("bad"); } else if (r2 >= 0.72) { me.boostT = 1.0; me.vx = Math.cos(me.a) * 140; me.vy = Math.sin(me.a) * 140; lm = "PARTENZA PERFETTA!"; A.haptic("ok"); } else if (r2 >= 0.45) { me.boostT = 0.45; me.vx = Math.cos(me.a) * 70; me.vy = Math.sin(me.a) * 70; lm = "Buona partenza"; }
               say2(lm, 1.4); }
             continue;
@@ -983,12 +1068,9 @@
           if (state !== "run") continue;
           if (!solo && !qual) aero(tr, cars, opts);
           cars.forEach(function (c, k) {
+            if (c.remote) { remStep(c); return; }
             if (c.fin) { c.vx *= 0.99; c.vy *= 0.99; return; }
             if (k === 0) { if (window.__RACE_AUTO) { var pa = pilot(tr, c, 0, 1.2); inp.l = !!pa.l; inp.r = !!pa.r; } step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (!c.remote && t >= botDelay[k]) { step(tr, c, pilot(tr, c, offs[k], sk[k])); items(tr, c); }
-            if (c.remote) {                                                                                       // auto di un altro giocatore: si muove verso l'ultima posizione ricevuta (+ stima col suo vettore velocità)
-              if (c.tx !== undefined) { c.tx += c.vx * DT; c.ty += c.vy * DT; c.x += (c.tx - c.x) * 0.3; c.y += (c.ty - c.y) * 0.3; var da = c.ta2 - c.a; da = Math.atan2(Math.sin(da), Math.cos(da)); c.a += da * 0.3; c.prog = c.rprog; c.idx = ((Math.floor(c.rprog) % tr.N) + tr.N) % tr.N; }
-              return;
-            }
             if (c.blink > 0) c.blink -= DT;
             if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { AU.sfx("lap"); lapT.push(t - lapStart); if (!opts.qual && lapT.length > 1) { var lt = lapT[lapT.length - 1]; var bb = lsGet(PF() + "b_" + tr.id); if (!bb || !bb.t || lt < bb.t) lsSet(PF() + "b_" + tr.id, { t: lt }); } lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
             if (c.prog >= tr.N * laps && pastLine(c)) { c.fin = true; c.finT = t; }
@@ -1011,21 +1093,29 @@
         if (tq < 60) { qEma += (tq - qEma) * 0.05; if (qEma > 9 && QL > 0.62) QL = 0.62; else if (qEma < 6 && QL < 1) QL = 1; }   // qualità adattiva: se disegnare costa troppo, si accorcia la distanza di visuale (la fisica non cambia)
         raf = requestAnimationFrame(frame);
       }
-      if (RMT) {                                                                                                  // sincronizzazione online: ~6 volte al secondo mando la mia posizione e ricevo quelle degli altri
+      if (RMT) {                                                                                                  // sincronizzazione online: ogni 100 ms mando la mia posizione (con il tempo di gara) e ricevo quelle degli altri
+        RMT.sy = RMT.sy || {}; RMT.pl = RMT.pl || [];
+        var barrierOK = function () { var rl = (RMT.sy.rdy && RMT.sy.rdy[PH]) || []; return RMT.pl.filter(function (p) { return p.online !== false; }).every(function (p) { return rl.indexOf(p.uid) >= 0; }) || performance.now() - waitT0 > 25000; };
         var rSend = function () {
-          if (done || rBusy) return; rBusy = true;
-          var ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0 };
-          A.api("/api/room/sync", "POST", { id: RMT.id, since: rSince, ev: ev }).then(function (j) {
-            rBusy = false; if (!j || !j.success) return; rSince = j.n;
+          if (done) return; if (rBusy && performance.now() - rBusyT < 3500) return; rBusy = true; rBusyT = performance.now();
+          var sy = RMT.sy, ev = null, tS = performance.now();
+          if (state === "wait") { var rl = (sy.rdy && sy.rdy[PH]) || []; if (rl.indexOf(RMT.uid) < 0) ev = { k: "rdy", ph: PH }; else if (!(sy.go && sy.go[PH] != null) && barrierOK()) ev = { k: "go", ph: PH }; }
+          else if (RMT.wantQ !== undefined && !(sy.q && sy.q[RMT.uid] != null)) ev = { k: "q", qt: RMT.wantQ };
+          else if (RMT.wantGrid && !sy.grid) ev = { k: "grid", g: RMT.wantGrid };
+          else if ((state === "run" || state === "end") && !qual) ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0, tt: Math.round(t * 1000) };
+          A.api("/api/room/sync", "POST", { id: RMT.id, since: rSince, ev: ev || undefined }).then(function (j) {
+            rBusy = false; if (!j || !j.success) return; var rt = performance.now() - tS; rSince = j.n; RMT.since = j.n;
+            if (j.room) { if (j.room.st && rt < RMT.rtt && rt < 1500) { RMT.rtt = rt; RMT.off = j.room.st - (tS + rt / 2) / 1000; } RMT.sy = j.room.sy || RMT.sy; RMT.pl = j.room.players || RMT.pl; }
             (j.events || []).forEach(function (e) {
               if (e.k !== "p" || e.u === RMT.uid) return; var c = null; cars.forEach(function (q) { if (q.remote === e.u) c = q; }); if (!c) return;
-              if (c.tx === undefined) { c.x = e.x; c.y = e.y; c.a = e.a / 100; } c.tx = e.x; c.ty = e.y; c.ta2 = e.a / 100; c.vx = e.vx; c.vy = e.vy; c.rprog = e.pr / 10; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d;
-              if (e.f && !c.fin) { c.fin = true; c.finT = e.f / 1000; }
+              var smp = { ts: e.t || srvNow(), tt: e.tt || 0, x: e.x, y: e.y, a: e.a / 100, vx: e.vx, vy: e.vy, pr: e.pr }; if (c.sm && smp.tt < c.sm.tt) return;
+              if (!c.sm) { c.x = smp.x; c.y = smp.y; c.a = smp.a; } c.sp = c.sm; c.sm = smp; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d;
+              if (e.f && (!c.fin || c.dnf)) { c.fin = true; c.dnf = false; c.finT = e.f / 1000; }
             });
             if (j.room && j.room.result && resLn && !resLn._d) { resLn._d = 1; var py = (j.room.result.pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} }
           }).catch(function () { rBusy = false; });
         };
-        RT = setInterval(rSend, 160);
+        RT = setInterval(rSend, 100);
       }
       raf = requestAnimationFrame(function (n) { last = n; frame(n); });
     }

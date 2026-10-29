@@ -1741,3 +1741,9 @@ body.sbx .pg-head{padding-top:22px}
 
 /* header stabile: il posto del tasto Amici è già riservato prima che friends.js lo crei (niente salto dell'ingranaggio) */
 html.mo .hbtns:not(.has)::after{content:"";flex:1 1 0;min-height:0;width:46px;border-radius:14px}
+
+/* lobby: stati dei piloti */
+.lb-slot em.on{background:rgba(47,211,111,.55);color:#eafff1}.lb-slot em.off{background:rgba(255,80,110,.4);color:#ffd3dc}.lb-slot em.rdy{background:#2fd36f;color:#04260f}
+.lb-open.mine{border-color:#ffd23b;background:rgba(255,210,59,.12)}.lb-open .lbi{font-style:normal;font-size:24px;width:44px;text-align:center}
+.lb-go.on{background:linear-gradient(180deg,#2fd36f,#14924a);box-shadow:0 0 18px rgba(47,211,111,.55)}
+.rc2-end.wait{max-width:min(92%,420px)}.rc2-end .wl .rr .tt.dn{color:#ff8da1}.rc2-end .wl .rr .tt.lv{color:#b9a9d6;font-size:.85em}
