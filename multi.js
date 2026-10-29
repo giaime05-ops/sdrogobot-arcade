@@ -301,6 +301,21 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     netSend({ k: "b", t: tag });
     return Promise.all(P.filter(function (p) { return p.net && !p.gone; }).map(function (p) { return netTake(function (e) { return e.k === "b" && e.t === tag && e.u === p.net; }, p.net).catch(function (x) { if (x && x.forfeit) { p.gone = true; return null; } throw x; }); }));
   }
+  // tra una mano e l'altra: ognuno deve premere PRONTO (mostra quanti sono pronti); nessuno viene buttato fuori
+  function tblReady(P, tag, en, topup) {
+    var live = P.filter(function (p) { return p.net && !p.gone; }), k = 1, tot = live.length + 1, pressed = false;
+    var w = el("div", "mp-wait", ""), b = el("button", "mp-go", "✅ PRONTO" + (topup ? " · +" + A.fmt(topup) + " $SDG" : "")); b.type = "button";
+    function paintW() { w.textContent = "Pronti " + k + "/" + tot; }
+    paintW(); en.appendChild(b); en.appendChild(w);
+    live.forEach(function (p) { netTake(function (e) { return e.k === "b" && e.t === tag && e.u === p.net; }, p.net).then(function () { k++; paintW(); }, function (x) { if (x && x.forfeit) { p.gone = true; tot--; paintW(); } }); });
+    return new Promise(function (res) {
+      b.addEventListener("click", function () {
+        if (pressed) return; pressed = true; A.haptic("medium"); b.disabled = true; b.textContent = "⏳ In attesa degli altri…"; k++; paintW();
+        netSend({ k: "b", t: tag });
+        var chk = setInterval(function () { if (!NET || NET.dead) return clearInterval(chk); if (k >= tot) { clearInterval(chk); res(); } }, 200);
+      });
+    });
+  }
   // fine tavolo: invio le fiches finali; il server paga in proporzione se la maggioranza concorda (o se chi manca è sparito)
   function tblFinish(P, net, box, en, label) {
     var N = NET, ch = {}, any = 0; P.forEach(function (p) { if (p.uid) { ch[p.uid] = Math.max(0, Math.round(p.stack != null ? p.stack : p.chips)); any += ch[p.uid]; } });
@@ -848,8 +863,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
           if (net) {
             var live = P.filter(function (p) { return !p.bot && p.chips > 0; }).length, fin = hn >= hands || live < 1 || (net.roster.length > 1 && live < 2);
             if (fin) { tblFinish(P, net, tot, en); return; }
-            var w = el("div", "mp-wait", "⏳ In attesa degli altri giocatori…"); en.appendChild(w);
-            tblBarrier(P, "h" + hn).then(function () { if (alive(E)) { c.firstChild.textContent = "BLACKJACK · " + A.fmt(bet) + " $SDG a mano · mano " + (hn + 1) + "/" + hands; hand(); } });
+            tblReady(P, "h" + hn, en, 0).then(function () { if (alive(E)) { c.firstChild.textContent = "BLACKJACK · " + A.fmt(bet) + " $SDG a mano · mano " + (hn + 1) + "/" + hands; hand(); } });
             return;
           }
           var a1 = el("button", "mp-go", "RIGIOCA"); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); });
@@ -1049,9 +1063,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         ord.forEach(function (o, i) { var r = el("div", "sc-sr" + (o.me ? " me" : "") + (i === 0 ? " top" : "")); r.appendChild(el("u", "", String(i + 1))); r.appendChild(el("span", "n", o.n)); r.appendChild(el("em", "", "+" + o.d)); r.appendChild(el("i", "t", String(o.t))); var bar = el("div", "bar"), f = el("s"); f.style.width = Math.min(100, o.t / target * 100) + "%"; bar.appendChild(f); r.appendChild(bar); st2.appendChild(r); });
         st2.appendChild(el("div", "sc-tg", over ? "" : "Primo a " + target + " punti" + (mx >= target ? " (pari in testa: si gioca un'altra mano)" : ""))); felt.appendChild(st2);
         if (over) { var w0 = tot.indexOf(mx); gameEnd(w0 === myEnt, false, [w0]); if (net) return; say(msg, w0 === 0 ? "HAI VINTO LA PARTITA! +" + A.fmt(st.bet) + " $SDG (simulato)" : "Partita persa: " + ENT[w0] + " arriva a " + mx + " (−" + A.fmt(st.bet) + " $SDG simulato)", w0 === 0 ? "mp-win" : "mp-lose"); return; }
-        var cb = el("button", "mp-go", "CONTINUA ▶"); cb.type = "button"; var cw = el("div", "mp-end"); cw.appendChild(cb); area.appendChild(cw); say(msg, "Premi CONTINUA: la prossima mano parte quando sono tutti pronti");
+        var cb = el("button", "mp-go", "CONTINUA ▶"); cb.type = "button"; var cw = el("div", "mp-end"); if (net) { area.appendChild(cw); say(msg, "Premi PRONTO: la prossima mano parte quando lo sono tutti"); tblReady(P, "r" + rn, cw, 0).then(function () { if (alive(E)) scopaTable(mode, target, tot, rn + 1, net); }); return; } cw.appendChild(cb); area.appendChild(cw); say(msg, "Premi CONTINUA: la prossima mano parte quando sono tutti pronti");
         cb.addEventListener("click", function () {
-          if (net) { area.innerHTML = ""; area.appendChild(el("div", "mp-wait", "⏳ In attesa degli altri giocatori…")); tblBarrier(P, "r" + rn).then(function () { if (alive(E)) scopaTable(mode, target, tot, rn + 1, net); }); return; }
+          if (net) { cb.remove(); tblReady(P, "r" + rn, cw, 0).then(function () { if (alive(E)) scopaTable(mode, target, tot, rn + 1, net); }); return; }
           area.innerHTML = ""; var w = el("div", "mp-wait"), k = 1; area.appendChild(w); function paintW() { w.textContent = "⏳ Continua · " + k + "/" + N + " pronti"; } paintW();
           (function tick() { if (!alive(E)) return; if (k >= N) return scopaTable(mode, target, tot, rn + 1); wait(500 + rnd(500)).then(function () { if (!alive(E)) return; k++; paintW(); tick(); }); })();
         });
@@ -1099,6 +1113,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       return [0.15 + rk / 12 * 0.15, 0.35 + rk / 12 * 0.25, 0.65, 0.75, 0.8, 0.85, 0.92, 0.97, 1][cat];
     }
     function live() { return P.filter(function (p) { return !p.fold; }); }
+    function autoAmt() { var o = (u >= 50 ? [1000, 2000, 5000] : [50, 100, 200, 500]).filter(function (n) { return n <= wallet; }); var t = cfg.buy || 0, best = 0; o.forEach(function (n) { if (!best || Math.abs(n - t) < Math.abs(best - t)) best = n; }); return best || (wallet > 0 ? wallet : 0); }
     function rebuy(cb) {                                         // fiche finite: ricompra dal tuo saldo oppure esci
       area.innerHTML = ""; var opts = (u >= 50 ? [1000, 2000, 5000] : [50, 100, 200, 500]).filter(function (n) { return n <= wallet; });
       if (!opts.length && wallet > 0) opts = [wallet];
@@ -1125,7 +1140,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       if (i >= P.length) { if (P.filter(function (p) { return !p.out && !p.gone && p.stack >= 2; }).length < 2) return pkEnd(true); return deal(); }
       var p = P[i], dn = ++NET.d;
       function apply2(e) { if (e && e.a === "rebuy" && e.n > 0) { p.stack = Math.max(2, Math.round(e.n / u)); } else { p.out = true; p.fold = true; } netRebuys(i + 1); }
-      if (p.me) { rebuy(function (n) { if (n > 0) { A.api("/api/room/topup", "POST", { id: NET.id, amount: n }).then(function () { wallet -= n; netSend({ k: "m", d: dn, a: "rebuy", n: n }); apply2({ a: "rebuy", n: n }); }).catch(function (x) { A.toast((x && x.message) || "Ricompra non riuscita"); netSend({ k: "m", d: dn, a: "out" }); apply2(null); }); } else { netSend({ k: "m", d: dn, a: "out" }); apply2(null); } }); }
+      if (p.me) { var aa = autoAmt(); (function (cbk) { if (aa > 0) { A.toast("💰 Fiche finite: +" + A.fmt(aa) + " $SDG dal tuo saldo"); cbk(aa); } else rebuy(cbk); })(function (n) { if (n > 0) { A.api("/api/room/topup", "POST", { id: NET.id, amount: n }).then(function () { wallet -= n; netSend({ k: "m", d: dn, a: "rebuy", n: n }); apply2({ a: "rebuy", n: n }); }).catch(function (x) { A.toast((x && x.message) || "Ricompra non riuscita"); netSend({ k: "m", d: dn, a: "out" }); apply2(null); }); } else { netSend({ k: "m", d: dn, a: "out" }); apply2(null); } }); }
       else { say(msg, "⏳ " + p.name + " ha finito le fiches…"); remoteAct(p, dn).then(function (e) { if (alive(E)) apply2(e); }); }
     }
     function street(s) {
@@ -1193,7 +1208,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       var fin = cfg.hands && hn >= cfg.hands;
       if (net) {
         if (fin) return pkEnd();
-        var w = el("div", "mp-wait", "⏳ In attesa degli altri giocatori…"); en.appendChild(w); tblBarrier(P, "h" + hn).then(function () { if (alive(E)) { c.firstChild.textContent = "POKER TEXAS · ante " + A.fmt(u) + " $SDG · mano " + (hn + 1) + "/" + cfg.hands; hand(); } }); return;
+        tblReady(P, "h" + hn, en, P[ME].stack < 2 ? autoAmt() : 0).then(function () { if (alive(E)) { c.firstChild.textContent = "POKER TEXAS · ante " + A.fmt(u) + " $SDG · mano " + (hn + 1) + "/" + cfg.hands; hand(); } }); return;
       }
       if (fin) { var diff = P[0].stack * u - cfg.buy; say(msg, "Fine del tavolo dopo " + cfg.hands + " mani: " + (diff > 0 ? "+" : "") + A.fmt(diff) + " $SDG (simulato)", diff > 0 ? "mp-win" : (diff < 0 ? "mp-lose" : "")); }
       else { var a1 = el("button", "mp-go", "RIGIOCA" + (cfg.hands ? " · mano " + (hn + 1) + "/" + cfg.hands : "")); a1.type = "button"; a1.addEventListener("click", function () { rematch(area, P.length, hand, E); }); en.appendChild(a1); }
@@ -1207,15 +1222,15 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     if (!(A.multiOn && A.multiOn())) { soon(); return; }
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
   }, openGP: function () { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); return true; } };
-  // link diretto dal gruppo (t.me/…?startapp=grandprix): apre subito il Grand Prix, già col tuo account
+  // link diretto dal gruppo (t.me/…?startapp=multiplayer oppure grandprix): apre il Multiplayer (o subito il Grand Prix), già col tuo account
   (function () {
     var sp = ""; try { sp = String((window.Telegram.WebApp.initDataUnsafe || {}).start_param || ""); } catch (e) {}
     if (!sp) { try { sp = new URLSearchParams(location.search).get("go") || ""; } catch (e) {} }
-    if (sp !== "grandprix") return;
+    if (sp !== "grandprix" && sp !== "multiplayer") return;
     var tries = 0, iv = setInterval(function () {
       if (++tries > 40) return clearInterval(iv);
       if (!(A.multiOn && A.multiOn()) || !(A.me && A.me()) || !document.querySelector(".tab[data-tab=mp]")) return;
-      clearInterval(iv); document.querySelector(".tab[data-tab=mp]").click(); setTimeout(function () { window.ArcadeMulti.openGP(); }, 250);
+      clearInterval(iv); document.querySelector(".tab[data-tab=mp]").click(); if (sp === "grandprix") setTimeout(function () { window.ArcadeMulti.openGP(); }, 250);
     }, 300);
   })();
 })();

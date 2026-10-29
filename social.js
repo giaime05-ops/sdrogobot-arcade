@@ -124,7 +124,7 @@
         A.styleRow(row, rst);
         var nm = el("div", "nm"); nm.appendChild(A.nameEl(r.name + (r.me ? " (tu)" : ""), rst)); if (r.badge && A.badgeEl) nm.appendChild(A.badgeEl(r.badge));
         row.appendChild(nm);
-        row.appendChild(el("div", "vl", A.fmt(r.value) + " " + j.unit));
+        row.appendChild(el("div", "vl", r.extra || (A.fmt(r.value) + " " + j.unit)));
         row.classList.add("tappable"); row.addEventListener("click", function () { openOther(r); });
         box.appendChild(row);
       });

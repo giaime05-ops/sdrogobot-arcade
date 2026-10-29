@@ -94,7 +94,8 @@
     }
     function dmin(x, y) { var m = 1e12; for (var q = 0; q < N; q++) { var dx = x - P[q][0], dy = y - P[q][1], d2 = dx * dx + dy * dy; if (d2 < m) m = d2; } return Math.sqrt(m); }
     function dgap(x, y) { var m = 1e12; for (var q in tr.gap) { var dx = x - P[q][0], dy = y - P[q][1], d2 = dx * dx + dy * dy; if (d2 < m) m = d2; } return Math.sqrt(m); }
-    var hasGap = jp.length > 0;
+    var hasGap = jp.length > 0, occ = [];
+    function fit(x, y, rad) { for (var q = 0; q < occ.length; q++) { var o = occ[q]; if (Math.hypot(x - o.x, y - o.y) < (rad + o.r) * 0.9) return false; } return true; }      // niente oggetti sovrapposti o incollati (alberi, sassi, laghetti)
     for (k = 0; k < N; k += 2) [1, -1].forEach(function (sg2) {       // scenografia: sempre lontana dalla pista (anche dalle altre parti del circuito)
       function ok(x, y, rad) { return dmin(x, y) > wl + rad + 24 && (!hasGap || dgap(x, y) > wl + 300 + rad); }
       if (tr.theme === "city") {                                                                                         // città di notte: palazzi con luci neon in alto e lampioni lungo la pista
@@ -104,9 +105,9 @@
         if (k % 8 === 0) { var ol = (wl + 22) * sg2; deco.push({ t: "lamp", x: P[k][0] + nx[k] * ol, y: P[k][1] + ny[k] * ol, c: Math.floor(k / 8) % 3 }); }
         return;
       }
-      if (R() < 0.6) { var o = (wl + 46 + R() * 220) * sg2, tx = P[k][0] + nx[k] * o, ty = P[k][1] + ny[k] * o, sz = 22 + R() * 14, hh = 18 + R() * 30, cc = Math.floor(R() * 3), sd = R() < 0.12; if (ok(tx, ty, sz)) trees.push({ x: tx, y: ty, h: hh, s: sz, sand: sd, c: cc }); }
-      if (R() < 0.5) { var o2 = (wl + 30 + R() * 330) * sg2, rr = R(), fx = P[k][0] + nx[k] * o2, fy = P[k][1] + ny[k] * o2, fc = Math.floor(R() * 4); if (ok(fx, fy, 10)) deco.push({ t: rr < 0.6 ? "flower" : "rock", x: fx, y: fy, c: fc }); }
-      if (R() < 0.06) { var o3 = (wl + 260 + R() * 160) * sg2, qx = P[k][0] + nx[k] * o3, qy = P[k][1] + ny[k] * o3, pw = 90 + R() * 90, ph = 60 + R() * 60, pa = R() * 3; if (ok(qx, qy, Math.hypot(pw, ph))) deco.push({ t: "pond", x: qx, y: qy, w: pw, h: ph, a: pa }); }
+      if (R() < 0.6) { var o = (wl + 46 + R() * 220) * sg2, tx = P[k][0] + nx[k] * o, ty = P[k][1] + ny[k] * o, sz = 22 + R() * 14, hh = 18 + R() * 30, cc = Math.floor(R() * 3), sd = R() < 0.12; if (ok(tx, ty, sz) && fit(tx, ty, sz * 1.1)) { trees.push({ x: tx, y: ty, h: hh, s: sz, sand: sd, c: cc }); occ.push({ x: tx, y: ty, r: sz * 1.1 }); } }
+      if (R() < 0.5) { var o2 = (wl + 30 + R() * 330) * sg2, rr = R(), fx = P[k][0] + nx[k] * o2, fy = P[k][1] + ny[k] * o2, fc = Math.floor(R() * 4); if (ok(fx, fy, 10) && fit(fx, fy, 9)) { deco.push({ t: rr < 0.6 ? "flower" : "rock", x: fx, y: fy, c: fc }); occ.push({ x: fx, y: fy, r: 9 }); } }
+      if (R() < 0.06) { var o3 = (wl + 260 + R() * 160) * sg2, qx = P[k][0] + nx[k] * o3, qy = P[k][1] + ny[k] * o3, pw = 90 + R() * 90, ph = 60 + R() * 60, pa = R() * 3; if (ok(qx, qy, Math.hypot(pw, ph)) && fit(qx, qy, Math.max(pw, ph) * 0.6)) { deco.push({ t: "pond", x: qx, y: qy, w: pw, h: ph, a: pa }); occ.push({ x: qx, y: qy, r: Math.max(pw, ph) * 0.6 }); } }
     });
     var SPT = tr.theme === "city" ? ["NEON BANK", "SDROGO CASINÒ", "LUCKY 7", "ZAP ENERGY", "ROYAL FLUSH", "TURBO OIL", "JACKPOT", "SDROGO ARCADE", "DADI D'ORO", "POKER KING"] : ["SDROGO ARCADE", "ROULETTE 36", "TURBO OIL", "SCOPA CLUB", "BLITZ GOMME", "ZAP ENERGY", "SDROGO BANK", "NOVA FUEL", "FORTUNA SDG", "ASSO DI CUORI"],
         SPC = [["#14052e", "#ffd23b"], ["#0b2a4a", "#35e6ff"], ["#3a0a2a", "#ff6fc8"], ["#0a3a22", "#52ff9a"], ["#2a0a0a", "#ff8a8a"]], si = 0; tr.spons = [];
@@ -174,15 +175,18 @@
       om = turn * 2.5 * (1 - 0.55 * Math.min(1, vf / VMAX)) * Math.min(1, vf / 60);
       if (human && vf > 1) { var vE = Math.min(vf, VMAX) + 0.25 * Math.max(0, vf - VMAX), lim = AG * (bst ? 1.7 : 1.4); if (vE * Math.abs(om) > lim) om = (om < 0 ? -1 : 1) * lim / vE; }                      // anti-testacoda
     }
+    if (tr.rain && !car.dd && car.spin <= 0 && !air) {                                                                   // asfalto bagnato: sterzo più "molle" e auto che allarga in curva (leggero con la pioggia, evidente con la forte)
+      car.omR = car.omR == null ? om : car.omR + (om - car.omR) * Math.min(1, (tr.rain > 1 ? 5.2 : 9) * DT); om = car.omR * (1 - (tr.rain > 1 ? 0.12 : 0.045) * Math.min(1, vf / VMAX));
+    } else car.omR = om;
     car.drift = car.dd ? 1 : 0;
     if (car.spin > 0) { car.spin -= DT; om = 7; vf *= Math.exp(-1.4 * DT); if (car.spin <= 0 && car.oil) { var o = car.oil, k2 = (o.idx + 4) % tr.N; car.x = tr.P[k2][0] + tr.nx[k2] * o.lat; car.y = tr.P[k2][1] + tr.ny[k2] * o.lat; car.a = tr.ta[k2]; car.vx = Math.cos(car.a) * 70; car.vy = Math.sin(car.a) * 70; car.idx = k2; car.oil = null; car.blink = 1; return; } }
-    var dem = vf * Math.abs(om), sl = (car.spin > 0 || car.dd) ? 0 : Math.max(0, Math.min(1.2, (dem - AG * (tr.rain > 1 ? 0.78 : tr.rain ? 0.88 : 1)) / (AG * 0.5)));
+    var dem = vf * Math.abs(om), sl = (car.spin > 0 || car.dd) ? 0 : Math.max(0, Math.min(1.2, (dem - AG * (tr.rain > 1 ? 0.7 : tr.rain ? 0.86 : 1)) / (AG * 0.5)));
     car.slip = sl; if (sl > 0) vf -= 30 * Math.min(1, sl) * DT;
     var wx = fx * vf + sx * vl, wy = fy * vf + sy * vl;
     car.a += om * DT;
     fx = Math.cos(car.a); fy = Math.sin(car.a); sx = -fy; sy = fx;
     vf = wx * fx + wy * fy; vl = wx * sx + wy * sy;
-    var dmp = car.dd ? 2.5 : (brk ? 7 : 12) * (1 - 0.92 * Math.min(1, sl)); if (tr.rain && !car.dd) dmp *= (tr.rain > 1 ? 0.38 : 0.6); if (!car.dd && car.rec > 0) { dmp = 6 + (dmp - 6) * (1 - car.rec); car.rec -= DT / 0.25; }
+    var dmp = car.dd ? 2.5 : (brk ? 7 : 12) * (1 - 0.92 * Math.min(1, sl)); if (tr.rain && !car.dd) dmp *= (tr.rain > 1 ? 0.3 : 0.55); if (!car.dd && car.rec > 0) { dmp = 6 + (dmp - 6) * (1 - car.rec); car.rec -= DT / 0.25; }
     vl *= Math.exp(-(air ? 0.3 : dmp) * DT);
     car.vx = fx * vf + sx * vl; car.vy = fy * vf + sy * vl;
     car.x += car.vx * DT; car.y += car.vy * DT;
@@ -214,15 +218,15 @@
   function crash(cars) {                     // contatti morbidi: le auto si toccano e si spingono, senza frenarsi
     function cc(c) { var co = Math.cos(c.a), si = Math.sin(c.a); return [[c.x + co * 11, c.y + si * 11], [c.x - co * 11, c.y - si * 11]]; }
     for (var i = 0; i < cars.length; i++) for (var j = i + 1; j < cars.length; j++) {
-      var a = cars[i], b = cars[j]; if (a.remote || b.remote || a.air > 0 || b.air > 0 || Math.abs(a.x - b.x) > 56 || Math.abs(a.y - b.y) > 56) continue;
+      var a = cars[i], b = cars[j]; if ((a.remote && b.remote) || a.air > 0 || b.air > 0 || Math.abs(a.x - b.x) > 56 || Math.abs(a.y - b.y) > 56) continue;
       var ca = cc(a), cb = cc(b);
       for (var p = 0; p < 2; p++) for (var q = 0; q < 2; q++) {
         var dx = cb[q][0] - ca[p][0], dy = cb[q][1] - ca[p][1], d = Math.hypot(dx, dy), R2 = 22;
         if (d < R2 && d > 0.01) {
           var nx = dx / d, ny = dy / d, o = Math.min(2.5, (R2 - d) / 2);
-          a.x -= nx * o; a.y -= ny * o; b.x += nx * o; b.y += ny * o;
+          if (!a.remote) { a.x -= nx * o; a.y -= ny * o; } if (!b.remote) { b.x += nx * o; b.y += ny * o; }      // contro un'auto online sposto solo la mia (l'altro telefono sposta la sua)
           var vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-          if (vn < 0) { var j2 = -vn * 0.25; a.vx -= nx * j2; a.vy -= ny * j2; b.vx += nx * j2; b.vy += ny * j2; }
+          if (vn < 0) { var j2 = -vn * 0.25; if (!a.remote) { a.vx -= nx * j2; a.vy -= ny * j2; } if (!b.remote) { b.vx += nx * j2; b.vy += ny * j2; } }
         }
       }
     }
@@ -279,13 +283,13 @@
     return { t: 999, path: path, i0: i0 };
   }
   function fmt(t) { if (!t) return "--:--.--"; var m = Math.floor(t / 60), s = t - m * 60; return m + ":" + (s < 10 ? "0" : "") + s.toFixed(2); }
-  function slider(v0, cb) {                                                                                          // cursore trascinabile col dito (continuo, non a scatti)
+  function slider(v0, cb, steps) {                                                                                          // cursore trascinabile col dito (continuo, non a scatti)
     var w = el("div", "rc2-sl"), fl = el("i"), th = el("b"); w.appendChild(fl); w.appendChild(th); var val = v0;
     function show() { fl.style.width = val * 100 + "%"; th.style.left = val * 100 + "%"; }
     function axis() { var m = new DOMMatrix(), n = w; while (n && n.nodeType === 1) { var tf = getComputedStyle(n).transform; if (tf && tf !== "none") m = new DOMMatrix(tf).multiply(m); n = n.parentElement; } return m; }
     function at(e) {                                                                                                   // funziona anche con lo schermo ruotato via software (modalità orizzontale)
       var rc = w.getBoundingClientRect(), m = axis(), ux = m.a, uy = m.b, L2 = ux * ux + uy * uy || 1, cx = rc.left + rc.width / 2, cy = rc.top + rc.height / 2;
-      val = Math.max(0, Math.min(1, 0.5 + ((e.clientX - cx) * ux + (e.clientY - cy) * uy) / (L2 * Math.max(1, w.offsetWidth)))); show(); cb(val);
+      val = Math.max(0, Math.min(1, 0.5 + ((e.clientX - cx) * ux + (e.clientY - cy) * uy) / (L2 * Math.max(1, w.offsetWidth)))); if (steps) val = Math.round(val * (steps - 1)) / (steps - 1); show(); cb(val);
     }
     var drag = false;
     w.addEventListener("pointerdown", function (e) { drag = true; try { w.setPointerCapture(e.pointerId); } catch (x) {} at(e); e.preventDefault(); e.stopPropagation(); });
@@ -293,6 +297,14 @@
     w.addEventListener("pointerup", function () { drag = false; }); w.addEventListener("pointercancel", function () { drag = false; });
     w.addEventListener("touchstart", function (e) { e.stopPropagation(); }, { passive: true }); w.addEventListener("touchmove", function (e) { e.preventDefault(); e.stopPropagation(); }, { passive: false });
     show(); return w;
+  }
+  function dragX(w) {                                                                                                // scorrimento orizzontale a dito che funziona anche con lo schermo ruotato via software
+    function axis() { var m = new DOMMatrix(), n = w; while (n && n.nodeType === 1) { var tf = getComputedStyle(n).transform; if (tf && tf !== "none") m = new DOMMatrix(tf).multiply(m); n = n.parentElement; } return m; }
+    var dn = false, lx = 0, ly = 0;
+    w.addEventListener("pointerdown", function (e) { dn = true; lx = e.clientX; ly = e.clientY; try { w.setPointerCapture(e.pointerId); } catch (x) {} });
+    w.addEventListener("pointermove", function (e) { if (!dn) return; var m = axis(), ux = m.a, uy = m.b, L2 = (ux * ux + uy * uy) || 1; w.scrollLeft -= ((e.clientX - lx) * ux + (e.clientY - ly) * uy) / L2; lx = e.clientX; ly = e.clientY; e.preventDefault(); });
+    w.addEventListener("pointerup", function () { dn = false; }); w.addEventListener("pointercancel", function () { dn = false; });
+    w.addEventListener("touchstart", function (e) { e.stopPropagation(); }, { passive: true }); w.addEventListener("touchmove", function (e) { e.preventDefault(); e.stopPropagation(); }, { passive: false });
   }
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -387,7 +399,7 @@
       for (i = 1; i < sl.length; i++) if (idx[i] == null) { while (used[nx] && nx < 7) nx++; used[nx] = 1; idx[i] = nx; }
       return idx.map(function (c) { return COLS[c]; });
     }
-    function newLobby() { return { col: 0, ti: 1, laps: 3, diff: 3, vis: 1, tab: 0, obst: true, pads: true, slip: true, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
+    function newLobby() { return { col: 0, ti: 0, laps: 3, diff: 3, vis: 1, tab: 0, obst: true, pads: true, slip: false, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
     function lobbyHub() {
       act("gp_lobby");
       root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; });
@@ -436,16 +448,14 @@
       if (L.tab === 0) {
         var list = el("div", "lb-slots");
         for (var i = 0; i < 8; i++) { (function (i) { var sl = L.slots[i], r = el("div", "lb-slot" + (sl ? "" : " free")); r.appendChild(el("u", "", String(i + 1))); var dot = el(sl && sl.t === "me" ? "button" : "i", "dot" + (sl && sl.t === "me" ? " pick" : "")); dot.style.background = sl ? lbCols(L)[i] : "transparent"; if (sl && sl.t === "me") { dot.type = "button"; dot.addEventListener("click", function () { palette(); }); } r.appendChild(dot);
-          if (!sl) { r.appendChild(el("span", "n", "libero")); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); var stt = sl.t === "me" ? ["me", "LEADER"] : (sl.t === "bot" ? ["bot", "BOT · " + DIFF[L.diff].n] : (sl.t === "wait" ? ["wait", "INVITATO…"] : (sl.on === false ? ["off", "OFFLINE"] : (sl.rdy ? ["rdy", "PRONTO"] : ["on", "ONLINE"])))); r.appendChild(el("em", stt[0], stt[1])); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { if (sl.uid && real() && L.rm) A.api("/api/room/kick", "POST", { id: L.rm, uid: sl.uid }).catch(function () {}); L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
+          if (!sl) { r.appendChild(el("span", "n", "libero")); var pl = el("button", "lb-plus", "＋"); pl.type = "button"; pl.addEventListener("click", function () { slotMenu(); }); r.appendChild(pl); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); var stt = sl.t === "me" ? ["me", "LEADER"] : (sl.t === "bot" ? ["bot", "BOT · " + DIFF[L.diff].n] : (sl.t === "wait" ? ["wait", "INVITATO…"] : (sl.on === false ? ["off", "OFFLINE"] : (sl.rdy ? ["rdy", "PRONTO"] : ["on", "ONLINE"])))); r.appendChild(el("em", stt[0], stt[1])); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { if (sl.uid && real() && L.rm) A.api("/api/room/kick", "POST", { id: L.rm, uid: sl.uid }).catch(function () {}); L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
           list.appendChild(r); })(i); }
         body.appendChild(list);
-        var ab = el("div", "lb-acts"); var full = L.slots.length >= 8;
-        [["＋ INVITA AMICO", function () { inviteSheet(); }, ""], ["＋ BOT", function () { if (L.slots.length < 8) { L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); } }, ""], ["RIEMPI CON BOT", function () { while (L.slots.length < 8) L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }, " alt"]].forEach(function (a) { var b = el("button", "lb-b" + a[2], a[0]); b.type = "button"; b.disabled = full; b.addEventListener("click", a[1]); ab.appendChild(b); }); body.appendChild(ab);
         var dr = el("div", "lb-row col"); dr.appendChild(el("span", "", "DIFFICOLTÀ BOT")); var chips = el("div", "lb-chips"); DIFF.forEach(function (df, n) { var b = el("button", "mp-gt wide" + (L.diff === n ? " on" : ""), df.n); b.type = "button"; b.addEventListener("click", function () { L.diff = n; lobby(); }); chips.appendChild(b); }); dr.appendChild(chips); body.appendChild(dr);
         body.appendChild(el("div", "rc-note", L.diff === 3 ? "Campione: i bot girano come il TUO record su questa pista (col server: come il miglior giro di tutti)." : "Nelle lobby pubbliche i bot li decide chi crea la lobby: puoi giocare solo con persone, solo con bot o misto."));
       } else {
         var th = el("div", "lb-tr"); TRACKS.forEach(function (tr, i) { var b = el("button", "lb-t" + (L.ti === i ? " on" : "")); b.type = "button"; var im = el("img"); im.src = thumb(tr); b.appendChild(im); b.appendChild(el("span", "", tr.name)); b.addEventListener("click", function () { L.ti = i; lobby(); }); th.appendChild(b); }); body.appendChild(th); 
-        var lr = el("div", "lb-row"); lr.appendChild(el("span", "", "GIRI")); var c2 = el("div", "lb-chips"); [3, 5, 7, 10].forEach(function (n) { var b = el("button", "mp-gt" + (L.laps === n ? " on" : ""), String(n)); b.type = "button"; b.addEventListener("click", function () { L.laps = n; lobby(); }); c2.appendChild(b); }); lr.appendChild(c2); body.appendChild(lr);
+        var lr = el("div", "lb-row"); lr.appendChild(el("span", "", "GIRI")); var lapv = el("b", "lb-lapv", String(L.laps)); lr.appendChild(slider((L.laps - 1) / 14, function (v) { L.laps = 1 + Math.round(v * 14); lapv.textContent = String(L.laps); clearTimeout(L._lt); L._lt = setTimeout(function () { if (LB === L) rmPush(); }, 400); }, 15)); lr.appendChild(lapv); body.appendChild(lr);
         var tg = el("div", "lb-tg");
         [["obst", "💧", "Ostacoli", "Pozze d'acqua e olio"], ["pads", "⚡", "Boost a terra", "Pedane acceleranti"], ["slip", "💨", "Scia", "Stando dietro prendi velocità"], ["assist", "🤝", "Aiuto ultimi", "Chi è indietro va un po' più forte"], ["qual", "⏱", "Qualifica", "Giro lanciato che decide la griglia"]].forEach(function (o) {
           var r = el("button", "lb-tog" + (L[o[0]] ? " on" : "")); r.type = "button"; r.appendChild(el("i", "", o[1])); var d = el("div", "d"); d.appendChild(el("b", "", o[2])); d.appendChild(el("span", "", o[3])); r.appendChild(d); r.appendChild(el("u", "sw")); r.addEventListener("click", function () { L[o[0]] = !L[o[0]]; lobby(); }); tg.appendChild(r); });
@@ -463,7 +473,7 @@
         var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: lbCols({ col: L.col, slots: act })[i] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, rain: L.rain, qual: L.qual, prize: L.prize, back: lobby };
         if (L.qual) o.qualPhase = true;
         var hum = L.slots.filter(function (x) { return x.t === "friend" && x.uid; });
-        if (real() && L.rm && hum.length) { A.api("/api/room/start", "POST", { id: L.rm }).then(function (j) { if (j && j.success) { clearInterval(L._pt); L._pt = 0; runRoom(j.room, function () { L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; LB = L; lobby(); }); } else A.toast((j && j.error) || "Non riesco ad avviare"); }).catch(function () { A.toast("Server non raggiungibile"); }); return; }
+        if (real() && L.rm && hum.length) { A.api("/api/room/start", "POST", { id: L.rm }).then(function (j) { if (j && j.success) { clearInterval(L._pt); L._pt = 0; runRoom(j.room); } else A.toast((j && j.error) || "Non riesco ad avviare"); }).catch(function () { A.toast("Server non raggiungibile"); }); return; }
         if (real() && L.rm) { A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); if (L._pt) { clearInterval(L._pt); L._pt = 0; } L.rm = 0; L._ens = 0; }   // gara solo con bot: la lobby online si chiude
         race(TRACKS[L.ti], "race", o);
       });
@@ -503,6 +513,19 @@
         }).catch(function () { busy = 0; });
       }, 1200);
     }
+        function afterRace(room) {                                                                                       // finita la gara si resta nella stessa lobby: tutti "non pronti", si riparte quando lo sono
+      root.innerHTML = ""; root.className = "rc-root lobby"; var lv = function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); }; hook(function () { lv(); return true; }); top("LOBBY", lv, "‹ Esci");
+      var nt = el("div", "rc-note", "Torno alla lobby…"); root.appendChild(nt); var tries = 0;
+      (function go() {
+        if (!root.isConnected || !nt.isConnected) return;
+        A.api("/api/room/rematch", "POST", { id: room.id, round: room.round | 0 }).then(function (k) {
+          if (!root.isConnected || !nt.isConnected) return;
+          if (k && k.wait) { nt.textContent = "Aspetto che tutti finiscano la gara…"; setTimeout(go, 1500); return; }
+          if (!k || !k.success) { A.toast("La lobby non c'è più"); lobbyHub(); return; }
+          if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room);
+        }).catch(function () { if (++tries < 3) { setTimeout(go, 1200); return; } A.toast("La lobby è già ripartita o chiusa"); lobbyHub(); });
+      })();
+    }
     function runRoom(room, back, order, n0) {                                                                      // parte la gara online: stessa pista, stesso ordine in griglia per tutti
       var ps = order ? order.map(function (u) { return room.players.filter(function (p) { return p.uid === u; })[0] || { uid: u, name: "Pilota" }; }) : room.players, x = room.cfg.x || {};
       var mei = Math.max(0, ps.findIndex(function (p) { return p.uid === room.me; })), cols = lbCols({ col: x.hcol | 0, slots: ps });
@@ -510,7 +533,7 @@
       var roster = ord.map(function (i) { return { name: ps[i].name, col: cols[i], uid: ps[i].uid }; }), grid = [], map = {};
       ord.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
       var tr = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1]; build(tr);
-      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, room: { id: room.id, uid: room.me, map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || lobbyHub });
+      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, room: { id: room.id, uid: room.me, map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
     }
     function guestLobby(room) {                                                                                    // lobby di chi è entrato (invitato o dalla lista pubblica): segna PRONTO e aspetta che l'host avvii
       root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1], busy = 0, myRdy = false, lastRm = room;
@@ -547,6 +570,13 @@
         }).catch(function (e) { busy = 0; if (e && e.status === 403 && alive) { alive = false; clearInterval(pt); A.toast("Sei stato tolto dalla lobby"); lobbyHub(); } });
       }, 800);
     }
+    function slotMenu() {                                                                                           // il "+" di un posto libero: invita un amico o aggiungi un bot
+      var L = LB; if (L.slots.length >= 8) return; var ov = el("div", "lb-pal-ov"), bx = el("div", "lb-pal sm");
+      bx.appendChild(el("b", "", "AGGIUNGI AL POSTO LIBERO"));
+      [["👥 Invita un amico", function () { inviteSheet(); }], ["🤖 Aggiungi un bot", function () { L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }], ["🤖🤖 Riempi tutti i posti con bot", function () { while (L.slots.length < 8) L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }]].forEach(function (a) {
+        var b = el("button", "mp-go lb-smb", a[0]); b.type = "button"; b.addEventListener("click", function () { ov.remove(); a[1](); }); bx.appendChild(b); });
+      ov.appendChild(bx); ov.addEventListener("click", function (e) { if (e.target === ov) ov.remove(); }); root.appendChild(ov);
+    }
     function inviteSheet() {
       var L = LB; if (L.slots.length >= 8) return;
       window.ArcadeMulti.friendSheet(L.slots.map(function (x) { return x.pid; }).filter(Boolean), function (f) {
@@ -566,8 +596,7 @@
       var tpb = top(mode === "single" ? "SINGOLO" : "GARA RAPIDA", menu, "‹ Grand Prix"); if (A.isSandbox && A.isSandbox()) { try { tpb.appendChild(el("span", "rc-wal", "💰 " + A.fmt(wal()) + " (prova)")); } catch (e) {} }
       function chipRow(label, items, cur, fn) { var r = el("div", "rc-laps"); r.appendChild(el("span", "", label)); items.forEach(function (it) { var b = el("button", "mp-gt wide" + (cur(it[0]) ? " on" : ""), it[1]); b.type = "button"; b.addEventListener("click", function () { fn(it[0]); tracks(mode); }); r.appendChild(b); }); root.appendChild(r); }
       if (mode !== "single") {
-        var lr = el("div", "rc-laps"); lr.appendChild(el("span", "", "GIRI"));
-        [3, 5, 7, 10].forEach(function (n) { var b = el("button", "mp-gt" + (RL === n ? " on" : ""), String(n)); b.type = "button"; b.addEventListener("click", function () { RL = n; lsSet("arc_race4_laps", n); tracks(mode); }); lr.appendChild(b); });
+        var lr = el("div", "rc-laps"); lr.appendChild(el("span", "", "GIRI")); var lapq = el("b", "lb-lapv", String(RL)); lr.appendChild(slider((RL - 1) / 14, function (v) { RL = 1 + Math.round(v * 14); lapq.textContent = String(RL); lsSet("arc_race4_laps", RL); }, 15)); lr.appendChild(lapq);
         root.appendChild(lr);
         var dr = el("div", "rc-laps"); dr.appendChild(el("span", "", "BOT"));
         DIFF.forEach(function (df, n) { var b = el("button", "mp-gt wide" + (RD === n ? " on" : ""), df.n); b.type = "button"; b.addEventListener("click", function () { RD = n; lsSet("arc_race4_diff", n); tracks(mode); }); dr.appendChild(b); });
@@ -681,13 +710,12 @@
       var GO = 3.4, trail = [], curSeg = null, PH = qual ? "qual" : "race", waitT0 = 0, SPC = 0;
       (function () { for (var i = 0; i < tr.N; i++) { var a = tr.P[i], b = tr.P[(i + 1) % tr.N]; SPC += Math.hypot(b[0] - a[0], b[1] - a[1]); } SPC = Math.max(1, SPC / tr.N); })();
       function srvNow() { return performance.now() / 1000 + RMT.off; }
-      function remStep(c) {                                                                                     // auto di un altro giocatore: posizione stimata "adesso" (ultimo campione + velocità × età), poi si avvicina morbida
-        var sm = c.sm; if (!sm) return; var age = Math.max(0, Math.min(0.45, srvNow() - sm.ts)), w = 0;      // età del campione = ora del server adesso − ora del server quando l'ha mandato chi guida (include rete e attese)
+      function remStep(c) {                                                                                     // auto di un altro giocatore: posizione stimata "adesso" (ultimo campione + velocità × età); ai nuovi campioni lo scarto si assorbe piano (niente scatti)
+        var sm = c.sm; if (!sm) return; var age = Math.max(0, Math.min(0.45, srvNow() - sm.ts)), w = 0;      // età = ora del server adesso − ora del server quando l'ha mandato chi guida (include rete e attese)
         if (c.sp && sm.tt > c.sp.tt) { var d0 = sm.a - c.sp.a; d0 = Math.atan2(Math.sin(d0), Math.cos(d0)); w = Math.max(-4, Math.min(4, d0 / ((sm.tt - c.sp.tt) / 1000))); }
-        var th = w * age / 2, cth = Math.cos(th), sth = Math.sin(th), tx = sm.x + (sm.vx * cth - sm.vy * sth) * age, ty = sm.y + (sm.vx * sth + sm.vy * cth) * age, ta = sm.a + w * age;      // la velocità ruota con la curva
-        
-        if (Math.hypot(tx - c.x, ty - c.y) > 220) { c.x = tx; c.y = ty; } else { c.x += (tx - c.x) * 0.45; c.y += (ty - c.y) * 0.45; }
-        var d1 = ta - c.a; d1 = Math.atan2(Math.sin(d1), Math.cos(d1)); c.a += d1 * 0.45; c.vx = sm.vx; c.vy = sm.vy;
+        var th = w * age / 2, cth = Math.cos(th), sth = Math.sin(th), vxr = sm.vx * cth - sm.vy * sth, vyr = sm.vx * sth + sm.vy * cth, ex = sm.x + vxr * age, ey = sm.y + vyr * age, ea = sm.a + w * age;
+        if (c.smNew) { c.smNew = false; if (c.ox === undefined) { c.ox = 0; c.oy = 0; c.oa = 0; } else { c.ox = c.x - (ex - vxr * DT); c.oy = c.y - (ey - vyr * DT); var da = c.a - (ea - w * DT); c.oa = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.hypot(c.ox, c.oy) > 260) { c.ox = 0; c.oy = 0; c.oa = 0; } } }
+        var dc = Math.exp(-DT / 0.3); c.ox *= dc; c.oy *= dc; c.oa *= dc; c.x = ex + c.ox; c.y = ey + c.oy; c.a = ea + c.oa; c.vx = sm.vx; c.vy = sm.vy;
         c.prog = sm.pr / 10 + age * Math.hypot(sm.vx, sm.vy) / SPC; c.idx = ((Math.floor(c.prog) % tr.N) + tr.N) % tr.N;
       }
       if (window.__RACE_DEBUG) window.__RACE_DEBUG({ me: me, tr: tr, cars: cars, inp: inp });
@@ -702,7 +730,7 @@
         pbox = el("div", "rc2-end"); pbox.appendChild(el("b", "", "IN PAUSA"));
         var sr = el("div", "rc2-snd"); [["sfx", "🔊 Suoni"], ["music", "🎵 Musica"]].forEach(function (o) { var row = el("div", "rc2-vol"), nm = el("span", "", o[1]); row.appendChild(nm); row.appendChild(slider(SN[o[0]], function (v) { SN[o[0]] = v; lsSet("arc_race4_snd", SN); var q = {}; q[o[0]] = v; AU.set(q); })); sr.appendChild(row); }); pbox.appendChild(sr);
         var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIPRENDI"), rs = el("button", "mp-go mp-alt2", opts.room ? "" : "RICOMINCIA"), b = el("button", "mp-go mp-alt", "ESCI"); a.type = b.type = rs.type = "button";
-        a.addEventListener("click", function () { pause(false); }); rs.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); rw.appendChild(a); if (!opts.room) rw.appendChild(rs); rw.appendChild(b); pbox.appendChild(rw); full.appendChild(pbox);
+        a.addEventListener("click", function () { pause(false); }); rs.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); if (opts.room && opts.exit) opts.exit(); else goBack(); }); rw.appendChild(a); if (!opts.room) rw.appendChild(rs); rw.appendChild(b); pbox.appendChild(rw); full.appendChild(pbox);
       }
       xb.addEventListener("click", function () { pause(!paused); });
       window.ArcadeBackHide = false; window.ArcadeBackHook = function () { if (state === "end") return false; pause(!paused); return true; }; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {}
@@ -777,13 +805,15 @@
             A.api("/api/room/result", "POST", { id: RMT.id, order: ord2 }).then(function (j) { if (j && j.success && j.settled && resLn && !resLn._d) { resLn._d = 1; var py = ((j.result || {}).pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} } }).catch(function () {});
           } else if (opts.prize) { var pz = [opts.prize, Math.round(opts.prize * 0.75), Math.round(opts.prize * 0.5)][p0] || 0; box.appendChild(el("div", "rc-lap", pz ? "💰 Premio: +" + A.fmt(pz) + " $SDG (simulato)" : "Premi: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)))); }
         }
-        var tb = el("div", "rc2-tbl"), showLaps = laps <= 4;
+        var tb = el("div", "rc2-tbl lt"), lcol = el("div", "lt-l"), rcol = el("div", "lt-r"), rin = el("div", "lt-in"), hd = el("div", "lr h");      // sinistra: posizione, nome, totale; destra: tutti i giri (si scorre col dito)
+        lcol.appendChild(el("div", "lr h", "")); for (var gi = 1; gi <= laps; gi++) hd.appendChild(el("i", "", "G" + gi)); rin.appendChild(hd);
         rows.forEach(function (c, i) {
-          var r = el("div", "rr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me && !opts.roster ? "Tu" : c.name), tt = el("span", "tt", c.dnf ? "RITIRATO" : fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt);
-          var lp = el("span", "lp"), bst = Math.min.apply(null, c.lapTs && c.lapTs.length ? c.lapTs : [0]);
-          (c.lapTs || []).forEach(function (x) { if (showLaps || x === bst) lp.appendChild(el("i", x <= fl + 0.0005 ? "fl" : "", (showLaps ? "" : "Migliore ") + fmt(x))); }); r.appendChild(lp); tb.appendChild(r);
+          var r = el("div", "lr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me && !opts.roster ? "Tu" : c.name), tt = el("span", "tt", c.dnf ? "RITIRATO" : fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt); lcol.appendChild(r);
+          var lp = el("div", "lr" + (c === me ? " me" : "")), bst = Math.min.apply(null, c.lapTs && c.lapTs.length ? c.lapTs : [1e9]);
+          for (var q = 0; q < laps; q++) { var x = (c.lapTs || [])[q]; lp.appendChild(el("i", x == null ? "" : (x <= fl + 0.0005 ? "fl" : (x === bst ? "bs" : "")), x == null ? "–" : fmt(x))); } rin.appendChild(lp);
         });
-        var pg2 = el("div", "rc2-pg2"); pg2.appendChild(tb); pg2.appendChild(el("div", "rc-lap", "⚡ = giro più veloce" + (fl < 1e9 ? " (" + fmt(fl) + ")" : "")));
+        rcol.appendChild(rin); tb.appendChild(lcol); tb.appendChild(rcol); dragX(rcol);
+        var pg2 = el("div", "rc2-pg2"); pg2.appendChild(tb); pg2.appendChild(el("div", "rc-lap", "⚡ = giro più veloce" + (fl < 1e9 ? " (" + fmt(fl) + ")" : "") + (laps > 3 ? " · scorri i giri col dito ↔" : "")));
         var pod = null, tgl = null;
         if (!solo && rows.length >= 2) {                                                                                  // schermata 1: podio con le auto dei primi tre
           pod = el("div", "rc2-pod"); var ord = rows.length >= 3 ? [1, 0, 2] : [1, 0];
@@ -1121,8 +1151,8 @@
             (j.events || []).slice(skip).forEach(function (e) {
               if (e.k !== "p" || e.u === RMT.uid) return; var c = null; cars.forEach(function (q) { if (q.remote === e.u) c = q; }); if (!c) return;
               var smp = { ts: e.ss || ((e.t || srvNow()) - 0.08), tt: e.tt || 0, x: e.x, y: e.y, a: e.a / 100, vx: e.vx, vy: e.vy, pr: e.pr }; if (c.sm && smp.tt < c.sm.tt) return;
-              if (!c.sm) { c.x = smp.x; c.y = smp.y; c.a = smp.a; } c.sp = c.sm; c.sm = smp; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d; if (e.lt) c.lapTs = e.lt.map(function (q) { return q / 1000; });
-              if (e.f && (!c.fin || c.dnf)) { c.fin = true; c.dnf = false; c.finT = e.f / 1000; }
+              if (!c.sm) { c.x = smp.x; c.y = smp.y; c.a = smp.a; } c.sp = c.sm; c.sm = smp; c.smNew = true; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d; if (e.lt) c.lapTs = e.lt.map(function (q) { return q / 1000; });
+              if (e.f && (!c.fin || c.dnf)) { c.fin = true; c.dnf = false; c.finT = e.f / 1000; if (!me.fin) say2("🏁 " + c.name + " ha tagliato il traguardo (" + ORD[Math.min(7, cars.filter(function (q) { return q.fin; }).length - 1)] + ")", 2.4); }
             });
             if (j.room && j.room.result && resLn && !resLn._d) { resLn._d = 1; var py = (j.room.result.pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} }
           }).catch(function () { rInfl = Math.max(0, rInfl - 1); });

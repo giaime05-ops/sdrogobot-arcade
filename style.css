@@ -1747,3 +1747,19 @@ html.mo .hbtns:not(.has)::after{content:"";flex:1 1 0;min-height:0;width:46px;bo
 .lb-open.mine{border-color:#ffd23b;background:rgba(255,210,59,.12)}.lb-open .lbi{font-style:normal;font-size:24px;width:44px;text-align:center}
 .lb-go.on{background:linear-gradient(180deg,#2fd36f,#14924a);box-shadow:0 0 18px rgba(47,211,111,.55)}
 .rc2-end.wait{max-width:min(92%,420px)}.rc2-end .wl .rr .tt.dn{color:#ff8da1}.rc2-end .wl .rr .tt.lv{color:#b9a9d6;font-size:.85em}
+/* lobby: posto libero con "+", cursore dei giri */
+.lb-plus{margin-left:auto;width:36px;height:28px;border-radius:10px;border:1.5px dashed rgba(255,255,255,.55);background:rgba(255,255,255,.08);color:#fff;font:700 18px Rajdhani,sans-serif;padding:0;cursor:pointer}
+.lb-slot.free .n{flex:1}
+.lb-lapv{font:400 18px Bungee,Rajdhani,sans-serif;color:#ffd23b;min-width:30px;text-align:right}
+.lb-pal.sm{gap:10px;width:min(86%,320px)}.lb-smb{width:100%;padding:12px;font-size:15px}
+.lb-row .rc2-sl,.rc-laps .rc2-sl{min-width:120px}
+
+/* tabella tempi: nomi fissi a sinistra, tutti i giri a destra (scorrevole) */
+.rc2-tbl.lt{display:flex;gap:6px;align-items:flex-start;max-width:100%}
+.rc2-tbl.lt .lt-l{flex:0 0 auto}.rc2-tbl.lt .lt-r{flex:1 1 0;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;touch-action:none;cursor:grab}.rc2-tbl.lt .lt-r::-webkit-scrollbar{display:none}
+.rc2-tbl.lt .lt-in{display:inline-block;min-width:100%}
+.rc2-tbl.lt .lr{display:flex;align-items:center;gap:8px;height:26px;padding:0 6px;border-radius:8px;font:700 15px Rajdhani,sans-serif;color:#e6dcff;white-space:nowrap}
+.rc2-tbl.lt .lr:nth-child(even){background:rgba(255,255,255,.07)}.rc2-tbl.lt .lr.me{background:rgba(255,210,59,.18);color:#ffe27a}
+.rc2-tbl.lt .lt-l .pn{width:22px}.rc2-tbl.lt .lt-l .nm{width:74px;overflow:hidden;text-overflow:ellipsis}.rc2-tbl.lt .lt-l .tt{width:78px;text-align:right}
+.rc2-tbl.lt .lt-r i{font-style:normal;flex:0 0 56px;text-align:center;color:#9fe3ff;font-size:13px}.rc2-tbl.lt .lt-r i.fl{color:#ff5ad0;text-shadow:0 0 6px #ff3db0}.rc2-tbl.lt .lt-r i.bs{color:#7dffb0}
+.rc2-tbl.lt .lr.h{color:#b9a9d6;font-size:11px;letter-spacing:.1em}
