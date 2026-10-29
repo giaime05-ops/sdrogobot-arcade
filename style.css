@@ -1736,5 +1736,5 @@ body.sbx .pg-head{padding-top:22px}
 .gsw:not(.on){opacity:.75}
 
 /* presentazione pista: titolo in basso a sinistra (stile "lower third"), resta per tutta la panoramica lenta */
-.rc2-intro{align-items:flex-start;justify-content:flex-end;padding:0 0 11% 7%;box-sizing:border-box;animation-duration:8.4s}
+.rc2-intro{align-items:flex-start;justify-content:flex-end;padding:0 0 calc(11% + 24px) 7%;box-sizing:border-box;animation-duration:8.4s}
 .rc2-intro b{font-size:40px}
