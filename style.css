@@ -1768,3 +1768,29 @@ html.mo .hbtns:not(.has)::after{content:"";flex:1 1 0;min-height:0;width:46px;bo
 .lt-tabs{display:flex;gap:8px;justify-content:center;margin:0 0 8px}.lt-tab{padding:6px 14px;border-radius:999px;border:1px solid rgba(255,90,208,.5);background:rgba(255,255,255,.06);color:#e6dcff;font:700 14px Rajdhani,sans-serif;letter-spacing:.06em}.lt-tab.on{background:linear-gradient(135deg,#ff3db0,#a855f7);color:#fff;border-color:transparent;box-shadow:0 0 10px rgba(255,61,176,.5)}
 .rc-root.lobby>.lb-close{flex:0 0 auto;margin-top:6px;font-size:13px;padding:9px 12px;background:rgba(255,60,110,.08);border:1px solid rgba(255,60,110,.45);color:#ff8fb0;box-shadow:none}
 .rc-root.lobby>.lb-close.arm{background:linear-gradient(180deg,#ff3c6e,#b01a45);color:#fff;box-shadow:0 0 16px rgba(255,60,110,.5)}
+.lb-ann{margin:0 0 10px!important;font-size:14px;padding:11px 12px;border:1px solid rgba(255,60,200,.55);background:rgba(255,60,200,.10);color:#ffa6e6}
+.lb-ann:disabled{opacity:.55}
+.rc-t.abs{display:flex;flex-wrap:wrap;gap:2px 6px;line-height:1.35}
+
+/* gara lunga: gomme, BOX */
+.rc2-tyre{position:absolute;left:calc(12px + var(--sl,0px));top:calc(60px + var(--st,0px));display:flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-radius:14px;background:rgba(8,4,20,.62);border:1.5px solid rgba(255,255,255,.35);color:#fff;font:700 13px Rajdhani,sans-serif;text-align:left;z-index:5}
+.rc2-tyre .ico{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:400 15px Bungee,Rajdhani,sans-serif;border:3px solid rgba(0,0,0,.45);box-shadow:0 0 0 2px rgba(255,255,255,.55)}
+.rc2-tyre .tw{display:flex;flex-direction:column;gap:2px;min-width:104px}.rc2-tyre b{font:700 14px Rajdhani,sans-serif;letter-spacing:.02em}
+.rc2-tyre .wb{display:block;height:7px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden}.rc2-tyre .wb i{display:block;height:100%;border-radius:4px}
+.rc2-tyre .wb i.g{background:#2fd36f}.rc2-tyre .wb i.y{background:#ffd23b}.rc2-tyre .wb i.r{background:#ff3b4f}
+.rc2-tyre em{font-style:normal;font-size:12px;color:#ffa6e6;min-height:13px}
+.rc2-tyre.warn{border-color:#ff3dc8;box-shadow:0 0 14px rgba(255,61,200,.7);animation:tyw .8s infinite}@keyframes tyw{50%{box-shadow:0 0 4px rgba(255,61,200,.3)}}
+.rc2-tpick{display:none;position:absolute;left:calc(12px + var(--sl,0px));top:calc(112px + var(--st,0px));padding:8px;border-radius:14px;background:rgba(12,6,32,.95);border:2px solid #ff3db0;flex-direction:column;gap:6px;z-index:6;min-width:190px}
+.rc2-tpick.show{display:flex}.rc2-tpick small{color:#ffa6e6;font:700 12px Rajdhani,sans-serif;letter-spacing:.08em}
+.rc2-tpick button{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.07);color:#fff;font:700 15px Rajdhani,sans-serif;text-align:left}
+.rc2-tpick button.on{border-color:#ff3dc8;background:rgba(255,61,200,.25)}.rc2-tpick button:disabled{opacity:.4}
+.rc2-tpick button i{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:400 13px Bungee,sans-serif;font-style:normal;color:#222;border:3px solid rgba(0,0,0,.4)}
+.rc2-tpick .cx{justify-content:center;color:#ff8fb0;border-color:rgba(255,60,110,.5)}
+.rc2-boxb{display:none;position:absolute;left:50%;top:24%;transform:translateX(-50%);padding:6px 20px;border-radius:14px;background:rgba(255,61,200,.88);color:#fff;font:400 26px Bungee,Rajdhani,sans-serif;letter-spacing:.08em;text-shadow:0 2px 4px #000;pointer-events:none;white-space:nowrap;z-index:5}
+.rc2-boxb.on{display:block;animation:boxf .7s infinite}.rc2-boxb.pit{animation:none;background:rgba(12,6,32,.9);border:2px solid #ff3dc8}@keyframes boxf{50%{opacity:.45}}
+.rc2.intro .rc2-tyre,.rc2.intro .rc2-tpick,.rc2.intro .rc2-boxb{display:none!important}
+.rc2-tower .tr i.ty{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:2px;vertical-align:middle;border:1.5px solid rgba(0,0,0,.5)}
+.st-box{margin-top:8px;text-align:left}.st-box small{display:block;color:#ffa6e6;font:700 12px Rajdhani,sans-serif;letter-spacing:.08em;margin-bottom:4px}
+.st-row{display:grid;grid-template-columns:62px 1fr 64px;gap:6px;align-items:center;margin:3px 0;font:700 13px Rajdhani,sans-serif;color:#fff}.st-row.me .nm{color:#ffd23b}
+.st-bar{display:flex;gap:2px;height:18px;border-radius:6px;overflow:hidden}.st-bar span{display:flex;align-items:center;justify-content:center;font:700 11px Rajdhani,sans-serif;min-width:0}
+.st-row em{font-style:normal;color:#cfe0ff;font-size:12px;text-align:right}.st-row em.pen{color:#ff8fb0}
