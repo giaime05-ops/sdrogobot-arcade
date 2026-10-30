@@ -117,7 +117,7 @@
   }
   function newCar(tr, slot) {
     var a = tr.ta[0], sx = -Math.sin(a), sy = Math.cos(a), row = Math.floor(slot / 2), side = slot % 2 ? 1 : -1;      // griglia 2x2
-    var x = tr.P[0][0] - Math.cos(a) * (40 + row * 44) + sx * side * 28, y = tr.P[0][1] - Math.sin(a) * (40 + row * 44) + sy * side * 28;
+    var x = tr.P[0][0] - Math.cos(a) * (40 + row * 72) + sx * side * 28, y = tr.P[0][1] - Math.sin(a) * (40 + row * 72) + sy * side * 28;
     return { x: x, y: y, a: a, vx: 0, vy: 0, idx: 0, prog: 0, off: false, hit: 0, slip: 0, spin: 0, boostT: 0, meter: 0, dd: 0, dT: 0, omS: 0, stall: 0, fin: false, finT: 0, slot: slot, col: COLS[slot], name: NAMES[slot], lap: 1 };
   }
   function nearest(tr, car) {
@@ -399,7 +399,7 @@
       for (i = 1; i < sl.length; i++) if (idx[i] == null) { while (used[nx] && nx < 7) nx++; used[nx] = 1; idx[i] = nx; }
       return idx.map(function (c) { return COLS[c]; });
     }
-    function newLobby() { return { col: 0, ti: 0, laps: 3, diff: 3, vis: 1, tab: 0, obst: true, pads: true, slip: false, assist: false, qual: false, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
+    function newLobby() { return { col: 0, ti: 0, laps: 3, diff: 3, vis: 1, tab: 0, obst: true, pads: true, slip: false, assist: false, qual: false, coll: true, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
     function lobbyHub() {
       act("gp_lobby");
       root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; });
@@ -457,7 +457,7 @@
         var th = el("div", "lb-tr"); TRACKS.forEach(function (tr, i) { var b = el("button", "lb-t" + (L.ti === i ? " on" : "")); b.type = "button"; var im = el("img"); im.src = thumb(tr); b.appendChild(im); b.appendChild(el("span", "", tr.name)); b.addEventListener("click", function () { L.ti = i; lobby(); }); th.appendChild(b); }); body.appendChild(th); 
         var lr = el("div", "lb-row"); lr.appendChild(el("span", "", "GIRI")); var lapv = el("b", "lb-lapv", String(L.laps)); lr.appendChild(slider((L.laps - 1) / 14, function (v) { L.laps = 1 + Math.round(v * 14); lapv.textContent = String(L.laps); clearTimeout(L._lt); L._lt = setTimeout(function () { if (LB === L) rmPush(); }, 400); }, 15)); lr.appendChild(lapv); body.appendChild(lr);
         var tg = el("div", "lb-tg");
-        [["obst", "💧", "Ostacoli", "Pozze d'acqua e olio"], ["pads", "⚡", "Boost a terra", "Pedane acceleranti"], ["slip", "💨", "Scia", "Stando dietro prendi velocità"], ["assist", "🤝", "Aiuto ultimi", "Chi è indietro va un po' più forte"], ["qual", "⏱", "Qualifica", "Giro lanciato che decide la griglia"]].forEach(function (o) {
+        [["obst", "💧", "Ostacoli", "Pozze d'acqua e olio"], ["pads", "⚡", "Boost a terra", "Pedane acceleranti"], ["slip", "💨", "Scia", "Stando dietro prendi velocità"], ["assist", "🤝", "Aiuto ultimi", "Chi è indietro va un po' più forte"], ["coll", "💥", "Contatti", "Le auto si toccano e si spingono"], ["qual", "⏱", "Qualifica", "Giro lanciato che decide la griglia"]].forEach(function (o) {
           var r = el("button", "lb-tog" + (L[o[0]] ? " on" : "")); r.type = "button"; r.appendChild(el("i", "", o[1])); var d = el("div", "d"); d.appendChild(el("b", "", o[2])); d.appendChild(el("span", "", o[3])); r.appendChild(d); r.appendChild(el("u", "sw")); r.addEventListener("click", function () { L[o[0]] = !L[o[0]]; lobby(); }); tg.appendChild(r); });
         body.appendChild(tg);
         var wr = el("div", "lb-row"); wr.appendChild(el("span", "", "METEO")); var cw = el("div", "lb-chips"); [[0, "☀️ Sereno"], [1, "🌦 Leggera"], [2, "🌧 Forte"]].forEach(function (m) { var b = el("button", "mp-gt wide" + ((L.rain | 0) === m[0] ? " on" : ""), m[1]); b.type = "button"; b.addEventListener("click", function () { L.rain = m[0]; lobby(); }); cw.appendChild(b); }); wr.appendChild(cw); body.appendChild(wr);
@@ -470,7 +470,7 @@
       var go = el("button", "mp-go lb-go", "▶ AVVIA GARA · " + actN + " piloti" + (L.qual ? " · con qualifica" : "")); go.type = "button"; go.disabled = actN < 2 || pend.length > 0;
       if (actN < 2) go.textContent = "Servono almeno 2 piloti: aggiungi un bot o invita un amico"; else if (pend.length) go.textContent = "In attesa che siano pronti: " + pend.slice(0, 3).map(function (x) { return x.name; }).join(", ");
       go.addEventListener("click", function () {
-        var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: lbCols({ col: L.col, slots: act })[i] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, rain: L.rain, qual: L.qual, prize: L.prize, back: lobby };
+        var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: lbCols({ col: L.col, slots: act })[i] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, coll: L.coll, rain: L.rain, qual: L.qual, prize: L.prize, back: lobby };
         if (L.qual) o.qualPhase = true;
         var hum = L.slots.filter(function (x) { return x.t === "friend" && x.uid; });
         if (real() && L.rm && hum.length) { A.api("/api/room/start", "POST", { id: L.rm }).then(function (j) { if (j && j.success) { clearInterval(L._pt); L._pt = 0; runRoom(j.room); } else A.toast((j && j.error) || "Non riesco ad avviare"); }).catch(function () { A.toast("Server non raggiungibile"); }); return; }
@@ -481,14 +481,14 @@
     }
     // ---------- stanze online (account vero): invito dal server, lobby condivisa, auto degli altri in tempo reale ----------
     function real() { return !isSbx(); }
-    function rmCfg(L) { return { track: TRACKS[L.ti].id, laps: L.laps, prize: L.prize | 0, max: 8, x: { rain: L.rain | 0, obst: L.obst ? 1 : 0, pads: L.pads ? 1 : 0, slip: L.slip ? 1 : 0, qual: L.qual ? 1 : 0, vis: L.vis ? 1 : 0, hcol: L.col | 0 } }; }
+    function rmCfg(L) { return { track: TRACKS[L.ti].id, laps: L.laps, prize: L.prize | 0, max: 8, x: { rain: L.rain | 0, obst: L.obst ? 1 : 0, pads: L.pads ? 1 : 0, slip: L.slip ? 1 : 0, coll: L.coll ? 1 : 0, qual: L.qual ? 1 : 0, vis: L.vis ? 1 : 0, hcol: L.col | 0 } }; }
     function rmEnsure(cb) {
       var L = LB; if (L.rm) return cb(true);
       A.api("/api/room/create", "POST", { game: "race", cfg: rmCfg(L) }).then(function (j) { if (j && j.success) { L.rm = j.room.id; cb(true); } else { A.toast((j && j.error) || "Impossibile creare la lobby online"); cb(false); } }).catch(function () { A.toast("Server non raggiungibile"); cb(false); });
     }
     function rmPush() { var L = LB; if (L && L.rm && real()) A.api("/api/room/cfg", "POST", { id: L.rm, cfg: rmCfg(L) }).catch(function () {}); }
     function lbFromRoom(room) {                                                                                    // ricostruisce la lobby dell'host da quella sul server (rientro dopo aver chiuso l'app)
-      var L = newLobby(), c = room.cfg || {}, x = c.x || {}; L.rm = room.id; L.ti = Math.max(0, TRACKS.findIndex(function (t) { return t.id === c.track; })); L.laps = c.laps || 3; L.prize = c.prize | 0; L.rain = x.rain | 0; L.obst = !!x.obst; L.pads = !!x.pads; L.slip = !!x.slip; L.qual = !!x.qual; L.vis = x.vis === 0 ? 0 : 1; L.col = x.hcol | 0;
+      var L = newLobby(), c = room.cfg || {}, x = c.x || {}; L.rm = room.id; L.ti = Math.max(0, TRACKS.findIndex(function (t) { return t.id === c.track; })); L.laps = c.laps || 3; L.prize = c.prize | 0; L.rain = x.rain | 0; L.obst = !!x.obst; L.pads = !!x.pads; L.slip = !!x.slip; L.coll = x.coll !== 0; L.qual = !!x.qual; L.vis = x.vis === 0 ? 0 : 1; L.col = x.hcol | 0;
       room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready, col: p.col }); }); return L;
     }
     function rmWatch() {                                                                                            // l'host segue la stanza: chi entra (anche senza invito), chi esce, chi è online / pronto
@@ -533,7 +533,7 @@
       var roster = ord.map(function (i) { return { name: ps[i].name, col: cols[i], uid: ps[i].uid }; }), grid = [], map = {};
       ord.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
       var tr = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1]; build(tr);
-      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, room: { id: room.id, uid: room.me, map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
+      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, coll: x.coll !== 0, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, room: { id: room.id, uid: room.me, map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
     }
     function guestLobby(room) {                                                                                    // lobby di chi è entrato (invitato o dalla lista pubblica): segna PRONTO e aspetta che l'host avvii
       root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1], busy = 0, myRdy = false, lastRm = room;
@@ -607,7 +607,7 @@
         [["obst", "💧 Ostacoli"], ["pads", "⚡ Boost"], ["slip", "💨 Scia"], ["assist", "🤝 Aiuto"]].forEach(function (o) { var b = el("button", "mp-gt wide" + (RO[o[0]] ? " on" : ""), o[1]); b.type = "button"; b.addEventListener("click", function () { RO[o[0]] = RO[o[0]] ? 0 : 1; sv(); tracks(mode); }); op.appendChild(b); });
         root.appendChild(op);
       } else {
-        var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 0 }, gr = el("div", "rc-laps"); gr.appendChild(el("span", "", "FANTASMI"));
+        var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 1 }, gr = el("div", "rc-laps"); gr.appendChild(el("span", "", "FANTASMI"));
         [["mine", "👻 Il tuo"], ["best", "🏆 Record assoluto"]].forEach(function (o) { var b = el("button", "mp-gt wide gsw" + (GPf[o[0]] ? " on" : ""), ""); b.type = "button"; b.appendChild(el("span", "gl", o[1])); var sw = el("span", "sw"); sw.appendChild(el("u", "", GPf[o[0]] ? "ON" : "OFF")); sw.appendChild(el("i", "kn", "")); b.appendChild(sw); b.addEventListener("click", function () { GPf[o[0]] = GPf[o[0]] ? 0 : 1; lsSet("arc_race4_gp", GPf); tracks(mode); }); gr.appendChild(b); });
         root.appendChild(gr);
       }
@@ -686,10 +686,11 @@
         for (var qk = 1; qk < (RM0 ? 1 : nCar); qk++) { var rs0 = opts.roster && opts.roster[qk], qs = qualSim(tr, sk[qk], vmv ? vmv[qk] : 1, offs[qk] * 0.5); qres.push({ id: qk, name: rs0 ? rs0.name : NAMES[qk % NAMES.length], t: qs.t }); qgh.push({ x: qs.path[0], y: qs.path[1], a: qs.path[2], col: rs0 ? rs0.col : COLS[qk % COLS.length], name: rs0 ? rs0.name : NAMES[qk % NAMES.length], ghost: true, hit: 0, path: qs.path }); } }
       var AU = (window.ArcadeAudio || {}).race || { begin: function () {}, end: function () {}, engine: function () {}, sfx: function () {}, set: function () {} }, SN = (function () { var q = lsGet("arc_race4_snd"); if (!q || q.v !== 2) { q = { v: 2, sfx: 0.7, music: 0.5 }; lsSet("arc_race4_snd", q); } return q; })(), pBoost = false, pHit = false, pSpin = false, lastNl = 0;
       AU.begin({ rain: opts.rain, sfx: SN.sfx, music: SN.music });
-      var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 0 }, gl = [], grec = [], gtick = 0;
+      var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 1 }, gl = [], grec = [], gtick = 0;
       if (solo) {
         var gm = (lsGet(PF() + "g_" + tr.id) || {}).g, ab0 = GPf.best ? absRec(tr) : null;
-        if (GPf.mine && gm && gm.length > 6) gl.push({ arr: gm, o: { x: 0, y: 0, a: 0, col: "#cfe6ff", name: "Il tuo record", ghost: true, hit: 0 } });
+        var iAmRec = !!(ab0 && ab0.me);                                                                              // se il record assoluto è tuo, il fantasma è uno solo (il tuo)
+        if ((GPf.mine || iAmRec) && gm && gm.length > 6) gl.push({ arr: gm, o: { x: 0, y: 0, a: 0, col: iAmRec ? "#ffd23b" : "#cfe6ff", name: iAmRec ? "Il tuo record 🏆" : "Il tuo record", ghost: true, hit: 0 } });
         if (ab0 && !ab0.me && tr._absG && tr._absG.length > 6) gl.push({ arr: tr._absG, o: { x: 0, y: 0, a: 0, col: "#ffd23b", name: "Record · " + ab0.n, ghost: true, hit: 0 } });
       }
       var sbest = (solo && lsGet(PF() + "s_" + tr.id)) || [0, 0, 0], secNo = 0, secStart = 0, secPrev = [], secLast = [], secCols = [];
@@ -783,7 +784,7 @@
               if (c.prog >= tr.N * c.lap) { (c.lapTs = c.lapTs || []).push(t2 - (c.lapS || 0)); c.lapS = t2; c.lap++; }
               if (c.prog >= tr.N * laps && pastLine(c)) { c.fin = true; c.finT = t2; }
             });
-            crash(cars); t2 += DT;
+            if (!(opts && opts.coll === false)) crash(cars); t2 += DT;
           }
         }
         var rows = solo ? [me] : rank(), fl = 1e9; rows.forEach(function (c) { (c.lapTs || []).forEach(function (x) { if (x < fl) fl = x; }); });
@@ -805,15 +806,19 @@
             A.api("/api/room/result", "POST", { id: RMT.id, order: ord2 }).then(function (j) { if (j && j.success && j.settled && resLn && !resLn._d) { resLn._d = 1; var py = ((j.result || {}).pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} } }).catch(function () {});
           } else if (opts.prize) { var pz = [opts.prize, Math.round(opts.prize * 0.75), Math.round(opts.prize * 0.5)][p0] || 0; box.appendChild(el("div", "rc-lap", pz ? "💰 Premio: +" + A.fmt(pz) + " $SDG (simulato)" : "Premi: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)))); }
         }
-        var tb = el("div", "rc2-tbl lt"), lcol = el("div", "lt-l"), rcol = el("div", "lt-r"), rin = el("div", "lt-in"), hd = el("div", "lr h");      // sinistra: posizione, nome, totale; destra: tutti i giri (si scorre col dito)
-        lcol.appendChild(el("div", "lr h", "")); for (var gi = 1; gi <= laps; gi++) hd.appendChild(el("i", "", "G" + gi)); rin.appendChild(hd);
+        var tb = el("div", "rc2-tbl lt"), lcol = el("div", "lt-l"), rcol = el("div", "lt-r"), rin = el("div", "lt-in"), hd = el("div", "lr h");      // sinistra: posizione, nome, totale; destra: i giri, a gruppi di 5
+        lcol.appendChild(el("div", "lr h", "")); for (var gi = 1; gi <= laps; gi++) { var hi = el("i", "", "G" + gi); hi.setAttribute("data-p", String(Math.floor((gi - 1) / 5))); hd.appendChild(hi); } rin.appendChild(hd);
         rows.forEach(function (c, i) {
           var r = el("div", "lr" + (c === me ? " me" : "")), pn = el("span", "pn", String(i + 1)), nm = el("span", "nm", c === me && !opts.roster ? "Tu" : c.name), tt = el("span", "tt", c.dnf ? "RITIRATO" : fmt(c.finT)); r.appendChild(pn); r.appendChild(nm); r.appendChild(tt); lcol.appendChild(r);
           var lp = el("div", "lr" + (c === me ? " me" : "")), bst = Math.min.apply(null, c.lapTs && c.lapTs.length ? c.lapTs : [1e9]);
-          for (var q = 0; q < laps; q++) { var x = (c.lapTs || [])[q]; lp.appendChild(el("i", x == null ? "" : (x <= fl + 0.0005 ? "fl" : (x === bst ? "bs" : "")), x == null ? "–" : fmt(x))); } rin.appendChild(lp);
+          for (var q = 0; q < laps; q++) { var x = (c.lapTs || [])[q], ci = el("i", x == null ? "" : (x <= fl + 0.0005 ? "fl" : (x === bst ? "bs" : "")), x == null ? "–" : fmt(x)); ci.setAttribute("data-p", String(Math.floor(q / 5))); lp.appendChild(ci); } rin.appendChild(lp);
         });
-        rcol.appendChild(rin); tb.appendChild(lcol); tb.appendChild(rcol); dragX(rcol);
-        var pg2 = el("div", "rc2-pg2"); pg2.appendChild(tb); pg2.appendChild(el("div", "rc-lap", "⚡ = giro più veloce" + (fl < 1e9 ? " (" + fmt(fl) + ")" : "") + (laps > 3 ? " · scorri i giri col dito ↔" : "")));
+        rcol.appendChild(rin); tb.appendChild(lcol); tb.appendChild(rcol);
+        var npg = Math.ceil(laps / 5), ltabs = null;
+        function setLg(p) { Array.prototype.forEach.call(rin.querySelectorAll("i"), function (n) { n.style.display = (+n.getAttribute("data-p") === p) ? "" : "none"; }); if (ltabs) Array.prototype.forEach.call(ltabs.children, function (b2, k2) { b2.classList.toggle("on", k2 === p); }); }
+        if (npg > 1) { ltabs = el("div", "lt-tabs"); for (var pk = 0; pk < npg; pk++) (function (pk) { var tb3 = el("button", "lt-tab", "G" + (pk * 5 + 1) + "–" + Math.min(laps, pk * 5 + 5)); tb3.type = "button"; tb3.addEventListener("click", function () { A.haptic("light"); setLg(pk); }); ltabs.appendChild(tb3); })(pk); }
+        setLg(0);
+        var pg2 = el("div", "rc2-pg2"); if (ltabs) pg2.appendChild(ltabs); pg2.appendChild(tb); pg2.appendChild(el("div", "rc-lap", "⚡ = giro più veloce" + (fl < 1e9 ? " (" + fmt(fl) + ")" : "")));
         var pod = null, tgl = null;
         if (!solo && rows.length >= 2) {                                                                                  // schermata 1: podio con le auto dei primi tre
           pod = el("div", "rc2-pod"); var ord = rows.length >= 3 ? [1, 0, 2] : [1, 0];
@@ -1031,7 +1036,7 @@
           else if (o.t.b) bldg(o.t);
           else { var tt = o.t, tc = tr.pal.tree[tt.c % 3]; if (o.d < 1100) box(tt.x, tt.y, tt.s / 5, tt.s / 5, 0, tt.h * 0.45, camA, "#8a5a2b", "#6a421c", "#573612"); box(tt.x, tt.y, tt.s / 2, tt.s / 2, tt.h * 0.3, tt.h * 0.85, camA, tc, shade(tc, -0.35), shade(tc, -0.2)); }
         });
-        (state === "run" ? cars.concat(allG()) : cars).forEach(function (c) {                                                                  // etichette: nome sopra le auto lontane / freccia ai bordi se fuori vista
+        (state === "intro" ? [] : (state === "run" ? cars.concat(allG()) : cars)).forEach(function (c) {                                                                  // etichette: nome sopra le auto lontane / freccia ai bordi se fuori vista
           if (c === me) return; var p = pr(c.x, c.y, 16), dist = Math.hypot(c.x - me.x, c.y - me.y), out = !p || p[0] < 24 || p[0] > W - 24 || p[1] < 24 || p[1] > H - 70, x, y;
           if (p) { x = Math.max(34, Math.min(W - 34, p[0])); y = Math.max(40, Math.min(H - 80, p[1] - 26)); } else { x = W / 2; y = H - 84; }
           ctx.font = "700 13px Rajdhani,sans-serif"; var txt = c.name + (dist > 260 ? "  " + Math.round(dist / 10) + "m" : ""), tw = ctx.measureText(txt).width + 14;
@@ -1066,7 +1071,7 @@
         if (state === "run" || state === "end") {                                                                                   // tempo del giro in corso, giro precedente e differenza
           var cl = Math.max(0, t - lapStart), pl = lapT.length ? lapT[lapT.length - 1] : 0, ppl = lapT.length > 1 ? lapT[lapT.length - 2] : 0, dl = pl && ppl ? pl - ppl : 0, bl = lapT.length ? Math.min.apply(null, lapT) : 0;
           if (!lapB) { lapb.innerHTML = "<b></b><span></span>"; lapB = lapb.firstChild; lapS = lapb.lastChild; }
-          lapB.textContent = fmt(cl); var showP = pl && t - prevAt < 5; lapb.classList.toggle("prev", !!showP); if (showP) { lapS.innerHTML = "PREC " + fmt(pl) + (dl ? " <i class='" + (dl < 0 ? "g" : "r") + "'>" + (dl < 0 ? "−" : "+") + Math.abs(dl).toFixed(2) + "</i>" : ""); lapS.style.opacity = Math.min(1, (5 - (t - prevAt)) / 1.2); } else lapS.style.opacity = 0;
+          lapB.textContent = fmt(cl); var showP = pl && t - prevAt < 5; lapb.classList.toggle("prev", !!showP); if (showP) { lapS.innerHTML = "PREC " + fmt(pl) + (dl ? " <i class='" + (dl < 0 ? (pl <= bl + 1e-9 ? "f" : "g") : "r") + "'>" + (dl < 0 ? "−" : "+") + Math.abs(dl).toFixed(2) + "</i>" : ""); lapS.style.opacity = Math.min(1, (5 - (t - prevAt)) / 1.2); } else lapS.style.opacity = 0;
         }
         if (!solo && (twc++ % 5 === 0)) {                                                                                       // classifica live stile F1: nome corto e distacco dall'auto davanti (in secondi, tre decimali)
           var rk = rank(), rows = "";
@@ -1128,7 +1133,7 @@
           if (me.hit <= 0) me.stuck = 0;
           { var dtn = me.vx * Math.cos(tr.ta[me.idx]) + me.vy * Math.sin(tr.ta[me.idx]); if (dtn < -40 && !me.air) wrongT += DT; else wrongT = Math.max(0, wrongT - DT * 2);
             if (wrongT > 0.5 && wrongT < 3) say2("⚠ CONTROMANO · tra " + Math.max(1, Math.ceil(3 - wrongT)) + "s ti rimetto in pista", 0.3); else if (wrongT >= 3) { respawn(); wrongT = 0; say2("Rimesso nel verso giusto", 1.4); } }
-          if (!solo) crash(cars); t += DT;
+          if (!solo && !(opts && opts.coll === false)) crash(cars); t += DT;
           if (me.fin) { finish(); break; }
         }
         var tq0 = performance.now(); drawI(acc / DT); hudDraw(); var tq = performance.now() - tq0;
