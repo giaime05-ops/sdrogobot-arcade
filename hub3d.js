@@ -598,6 +598,6 @@ window.Arcade3D = Object.assign(window.Arcade3D || {}, {
   setAnim(b) { animOn = !!b; },
   setHeist
 });
-try { if (window.Arcade && window.Arcade.isSandbox && window.Arcade.isSandbox()) setHeist(true); } catch (e) {}
+try { if (window.Arcade && ((window.Arcade.isSandbox && window.Arcade.isSandbox()) || (window.Arcade.newOn && window.Arcade.newOn()))) setHeist(true); } catch (e) {}
 requestAnimationFrame(frame);
 
