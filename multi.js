@@ -1221,16 +1221,16 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   window.ArcadeMulti = { friendSheet: function (ex, pick) { friendSheet(ex || [], pick); }, myName: function () { return myName(); }, load: function () {
     if (!(A.multiOn && A.multiOn())) { soon(); return; }
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
-  }, openGP: function () { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby); return true; } };
+  }, openGP: function (rid) { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby, rid || ""); return true; } };
   // link diretto dal gruppo (t.me/…?startapp=multiplayer oppure grandprix): apre il Multiplayer (o subito il Grand Prix), già col tuo account
   (function () {
     var sp = ""; try { sp = String((window.Telegram.WebApp.initDataUnsafe || {}).start_param || ""); } catch (e) {}
     if (!sp) { try { sp = new URLSearchParams(location.search).get("go") || ""; } catch (e) {} }
-    if (sp !== "grandprix" && sp !== "multiplayer") return;
+    var rm = /^room_([A-Za-z0-9_-]{4,24})$/.exec(sp); if (sp !== "grandprix" && sp !== "multiplayer" && !rm) return;
     var tries = 0, iv = setInterval(function () {
       if (++tries > 40) return clearInterval(iv);
       if (!(A.multiOn && A.multiOn()) || !(A.me && A.me()) || !document.querySelector(".tab[data-tab=mp]")) return;
-      clearInterval(iv); document.querySelector(".tab[data-tab=mp]").click(); if (sp === "grandprix") setTimeout(function () { window.ArcadeMulti.openGP(); }, 250);
+      clearInterval(iv); document.querySelector(".tab[data-tab=mp]").click(); if (sp === "grandprix") setTimeout(function () { window.ArcadeMulti.openGP(); }, 250); else if (rm) setTimeout(function () { window.ArcadeMulti.openGP(rm[1]); }, 250);
     }, 300);
   })();
 })();

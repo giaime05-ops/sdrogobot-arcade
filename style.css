@@ -1766,3 +1766,5 @@ html.mo .hbtns:not(.has)::after{content:"";flex:1 1 0;min-height:0;width:46px;bo
 
 .rc2-tbl.lt .lt-r{overflow:hidden;touch-action:auto;cursor:default}.rc2-tbl.lt .lt-r i{flex:0 0 62px}
 .lt-tabs{display:flex;gap:8px;justify-content:center;margin:0 0 8px}.lt-tab{padding:6px 14px;border-radius:999px;border:1px solid rgba(255,90,208,.5);background:rgba(255,255,255,.06);color:#e6dcff;font:700 14px Rajdhani,sans-serif;letter-spacing:.06em}.lt-tab.on{background:linear-gradient(135deg,#ff3db0,#a855f7);color:#fff;border-color:transparent;box-shadow:0 0 10px rgba(255,61,176,.5)}
+.rc-root.lobby>.lb-close{flex:0 0 auto;margin-top:6px;font-size:13px;padding:9px 12px;background:rgba(255,60,110,.08);border:1px solid rgba(255,60,110,.45);color:#ff8fb0;box-shadow:none}
+.rc-root.lobby>.lb-close.arm{background:linear-gradient(180deg,#ff3c6e,#b01a45);color:#fff;box-shadow:0 0 16px rgba(255,60,110,.5)}

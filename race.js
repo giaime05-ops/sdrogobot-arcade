@@ -158,7 +158,7 @@
         else if (!turn && car.str > 0.8 && car.meter < 0.22) car.meter = Math.max(0, car.meter - DT * 0.25);
       }
     } else if (!air) {                                                                                                  // bot: caricano e scaricano "virtualmente"
-      if (turn && vf > 220 && !off && car.bm) car.meter = Math.min(1, car.meter + DT / 3.2 * car.bm); else if (!turn && car.bm && car.str > 0.45 && car.meter >= 0.22) fireBoost(car, 0.8);
+      if (turn && vf > 220 && !off && car.bm) car.meter = Math.min(1, car.meter + DT / 3.2 * car.bm * (tr.rain ? (tr.rain > 1 ? 0.5 : 0.75) : 1)); else if (!turn && car.bm && car.str > 0.45 && car.meter >= 0.22) fireBoost(car, 0.8);
     }
     var brk = !air && (inp.brake || (human && !off && needBrake(tr, car, vf, (car.dd ? 1.2 : 0.9) * (bst ? 1.25 : 1)))); car.brk = brk;
     var vmax = off ? (bst ? VOFF * 1.9 : VOFF) : (car.boostT > 0 ? 570 : VMAX) * (car.vm || 1) * (tr.rain ? (tr.rain > 1 ? 0.95 : 0.975) : 1) * (1 + (car.tw || 0) * 0.13 + (car.rb || 0));
@@ -170,7 +170,7 @@
       car.dT += DT; if (tr.rain && human && car.dT > (tr.rain > 1 ? 1.05 : 1.6) && car.spin <= 0) { car.spin = 0.7; endDrift(car, true); }       // sul bagnato una derapata troppo lunga ti manda in testacoda
       var omD = 1.8 * (1 - 0.3 * Math.min(1, vf / VMAX)), tg = car.dd * omD * (turn === car.dd ? 1 : (turn === 0 ? 0.6 : 0.1));
       car.omS += (tg - car.omS) * Math.min(1, 9 * DT); om = car.omS;
-      if (car.dT > 0.12) car.meter = Math.min(1, car.meter + DT / 3.0 * (0.5 + 0.5 * Math.min(1, vf / 450)));                              // la barra si riempie derapando
+      if (car.dT > 0.12) car.meter = Math.min(1, car.meter + DT / 3.0 * (0.5 + 0.5 * Math.min(1, vf / 450)) * (tr.rain ? (tr.rain > 1 ? 0.5 : 0.75) : 1));                              // la barra si riempie derapando
     } else {
       om = turn * 2.5 * (1 - 0.55 * Math.min(1, vf / VMAX)) * Math.min(1, vf / 60);
       if (human && vf > 1) { var vE = Math.min(vf, VMAX) + 0.25 * Math.max(0, vf - VMAX), lim = AG * (bst ? 1.7 : 1.4); if (vE * Math.abs(om) > lim) om = (om < 0 ? -1 : 1) * lim / vE; }                      // anti-testacoda
@@ -370,7 +370,7 @@
     return cv;
   }
   var RL = lsGet("arc_race4_laps") || 3, RD = lsGet("arc_race4_diff"); if (RD == null || RD < 0 || RD > 3) RD = 1;
-  function open(host, onExit) {
+  function open(host, onExit, joinId) {
     var root = el("div", "rc-root"); host.appendChild(root);
     function hook(fn) { window.ArcadeBackHook = fn; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} }
     function top(title, back, label) { var t0 = el("div", "mp-top"), bk = el("button", "mp-back", label || "‹ Indietro"); bk.type = "button"; bk.addEventListener("click", back); t0.appendChild(bk); t0.appendChild(el("div", "mp-title", title)); root.appendChild(t0); return t0; }
@@ -477,7 +477,15 @@
         if (real() && L.rm) { A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); if (L._pt) { clearInterval(L._pt); L._pt = 0; } L.rm = 0; L._ens = 0; }   // gara solo con bot: la lobby online si chiude
         race(TRACKS[L.ti], "race", o);
       });
-      root.appendChild(go); body.scrollTop = sct; if (real()) { if (!L.rm) { if (!L._ens) { L._ens = 1; rmEnsure(function (ok) { if (ok && LB === L) { rmPush(); rmWatch(); } else L._ens = 0; }); } } else { rmPush(); rmWatch(); } }
+      root.appendChild(go);
+      if (real() && L.rm) {                                                                                               // l'host può chiudere la lobby davvero (le puntate tornano a tutti), senza aspettare i 15 secondi dell'uscita
+        var cl = el("button", "mp-go mp-alt lb-close", "🗑 CHIUDI LOBBY"); cl.type = "button"; var armed = 0;
+        cl.addEventListener("click", function () {
+          if (!armed) { armed = 1; cl.textContent = "Tocca ancora per chiuderla per tutti"; cl.classList.add("arm"); setTimeout(function () { if (cl.isConnected) { armed = 0; cl.textContent = "🗑 CHIUDI LOBBY"; cl.classList.remove("arm"); } }, 3500); return; }
+          A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); if (L._pt) { clearInterval(L._pt); L._pt = 0; } L.rm = 0; L._ens = 0; LB = newLobby(); A.toast("Lobby chiusa"); menu();
+        }); root.appendChild(cl);
+      }
+      body.scrollTop = sct; if (real()) { if (!L.rm) { if (!L._ens) { L._ens = 1; rmEnsure(function (ok) { if (ok && LB === L) { rmPush(); rmWatch(); } else L._ens = 0; }); } } else { rmPush(); rmWatch(); } }
     }
     // ---------- stanze online (account vero): invito dal server, lobby condivisa, auto degli altri in tempo reale ----------
     function real() { return !isSbx(); }
@@ -521,10 +529,16 @@
         A.api("/api/room/rematch", "POST", { id: room.id, round: room.round | 0 }).then(function (k) {
           if (!root.isConnected || !nt.isConnected) return;
           if (k && k.wait) { nt.textContent = "Aspetto che tutti finiscano la gara…"; setTimeout(go, 1500); return; }
-          if (!k || !k.success) { A.toast("La lobby non c'è più"); lobbyHub(); return; }
+          if (!k || !k.success) { rejoin(); return; }
           if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room);
-        }).catch(function () { if (++tries < 3) { setTimeout(go, 1200); return; } A.toast("La lobby è già ripartita o chiusa"); lobbyHub(); });
+        }).catch(function (e) { if (e && e.status === 409) { rejoin(); return; } if (++tries < 3) { setTimeout(go, 1200); return; } rejoin(); });
       })();
+      function rejoin() {                                                                                                  // il server non ti ha più in lista: se la lobby esiste ancora si rientra come un normale ingresso
+        A.api("/api/room/join", "POST", { id: room.id }).then(function (k) {
+          if (!root.isConnected) return;
+          if (k && k.success) { if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room); } else { A.toast("La lobby è già ripartita o chiusa"); lobbyHub(); }
+        }).catch(function () { A.toast("La lobby è già ripartita o chiusa"); lobbyHub(); });
+      }
     }
     function runRoom(room, back, order, n0) {                                                                      // parte la gara online: stessa pista, stesso ordine in griglia per tutti
       var ps = order ? order.map(function (u) { return room.players.filter(function (p) { return p.uid === u; })[0] || { uid: u, name: "Pilota" }; }) : room.players, x = room.cfg.x || {};
@@ -1200,6 +1214,12 @@
       raf = requestAnimationFrame(function (n) { last = n; frame(n); });
     }
     menu();
+    if (joinId) {                                                                                                       // arrivo dal pulsante del gruppo / dell'invito: entro subito nella lobby
+      A.api("/api/room/join", "POST", { id: String(joinId) }).then(function (k) {
+        if (k && k.success) { if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room); }
+        else A.toast((k && k.error) || "La lobby non c'è più");
+      }).catch(function (e) { A.toast((e && e.message) || "La lobby non c'è più"); });
+    }
   }
   window.ArcadeRace = { open: open, _t: { TRACKS: TRACKS, build: build, simulate: simulate, step: step, newCar: newCar, pilot: pilot, items: items } };
 })();
