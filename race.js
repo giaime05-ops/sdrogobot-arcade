@@ -533,7 +533,7 @@
       var roster = ord.map(function (i) { return { name: ps[i].name, col: cols[i], uid: ps[i].uid }; }), grid = [], map = {};
       ord.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
       var tr = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1]; build(tr);
-      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, coll: x.coll !== 0, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, room: { id: room.id, uid: room.me, map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
+      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, coll: x.coll !== 0, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, room: { id: room.id, uid: room.me, ws: room.ws || "", map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
     }
     function guestLobby(room) {                                                                                    // lobby di chi è entrato (invitato o dalla lista pubblica): segna PRONTO e aspetta che l'host avvii
       root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1], busy = 0, myRdy = false, lastRm = room;
@@ -722,7 +722,7 @@
       if (window.__RACE_DEBUG) window.__RACE_DEBUG({ me: me, tr: tr, cars: cars, inp: inp });
       function pastLine(c) { var a = tr.ta[0]; return (c.x - tr.P[0][0]) * Math.cos(a) + (c.y - tr.P[0][1]) * Math.sin(a) >= 0 || c.prog >= tr.N * laps + 4; }
       function rank() { return cars.slice().sort(function (a, b) { return (b.fin ? 1e6 - b.finT : b.prog) - (a.fin ? 1e6 - a.finT : a.prog); }); }
-      function stop(keepFs) { done = true; if (RT) clearInterval(RT); AU.end(); cancelAnimationFrame(raf); window.removeEventListener("keydown", kdown); window.removeEventListener("keyup", kup); window.removeEventListener("resize", layout); try { if (TGW && TGW.offEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach(function (ev) { TGW.offEvent(ev, layout); }); } catch (e) {} try { if (TGW) { if (TGW.disableClosingConfirmation) TGW.disableClosingConfirmation(); if (!keepFs && TGW.exitFullscreen && TGW.isFullscreen) TGW.exitFullscreen(); } if (!keepFs && screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+      function stop(keepFs) { done = true; if (RT) clearInterval(RT); try { if (typeof wsStop === "function") wsStop(); } catch (e) {} AU.end(); cancelAnimationFrame(raf); window.removeEventListener("keydown", kdown); window.removeEventListener("keyup", kup); window.removeEventListener("resize", layout); try { if (TGW && TGW.offEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach(function (ev) { TGW.offEvent(ev, layout); }); } catch (e) {} try { if (TGW) { if (TGW.disableClosingConfirmation) TGW.disableClosingConfirmation(); if (!keepFs && TGW.exitFullscreen && TGW.isFullscreen) TGW.exitFullscreen(); } if (!keepFs && screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
         if (!keepFs) window.ArcadeBackHide = false; window.ArcadeBackHook = null; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} full.remove(); }
       function goBack() { if (opts.back) opts.back(); else tracks(mode); }
       var paused = false, pbox = null;
@@ -1143,6 +1143,44 @@
       if (RMT) {                                                                                                  // sincronizzazione online: ogni 100 ms mando la mia posizione (con il tempo di gara) e ricevo quelle degli altri
         RMT.sy = RMT.sy || {}; RMT.pl = RMT.pl || [];
         var barrierOK = function () { var rl = (RMT.sy.rdy && RMT.sy.rdy[PH]) || []; return RMT.pl.filter(function (p) { return p.online !== false; }).every(function (p) { return rl.indexOf(p.uid) >= 0; }) || performance.now() - waitT0 > 25000; };
+        var onSync = function (j, tS) {                                                                           // risposta/novità dal server (uguale per HTTP e WebSocket)
+          if (!j || !j.success) return;
+          if (j.t === "p" && j.from != null && j.from > rSince) { if (j.room) { RMT.sy = j.room.sy || RMT.sy; RMT.pl = j.room.players || RMT.pl; } return; }      // push con buco: ci pensa la prossima risposta
+          var rt = tS != null ? performance.now() - tS : 1e9, skip = Math.max(0, rSince - (j.from != null ? j.from : rSince)); if (j.n > rSince) rSince = j.n; RMT.since = rSince;
+          if (j.room) { if (j.room.st && rt < RMT.rtt && rt < 1500) { RMT.rtt = rt; RMT.off = j.room.st - (tS + rt / 2) / 1000; } RMT.sy = j.room.sy || RMT.sy; RMT.pl = j.room.players || RMT.pl; }
+          (j.events || []).slice(skip).forEach(function (e) {
+            if (e.k !== "p" || e.u === RMT.uid) return; var c = null; cars.forEach(function (q) { if (q.remote === e.u) c = q; }); if (!c) return;
+            var smp = { ts: e.ss || ((e.t || srvNow()) - 0.08), tt: e.tt || 0, x: e.x, y: e.y, a: e.a / 100, vx: e.vx, vy: e.vy, pr: e.pr }; if (c.sm && smp.tt < c.sm.tt) return;
+            if (!c.sm) { c.x = smp.x; c.y = smp.y; c.a = smp.a; } c.sp = c.sm; c.sm = smp; c.smNew = true; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d; if (e.lt) c.lapTs = e.lt.map(function (q) { return q / 1000; });
+            if (e.f && (!c.fin || c.dnf)) { c.fin = true; c.dnf = false; c.finT = e.f / 1000; if (!me.fin) say2("🏁 " + c.name + " ha tagliato il traguardo (" + ORD[Math.min(7, cars.filter(function (q) { return q.fin; }).length - 1)] + ")", 2.4); }
+          });
+          if (j.room && j.room.result && resLn && !resLn._d) { resLn._d = 1; var py = (j.room.result.pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} }
+        };
+        // --- WebSocket (facoltativo): se non c'è, non parte o smette di rispondere, si resta/si torna al sistema HTTP senza che il giocatore se ne accorga ---
+        var WSK = null, wsOk = false, wsTry = 0, wsQ = 0, wsT = {}, wsTm = 0;
+        var wsStop = function () { wsTry = 99; wsOk = false; var s = WSK; WSK = null; if (s) { try { s.close(); } catch (e) {} } };
+        var wsInit = function () {
+          if (done || !RMT.ws || typeof WebSocket === "undefined" || wsTry >= 4 || WSK) return; wsTry++; var s;
+          try { s = new WebSocket(RMT.ws); } catch (e) { return; } WSK = s;
+          var ot = setTimeout(function () { if (WSK === s && !wsOk) { try { s.close(); } catch (e) {} } }, 4000);
+          var gone = function () { clearTimeout(ot); if (WSK === s) { WSK = null; wsOk = false; wsT = {}; if (!done) setTimeout(wsInit, 1200 * wsTry); } };
+          s.onopen = function () { try { s.send(JSON.stringify({ t: "hi", i: (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || "", id: RMT.id })); } catch (e) {} };
+          s.onmessage = function (m) {
+            var j; try { j = JSON.parse(m.data); } catch (e) { return; }
+            if (j.t === "ok") { wsOk = true; wsTm = performance.now(); clearTimeout(ot); return; }
+            if (j.t === "no") { wsTry = 99; wsOk = false; return; }
+            if (j.t === "r") { var tS = wsT[j.q]; delete wsT[j.q]; wsTm = performance.now(); rInfl = Math.max(0, rInfl - 1); onSync(j, tS != null ? tS : null); return; }
+            if (j.t === "p") { j.success = true; onSync(j, null); }
+          };
+          s.onclose = gone; s.onerror = function () { try { s.close(); } catch (e) {} };
+        };
+        var wsLive = function () {
+          if (!wsOk || !WSK || WSK.readyState !== 1) return false;
+          var now = performance.now(), old = 0; for (var k in wsT) if (now - wsT[k] > old) old = now - wsT[k];
+          if (old > 2500) { wsOk = false; try { WSK.close(); } catch (e) {} return false; }                      // da troppo non risponde: si torna a HTTP
+          return true;
+        };
+        if (RMT.ws) wsInit();
         var rSend = function () {
           if (done) return; if (rInfl >= 3 && performance.now() - rBusyT < 3500) return; if (rInfl >= 3) rInfl = 0; rInfl++; rBusyT = performance.now();      // fino a 3 richieste in volo: con rete lenta non si dimezza la frequenza di invio
           var sy = RMT.sy, ev = null, tS = performance.now();
@@ -1150,16 +1188,11 @@
           else if (RMT.wantQ !== undefined && !(sy.q && sy.q[RMT.uid] != null)) ev = { k: "q", qt: RMT.wantQ };
           else if (RMT.wantGrid && !sy.grid) ev = { k: "grid", g: RMT.wantGrid };
           else if ((state === "run" || state === "end") && !qual) ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0, tt: Math.round(t * 1000), ss: RMT.rtt < 1e8 ? Math.round(srvNow() * 1000) / 1000 : 0, lt: (me.lapTs || []).map(function (q) { return Math.round(q * 1000); }) };
+          if (wsLive()) {
+            var q = ++wsQ; wsT[q] = tS; try { WSK.send(JSON.stringify({ t: "s", q: q, since: rSince, ev: ev || undefined })); return; } catch (e) { wsOk = false; delete wsT[q]; }
+          }
           A.api("/api/room/sync", "POST", { id: RMT.id, since: rSince, ev: ev || undefined }).then(function (j) {
-            rInfl = Math.max(0, rInfl - 1); if (!j || !j.success) return; var rt = performance.now() - tS, skip = Math.max(0, rSince - (j.from != null ? j.from : rSince)); if (j.n > rSince) rSince = j.n; RMT.since = rSince;
-            if (j.room) { if (j.room.st && rt < RMT.rtt && rt < 1500) { RMT.rtt = rt; RMT.off = j.room.st - (tS + rt / 2) / 1000; } RMT.sy = j.room.sy || RMT.sy; RMT.pl = j.room.players || RMT.pl; }
-            (j.events || []).slice(skip).forEach(function (e) {
-              if (e.k !== "p" || e.u === RMT.uid) return; var c = null; cars.forEach(function (q) { if (q.remote === e.u) c = q; }); if (!c) return;
-              var smp = { ts: e.ss || ((e.t || srvNow()) - 0.08), tt: e.tt || 0, x: e.x, y: e.y, a: e.a / 100, vx: e.vx, vy: e.vy, pr: e.pr }; if (c.sm && smp.tt < c.sm.tt) return;
-              if (!c.sm) { c.x = smp.x; c.y = smp.y; c.a = smp.a; } c.sp = c.sm; c.sm = smp; c.smNew = true; c.lap = e.l; c.boostT = e.b ? 0.3 : 0; c.dd = e.d; if (e.lt) c.lapTs = e.lt.map(function (q) { return q / 1000; });
-              if (e.f && (!c.fin || c.dnf)) { c.fin = true; c.dnf = false; c.finT = e.f / 1000; if (!me.fin) say2("🏁 " + c.name + " ha tagliato il traguardo (" + ORD[Math.min(7, cars.filter(function (q) { return q.fin; }).length - 1)] + ")", 2.4); }
-            });
-            if (j.room && j.room.result && resLn && !resLn._d) { resLn._d = 1; var py = (j.room.result.pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} }
+            rInfl = Math.max(0, rInfl - 1); onSync(j, tS);
           }).catch(function () { rInfl = Math.max(0, rInfl - 1); });
         };
         RT = setInterval(rSend, 100);
