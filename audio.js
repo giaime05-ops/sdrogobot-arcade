@@ -268,7 +268,7 @@
   }
   function loadCard() {                                    // suoni veri (assets/); finché non sono pronti valgono quelli sintetici
     if (cardLoading || !ctx) return; cardLoading = true;
-    loadOne("slide", "assets/card.wav?v=24"); loadOne("slide2", "assets/card_slide.wav?v=24"); loadOne("pick", "assets/card_pick.wav?v=24"); loadOne("ball", "assets/roulette_ball.mp3?v=24");
+    loadOne("slide", "assets/card.wav?v=24"); loadOne("slide2", "assets/card_slide.wav?v=24"); loadOne("pick", "assets/card_pick.wav?v=24"); loadOne("ball", "assets/roulette_ball.mp3?v=24"); loadOne("pit", "assets/pit.mp3?v=1");
   }
   function playBuf(buf, t, rate, vol, maxDur) {
     var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf; src.playbackRate.value = rate; g.gain.setValueAtTime(vol, t);
@@ -433,6 +433,7 @@
     RC.rb.g.gain.setTargetAtTime(off ? 0.05 : 0, t, 0.08); RC.gr.g.gain.setTargetAtTime(off ? 0.012 + v * 0.012 : 0, t, 0.08);
   }
   var RSFX = {
+    pit: function (t) { if (B.pit) playBuf(B.pit, t, 1, 1.0, 2.8); },
     beep: function (t, hi) { tone(RC.gs, "sine", hi ? 784 : 523, t, hi ? 0.5 : 0.18, 0.12, { a: 0.01 }); if (hi) tone(RC.gs, "triangle", 1568, t, 0.3, 0.03, { a: 0.01 }); },
     boost: function (t) { noise(RC.gs, t, 0.55, 0.06, "bandpass", 700, 1.2, 3200); tone(RC.gs, "triangle", 300, t, 0.5, 0.035, { slide: 900, lp: 1800 }); },
     hit: function (t) { tone(RC.gs, "sine", 150, t, 0.2, 0.28, { slide: 55 }); noise(RC.gs, t, 0.12, 0.2, "lowpass", 700, 0.7, 200); },

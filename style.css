@@ -1811,3 +1811,24 @@ html.mo .hbtns:not(.has)::after{content:"";flex:1 1 0;min-height:0;width:46px;bo
 .rc2-pitpop .opt em.wn,.rc2-tpre .opt em.wn{font-style:normal;font:600 12px Rajdhani,sans-serif;color:#ffb25c}
 .rc2-boxb.pit{background:rgba(12,6,32,.9);border:2px solid #ff3dc8;font-size:18px}
 .rc-diff{margin:-2px 4px 10px;line-height:1.35}
+/* lobby tavoli condivisa + riepilogo di fine tavolo (v100) */
+.hs{width:100%;display:flex;flex-direction:column;gap:2px;padding:0 4px}
+.hs-v{text-align:center;font:700 17px Rajdhani,sans-serif;color:#ffe27a;letter-spacing:.04em}
+.hs-r{width:100%;accent-color:#ff3db0;height:26px;margin:0}
+.hs-t{display:flex;justify-content:space-between;font:600 11px Rajdhani,sans-serif;opacity:.65;padding:0 6px}
+.tl-row .mp-rowc:has(.hs){flex:1}
+.tl-free{font:600 14px Rajdhani,sans-serif;opacity:.45;margin:10px auto 0}
+.tl-rules.ro .pcat,.tl-rules.ro .hs{opacity:.78}
+.tl-rules.ro .pcat:disabled{cursor:default}
+.mp-card.tsum{background:linear-gradient(180deg,#0f5a37,#093a24 80%);border:1.5px solid #52ff9a;box-shadow:0 0 22px rgba(82,255,154,.25);display:flex;flex-direction:column;gap:10px}
+.tsum-res{text-align:center;font:700 18px Rajdhani,sans-serif;color:#d9ffe9;padding:6px 8px;border-radius:12px;background:rgba(0,0,0,.28)}
+.tsum-res.mp-win{color:#7dff9f}.tsum-res.mp-lose{color:#ff9a9a}
+.tsum-pg{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.tsum-tb{display:grid;gap:3px;align-items:stretch;max-height:46vh;overflow-y:auto}
+.tsum-tb span{padding:6px 4px;text-align:center;font:700 15px Rajdhani,sans-serif;background:rgba(0,0,0,.25);border-radius:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9fff3}
+.tsum-tb span.h{background:rgba(255,255,255,.14);font-size:13px;letter-spacing:.04em}.tsum-tb span.h.me{color:#ffe27a}
+.tsum-tb span.lb{background:rgba(255,255,255,.08);color:#9fe9bd;font-size:13px}
+.tsum-tb span.pos{color:#7dff9f}.tsum-tb span.neg{color:#ff8a8a}
+.tsum-tb span.tt{background:rgba(0,0,0,.45);font-size:17px;border:1px solid rgba(255,255,255,.25)}.tsum-tb span.tt.top{border-color:#ffe27a}
+.tsum-tb span.note{padding:18px 8px;font-size:18px;white-space:normal}
+.tsum-b{display:flex;gap:10px;justify-content:center}.tsum-b .mp-go{flex:1;margin:0}

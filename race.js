@@ -892,7 +892,7 @@
         var popK = "";
         function popFill() {
           pop.innerHTML = ""; var bx = el("div", "bx"); bx.appendChild(el("b", "tt", "🛞 SOSTA AI BOX")); bx.appendChild(el("small", "", (tr.rain ? (tr.rain > 1 ? "🌧 Pioggia forte" : "🌦 Pioggia leggera") : "☀️ Asciutto") + " · giro " + me.lap + "/" + laps + " · la sosta dura sempre uguale per tutti"));
-          bx.appendChild(tyOpts(function (k) { if (pitChoose(me, k)) { A.haptic("medium"); } }, me.tyc, me.tyU || 0, "pit"));
+          bx.appendChild(tyOpts(function (k) { if (pitChoose(me, k)) { A.haptic("medium"); AU.sfx("pit"); } }, me.tyc, me.tyU || 0, "pit"));
           var need = nUsedT(me.tyU || 0) < 2; bx.appendChild(el("small", need ? "wn" : "ok", need ? "Finora una sola mescola: ne serve una diversa, altrimenti +20 s a fine gara." : "✔ Hai già usato due mescole diverse."));
           pop.appendChild(bx);
         }
