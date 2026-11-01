@@ -956,14 +956,14 @@
         var gm = (lsGet(PF() + "g_" + tr.id) || {}).g, ab0 = GPf.best ? absRec(tr) : null;
         var iAmRec = !!(ab0 && ab0.me);                                                                              // se il record assoluto è tuo, il fantasma è uno solo (il tuo)
         if ((GPf.mine || iAmRec) && gm && gm.length > 6) gl.push({ arr: gm, o: { x: 0, y: 0, a: 0, col: iAmRec ? "#ffd23b" : "#cfe6ff", name: iAmRec ? "Il tuo record 🏆" : "Il tuo record", ghost: true, hit: 0 } });
-        if (ab0 && !ab0.me && tr._absG && tr._absG.length > 6) gl.push({ arr: tr._absG, o: { x: 0, y: 0, a: 0, col: "#ffd23b", name: "Record · " + ab0.n, ghost: true, hit: 0 } });
+        if (ab0 && !ab0.me && tr._absG && tr._absG.length > 6) gl.push({ arr: tr._absG, hz: (function () { var nn = tr._absG.length / 3, rr = ab0.t > 1 ? nn / ab0.t : 20; return Math.abs(rr - 10) < Math.abs(rr - 20) ? 10 : 20; })(), o: { x: 0, y: 0, a: 0, col: "#ffd23b", name: "Record · " + ab0.n, ghost: true, hit: 0 } });
       }
       var sbest = (solo && lsGet(PF() + "s_" + tr.id)) || [0, 0, 0], secNo = 0, secStart = 0, secPrev = [], secLast = [], secCols = [];
       var shots = (function () { var N = tr.N, sm = [], i, q, o = [], ch = []; for (i = 0; i < N; i++) { var k = 0; for (q = -7; q <= 7; q++) k += tr.kap[(i + q + N) % N]; sm.push([k, i]); } sm.sort(function (a, b) { return b[0] - a[0]; });
         sm.forEach(function (c) { if (ch.length >= 3) return; var i2 = c[1]; if (Math.min(i2, N - i2) < 60) return; if (ch.every(function (x) { var d = Math.abs(x - i2); return Math.min(d, N - d) > N / 6; })) ch.push(i2); }); ch.sort(function (a, b) { return a - b; }); while (ch.length < 3) ch.push(Math.floor(N * (ch.length + 1) / 4)); ch.push(N - 40); return ch; })();
       function allG() { return gl.map(function (g) { return g.o; }).concat(qgh); }
       function ghostAt(G, tt) {
-        var gh = G.arr, ghost = G.o, f = tt * 20, i = Math.min(Math.floor(f), gh.length / 3 - 2), u = Math.max(0, Math.min(1, f - i)); if (i < 0) i = 0;
+        var gh = G.arr, ghost = G.o, f = tt * (G.hz || 20), i = Math.min(Math.floor(f), gh.length / 3 - 2), u = Math.max(0, Math.min(1, f - i)); if (i < 0) i = 0;
         var a0 = gh[i * 3 + 2] / 100, a1 = gh[i * 3 + 5] / 100, da = a1 - a0; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
         ghost.x = gh[i * 3] + (gh[i * 3 + 3] - gh[i * 3]) * u; ghost.y = gh[i * 3 + 1] + (gh[i * 3 + 4] - gh[i * 3 + 1]) * u; ghost.a = a0 + da * u;
       }
