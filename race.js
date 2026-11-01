@@ -603,13 +603,13 @@
     }
     function lobby(reset) {
       var L = LB, sc0 = !reset && root.querySelector(".lb-body"), sct = sc0 ? sc0.scrollTop : 0; root.innerHTML = ""; root.className = "rc-root lobby"; var exitL = function () { if (real() && L.rm) { A.api("/api/room/leave", "POST", { id: L.rm, grace: 1 }).catch(function () {}); if (L._pt) { clearInterval(L._pt); L._pt = 0; } L.grace = Date.now() + 15000; setTimeout(function () { if (LB === L && L.grace && Date.now() >= L.grace - 200) { LB = null; } }, 15500); } lobbyHub(); }; hook(function () { exitL(); return true; });   // l'host che esce chiude la lobby: gli inviti spariscono
-      var tp = top("LOBBY", exitL, "‹ Esci");
-      var tabs = el("div", "lb-tabs"); ["👥 GIOCATORI " + L.slots.length + "/8", "🛠 PISTA & REGOLE"].forEach(function (nm, i) { var b = el("button", "lb-tab" + (L.tab === i ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.tab = i; lobby(true); }); tabs.appendChild(b); }); root.appendChild(tabs);
+      var tp = top(L.tourn ? "🏆 TORNEO" : "LOBBY", exitL, "‹ Esci");
+      if (L.tourn) L.tab = 0; var tabs = el("div", "lb-tabs"); ["👥 GIOCATORI " + L.slots.length + "/8", "🛠 PISTA & REGOLE"].slice(0, L.tourn ? 1 : 2).forEach(function (nm, i) { var b = el("button", "lb-tab" + (L.tab === i ? " on" : ""), nm); b.type = "button"; b.addEventListener("click", function () { L.tab = i; lobby(true); }); tabs.appendChild(b); }); root.appendChild(tabs);
       var body = el("div", "lb-body"); root.appendChild(body);
       if (L.tab === 0) {
         var list = el("div", "lb-slots");
         for (var i = 0; i < 8; i++) { (function (i) { var sl = L.slots[i], r = el("div", "lb-slot" + (sl ? "" : " free")); r.appendChild(el("u", "", String(i + 1))); var dot = el(sl && sl.t === "me" ? "button" : "i", "dot" + (sl && sl.t === "me" ? " pick" : "")); dot.style.background = sl ? lbCols(L)[i] : "transparent"; if (sl && sl.t === "me") { dot.type = "button"; dot.addEventListener("click", function () { palette(); }); } r.appendChild(dot);
-          if (!sl) { r.appendChild(el("span", "n", "libero")); var pl = el("button", "lb-plus", "＋"); pl.type = "button"; pl.addEventListener("click", function () { slotMenu(); }); r.appendChild(pl); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); var stt = sl.t === "me" ? ["me", "LEADER"] : (sl.t === "bot" ? ["bot", "BOT · " + DIFF[L.diff].n] : (sl.t === "wait" ? ["wait", "INVITATO…"] : (sl.on === false ? ["off", "OFFLINE"] : (sl.rdy ? ["rdy", "PRONTO"] : ["on", "ONLINE"])))); r.appendChild(el("em", stt[0], stt[1])); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { if (sl.uid && real() && L.rm) A.api("/api/room/kick", "POST", { id: L.rm, uid: sl.uid }).catch(function () {}); L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
+          if (!sl) { r.appendChild(el("span", "n", L.tourn ? "in attesa" : "libero")); var pl = el("button", "lb-plus", "＋"); if (L.tourn) pl.style.display = "none"; pl.type = "button"; pl.addEventListener("click", function () { slotMenu(); }); r.appendChild(pl); } else { var av = el("div", "avatar rav lbav"); if (sl.t === "bot") av.textContent = "🤖"; else { try { A.styleAvatar(av, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}), (sl.name || "?").charAt(0).toUpperCase()); } catch (e) { av.textContent = (sl.name || "?").charAt(0); } } var nn = el("span", "n"); if (sl.t === "bot") nn.textContent = sl.name; else nn.appendChild(A.nameEl(sl.name, sl.t === "me" ? ((A.me && A.me().style) || {}) : (sl.style || {}))); r.appendChild(nn); var stt = sl.t === "me" ? ["me", "LEADER"] : (sl.t === "bot" ? ["bot", "BOT · " + DIFF[L.diff].n] : (sl.t === "wait" ? ["wait", "INVITATO…"] : (sl.on === false ? ["off", "OFFLINE"] : (sl.rdy ? ["rdy", "PRONTO"] : ["on", "ONLINE"])))); r.appendChild(el("em", stt[0], stt[1])); if (sl.t !== "me") { var x = el("button", "lb-x", "✕"); x.type = "button"; x.addEventListener("click", function () { if (sl.uid && real() && L.rm) A.api("/api/room/kick", "POST", { id: L.rm, uid: sl.uid }).catch(function () {}); L.slots.splice(i, 1); lobby(); }); r.appendChild(x); } }
           list.appendChild(r); })(i); }
         if (real()) {                                                                                           // l'host manda la lobby nel gruppo quando vuole (con il pulsante per entrare)
           var an = el("button", "mp-go mp-alt lb-ann", "📣 ANNUNCIA NEL GRUPPO"); an.type = "button";
@@ -617,8 +617,8 @@
           body.appendChild(an);
         }
         body.appendChild(list);
-        var dr = el("div", "lb-row col"); dr.appendChild(el("span", "", "DIFFICOLTÀ BOT")); var chips = el("div", "lb-chips"); DIFF.forEach(function (df, n) { var b = el("button", "mp-gt wide" + (L.diff === n ? " on" : ""), df.n); b.type = "button"; b.addEventListener("click", function () { L.diff = n; lobby(); }); chips.appendChild(b); }); dr.appendChild(chips); body.appendChild(dr);
-        body.appendChild(el("div", "rc-note", L.diff === 3 ? "Campione: i bot girano come il TUO record su questa pista (col server: come il miglior giro di tutti)." : "Nelle lobby pubbliche i bot li decide chi crea la lobby: puoi giocare solo con persone, solo con bot o misto."));
+        if (L.tourn) { body.appendChild(el("div", "rc-note", "🏆 Gara di torneo: niente bot, regole fisse. Aspetta che i piloti siano PRONTI e avvia.")); } else { var dr = el("div", "lb-row col"); dr.appendChild(el("span", "", "DIFFICOLTÀ BOT")); var chips = el("div", "lb-chips"); DIFF.forEach(function (df, n) { var b = el("button", "mp-gt wide" + (L.diff === n ? " on" : ""), df.n); b.type = "button"; b.addEventListener("click", function () { L.diff = n; lobby(); }); chips.appendChild(b); }); dr.appendChild(chips); body.appendChild(dr);
+        body.appendChild(el("div", "rc-note", L.diff === 3 ? "Campione: i bot girano come il TUO record su questa pista (col server: come il miglior giro di tutti)." : "Nelle lobby pubbliche i bot li decide chi crea la lobby: puoi giocare solo con persone, solo con bot o misto.")); }
       } else {
         var th = el("div", "lb-tr"); TRACKS.forEach(function (tr, i) { if ((tr.sbx && !isSbx()) || (tr.hideSbx && isSbx())) return; var b = el("button", "lb-t" + (L.ti === i ? " on" : "")); b.type = "button"; var im = el("img"); im.src = thumb(tr); b.appendChild(im); b.appendChild(el("span", "", tr.name)); b.addEventListener("click", function () { L.ti = i; lobby(); }); th.appendChild(b); }); body.appendChild(th); 
         var adm = !!(A.isSandbox && A.isSandbox());
@@ -644,7 +644,7 @@
       }
       var actN = L.slots.filter(function (x) { return x.t !== "wait"; }).length, frs = L.slots.filter(function (x) { return x.t === "friend"; }), pend = frs.filter(function (x) { return x.on !== false && !x.rdy; });
       var go = el("button", "mp-go lb-go", "▶ AVVIA GARA · " + actN + " piloti" + (L.qual ? " · con qualifica" : "")); go.type = "button"; go.disabled = actN < 2 || pend.length > 0;
-      if (actN < 2) go.textContent = "Servono almeno 2 piloti: aggiungi un bot o invita un amico"; else if (pend.length) go.textContent = "In attesa che siano pronti: " + pend.slice(0, 3).map(function (x) { return x.name; }).join(", ");
+      if (actN < 2) go.textContent = L.tourn ? "Servono almeno 2 piloti del torneo" : "Servono almeno 2 piloti: aggiungi un bot o invita un amico"; else if (pend.length) go.textContent = "In attesa che siano pronti: " + pend.slice(0, 3).map(function (x) { return x.name; }).join(", ");
       go.addEventListener("click", function () {
         var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: lbCols({ col: L.col, slots: act })[i] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, coll: L.coll, rain: L.rain, qual: L.qual, prize: L.prize, lng: !!L.lng, tyre0: L.lng ? (lsGet("arc_lng_t0") || {}).c : undefined, back: lobby };
         if (L.qual) o.qualPhase = true;
@@ -665,7 +665,7 @@
       if (real()) { if (!L.rm) { if (!L._ens) { L._ens = 1; rmEnsure(function (ok) { if (ok && LB === L) { rmPush(); rmWatch(); } else { if (ok && L.rm && L._gone) A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); L._ens = 0; } }); } } else { rmPush(); rmWatch(); } }
     }
     // ---------- stanze online (account vero): invito dal server, lobby condivisa, auto degli altri in tempo reale ----------
-    function real() { return !isSbx(); }
+    function real() { return !isSbx() || !!(LB && LB.tourn); }
     function rmCfg(L) { return { track: TRACKS[L.ti].id, laps: L.laps, prize: L.prize | 0, max: 8, x: { rain: L.rain | 0, obst: L.obst ? 1 : 0, pads: L.pads ? 1 : 0, slip: L.slip ? 1 : 0, coll: L.coll ? 1 : 0, qual: L.qual ? 1 : 0, vis: L.vis ? 1 : 0, hcol: L.col | 0, lng: L.lng ? 1 : 0 } }; }
     function rmEnsure(cb) {
       var L = LB; if (L.rm) return cb(true);
@@ -674,7 +674,7 @@
     function rmPush() { var L = LB; if (L && L.rm && real()) A.api("/api/room/cfg", "POST", { id: L.rm, cfg: rmCfg(L) }).catch(function () {}); }
     function lbFromRoom(room) {                                                                                    // ricostruisce la lobby dell'host da quella sul server (rientro dopo aver chiuso l'app)
       var L = newLobby(), c = room.cfg || {}, x = c.x || {}; L.rm = room.id; L.ti = Math.max(0, TRACKS.findIndex(function (t) { return t.id === c.track; })); L.laps = c.laps || 3; L.prize = c.prize | 0; L.rain = x.rain | 0; L.obst = !!x.obst; L.pads = !!x.pads; L.slip = !!x.slip; L.coll = x.coll !== 0; L.lng = !!x.lng; L.qual = !!x.qual; L.vis = x.vis === 0 ? 0 : 1; L.col = x.hcol | 0;
-      room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready, col: p.col }); }); return L;
+ L.tourn = c.tourn || 0;      room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready, col: p.col }); }); return L;
     }
     function rmWatch() {                                                                                            // l'host segue la stanza: chi entra (anche senza invito), chi esce, chi è online / pronto
       var L = LB; if (!L || !L.rm || L._pt) return; var busy = 0;
@@ -845,8 +845,8 @@
       var left = el("div", "rc2-pad l"), right = el("div", "rc2-pad r"), rev = el("div", "rc2-rev"), rfill = el("i"), bbar = el("div", "rc2-boost"), bfill = el("i"); rev.appendChild(rfill); bbar.appendChild(bfill);
       var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : (opts.afterQual ? 4 : 8);
       gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small></small><b></b><span></span>"; intro.children[0].textContent = qual ? "🏁 SESSIONE UFFICIALE 🏁" : (opts.grid ? "🏆 GRAN PREMIO 🏆" : "CIRCUITO"); intro.children[1].textContent = qual ? "QUALIFICA" : (opts.grid ? "GARA" : tr.name); intro.children[2].textContent = qual ? "⏱ " + tr.name.toUpperCase() + " · 1 GIRO LANCIATO · DECIDE LA GRIGLIA" : (solo ? "CONTRO IL TEMPO" : (opts.grid ? "🏎 " + tr.name.toUpperCase() : "GARA")) + " · " + laps + " GIRI" + (opts.grid ? " · SI PARTE DALLA GRIGLIA" : ""); if (qual) intro.classList.add("qual");
-      var tower = el("div", "rc2-tower"), twc = 0, xb = el("button", "rc2-x", "⏸"); xb.type = "button"; var sec = el("div", "rc2-sec"), lapb = el("div", "rc2-lapb");
-      full.appendChild(cv); var rainEl = null; if (RAIN) { rainEl = el("div", "rc2-rain" + (RAIN > 1 && RAIN !== 3 ? " heavy" : "")); if (RAIN === 3) rainEl.style.opacity = "0"; full.appendChild(rainEl); } full.appendChild(hud); full.appendChild(cd); full.appendChild(tip); full.appendChild(left); full.appendChild(right); full.appendChild(bbar); full.appendChild(xb); full.appendChild(sec); full.appendChild(lapb); full.appendChild(gasb); full.appendChild(lch); full.appendChild(intro); if (!solo && !qual) full.appendChild(tower); document.body.appendChild(full);
+      var fln = el("div", "rc2-fln"), FLB = 1e9, FLC = null, flN = 0; var tower = el("div", "rc2-tower"), twc = 0, xb = el("button", "rc2-x", "⏸"); xb.type = "button"; var sec = el("div", "rc2-sec"), lapb = el("div", "rc2-lapb");
+      full.appendChild(cv); full.appendChild(fln); var rainEl = null; if (RAIN) { rainEl = el("div", "rc2-rain" + (RAIN > 1 && RAIN !== 3 ? " heavy" : "")); if (RAIN === 3) rainEl.style.opacity = "0"; full.appendChild(rainEl); } full.appendChild(hud); full.appendChild(cd); full.appendChild(tip); full.appendChild(left); full.appendChild(right); full.appendChild(bbar); full.appendChild(xb); full.appendChild(sec); full.appendChild(lapb); full.appendChild(gasb); full.appendChild(lch); full.appendChild(intro); if (!solo && !qual) full.appendChild(tower); document.body.appendChild(full);
       var TGW = window.Telegram && window.Telegram.WebApp;
       try { if (TGW) { if (TGW.unlockOrientation) TGW.unlockOrientation(); if (TGW.requestFullscreen && !TGW.isFullscreen) TGW.requestFullscreen(); if (TGW.disableVerticalSwipes) TGW.disableVerticalSwipes(); if (TGW.enableClosingConfirmation) TGW.enableClosingConfirmation(); } } catch (e) {}
       try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function () {}); } catch (e) {}
@@ -1108,7 +1108,7 @@
           if (RMT) {                                                                                                  // gara online: il server conferma la classifica (maggioranza) e paga il premio
             resLn = el("div", "rc-lap", opts.prize ? "💰 Premio: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)) + " $SDG" : ""); box.appendChild(resLn);
             var ord2 = rank().map(function (c) { return c === me ? RMT.uid : c.remote; });
-            A.api("/api/room/result", "POST", { id: RMT.id, order: ord2 }).then(function (j) { if (j && j.success && j.settled && resLn && !resLn._d) { resLn._d = 1; var py = ((j.result || {}).pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} } }).catch(function () {});
+            A.api("/api/room/result", "POST", { id: RMT.id, order: ord2, bl: Math.min.apply(null, (me.lapTs || []).length ? me.lapTs.slice(0) : [1e9]) }).then(function (j) { if (j && j.success && j.settled && resLn && !resLn._d) { resLn._d = 1; var py = ((j.result || {}).pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} } }).catch(function () {});
           } else if (opts.prize) { var pz = [opts.prize, Math.round(opts.prize * 0.75), Math.round(opts.prize * 0.5)][p0] || 0; box.appendChild(el("div", "rc-lap", pz ? "💰 Premio: +" + A.fmt(pz) + " $SDG (simulato)" : "Premi: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)))); }
         }
         if (wxb.parentNode) wxb.parentNode.removeChild(wxb); if (wxbub.parentNode) wxbub.parentNode.removeChild(wxbub);
@@ -1460,6 +1460,11 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
           if (!lapB) { lapb.innerHTML = "<b></b><span></span>"; lapB = lapb.firstChild; lapS = lapb.lastChild; }
           lapB.textContent = fmt(cl); var showP = pl && !LQ && !qual && t - prevAt < 5; lapb.classList.toggle("prev", !!showP); if (showP) { lapS.innerHTML = "PREC " + fmt(pl) + (dl ? " <i class='" + (dl < 0 ? (pl <= bl + 1e-9 ? "f" : "g") : "r") + "'>" + (dl < 0 ? "−" : "+") + Math.abs(dl).toFixed(2) + "</i>" : ""); lapS.style.opacity = Math.min(1, (5 - (t - prevAt)) / 1.2); } else lapS.style.opacity = 0;
         }
+        if (!solo && !qual && !LQ && (isSbx() || RMT) && cars.length > 1) {                                                // giro veloce: simbolo in classifica e avviso fucsia per ~3 s
+          var fb0 = 1e9, fc0 = null; cars.forEach(function (c) { (c.lapTs || []).forEach(function (x) { if (x > 5 && x < fb0) { fb0 = x; fc0 = c; } }); });
+          if (fc0 && fb0 < FLB - 0.0004) { FLB = fb0; FLC = fc0; flN = performance.now() + 3200; fln.textContent = "⏱ Giro veloce " + (fc0 === me ? "Tu" : fc0.name) + " " + Math.floor(fb0 / 60) + ":" + (fb0 % 60).toFixed(3).padStart(6, "0"); twc = 0; }
+          fln.className = "rc2-fln" + (performance.now() < flN ? " on" : "");
+        }
         if (!solo && (twc++ % 5 === 0)) {                                                                                       // classifica live stile F1: nome corto e distacco dall'auto davanti (in secondi, tre decimali)
           var rk = rank(), rows = "";
           var mi = rk.indexOf(me), ws = Math.min(Math.max(mi - 2, 1), Math.max(1, rk.length - 4));
@@ -1469,7 +1474,7 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
             if (j === 0) gap = "LEADER";
             else { var Ah = rk[0], ld = Math.floor((Ah.prog - c.prog) / tr.N);
               if (c.fin && Ah.fin) gap = "+" + Math.max(0, c.finT - Ah.finT).toFixed(3); else if (ld >= 1) gap = "+" + ld + (ld > 1 ? " GIRI" : " GIRO"); else { var h0 = Ah.hist[Math.floor(c.prog) + 60]; gap = h0 >= 0 ? "+" + Math.max(0, t - h0).toFixed(3) : "—"; } }
-            rows += "<div class='tr" + cls + "'><b>" + (j + 1) + "</b><i style='background:" + c.col + "'></i><span>" + (c === me ? "TU" : c.name.slice(0, 3).toUpperCase()) + (LNG && c.tyc != null ? "<i class='ty' style='background:" + TYC[c.tyc].col + "'></i>" + (c.pit || c.rpit ? "P" : "") : "") + "</span><em>" + gap + "</em></div>";
+            rows += "<div class='tr" + cls + "'><b>" + (j + 1) + "</b><i style='background:" + c.col + "'></i><span>" + (c === me ? "TU" : c.name.slice(0, 3).toUpperCase()) + (LNG && c.tyc != null ? "<i class='ty' style='background:" + TYC[c.tyc].col + "'></i>" + (c.pit || c.rpit ? "P" : "") : "") + (FLC === c ? "<u class='flm'>⏱</u>" : "") + "</span><em>" + gap + "</em></div>";
           });
           tower.innerHTML = rows;
         }

@@ -384,7 +384,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     return new Promise(function (res, rej) {
       for (var i = 0; i < N.inbox.length; i++) if (pred(N.inbox[i])) return res(N.inbox.splice(i, 1)[0]);
       var w = { pred: pred, res: res }, off = 0;
-      w.iv = setInterval(function () { if (N.dead) { clearInterval(w.iv); return; } if (oppOffline(who)) { off += 1; if (off >= 25) { clearInterval(w.iv); rej({ forfeit: true }); } } else off = 0; }, 1000);
+      w.iv = setInterval(function () { if (N.dead) { clearInterval(w.iv); return; } if (oppOffline(who)) { off += 1; if (off >= 60) { clearInterval(w.iv); rej({ forfeit: true }); } } else off = 0; }, 1000);
       N.waiters.push(w);
     });
   }
@@ -416,7 +416,9 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   }
   // fine tavolo: invio le fiches finali; il server paga in proporzione se la maggioranza concorda (o se chi manca è sparito)
   function tblFinish(P, net, box, en, label, S) {
-    var N = NET, ch = {}, any = 0; P.forEach(function (p) { if (p.uid) { ch[p.uid] = Math.max(0, Math.round(p.stack != null ? p.stack : p.chips)); any += ch[p.uid]; } });
+    var N = NET, ch = {}, any = 0, hum = P.filter(function (p) { return p.uid; }), gn = hum.filter(function (p) { return p.gone; });
+    P.forEach(function (p) { if (p.uid) { ch[p.uid] = p.gone ? 0 : Math.max(0, Math.round(p.stack != null ? p.stack : p.chips)); any += ch[p.uid]; } });
+    if (gn.length && hum.length - gn.length <= 1 && hum.length <= 2 && N.view && !N.view.sim) { A.api("/api/room/abort", "POST", { id: N.id, why: "left" }).catch(function () {}); }
     if (!any) P.forEach(function (p) { if (p.uid) ch[p.uid] = 1; });
     var order = Object.keys(ch).sort(function (a, b) { return ch[b] - ch[a]; }), done = false, tries = 0, me = N.me, game = (N.view || {}).game, kk = { poker: "pk", bj: "bj", scopa: "sc" }[game] || "pk";
     var host = (N.view || {}).host === me, rid = N.id, rnd = (N.view || {}).round | 0;
@@ -1203,6 +1205,13 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
       if (!t) { b.textContent = NET ? "SICURO? Abbandoni" : "SICURO?"; t = setTimeout(function () { t = 0; b.textContent = "✕ ESCI"; }, 3000); return; }
       clearTimeout(t); epoch++; if (NET) { try { A.api("/api/room/leave", "POST", { id: NET.id }).catch(function () {}); } catch (e) {} netClose(); } tables();
     });
+    if (NET && NET.view && NET.view.host === NET.me && !NET.view.sim) {                                  // l'host ha una via di fuga: chiude il tavolo per tutti e le puntate tornano indietro
+      var ab = el("button", "tbl-x tbl-ab", "⛔ CHIUDI TAVOLO"), t2 = 0; ab.type = "button"; sec.appendChild(ab);
+      ab.addEventListener("click", function () {
+        if (!t2) { ab.textContent = "SICURO? Rimborso a tutti"; t2 = setTimeout(function () { t2 = 0; ab.textContent = "⛔ CHIUDI TAVOLO"; }, 3500); return; }
+        clearTimeout(t2); var id = NET.id; epoch++; A.api("/api/room/abort", "POST", { id: id }).then(function () { A.toast("Tavolo chiuso: puntate restituite"); try { A.refreshMe(); } catch (e) {} }).catch(function () {}); netClose(); tables();
+      });
+    }
   }
   function pkTable(bots, cfg, net) {
     cfg = cfg || { buy: 100, wallet: 0, u: 5 };
@@ -1356,6 +1365,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
 
   window.ArcadeMulti = { friendSheet: function (ex, pick) { friendSheet(ex || [], pick); }, myName: function () { return myName(); }, load: function () {
     if (!(A.multiOn && A.multiOn())) { soon(); return; }
+    if (NET && !NET.dead && NET.started && body.firstChild) { fit(true); return; }                 // partita in corso: tornando sulla scheda si rientra nel tavolo, non si ricostruisce la home
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
   }, openGP: function (rid) { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby, rid || ""); return true; } };
   // link diretto dal gruppo (t.me/…?startapp=multiplayer oppure grandprix): apre il Multiplayer (o subito il Grand Prix), già col tuo account
