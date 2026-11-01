@@ -112,10 +112,31 @@
       var tx = el("div", "mp-tx"); tx.appendChild(el("b", "", t.name)); tx.appendChild(el("span", "", t.sub)); tx.appendChild(el("em", "", "▶ GIOCA")); b.appendChild(tx);
       b.addEventListener("click", function () { A.haptic("light"); st.tl = null; tableLobby(k); }); g.appendChild(b);
     });
+    if (isReal()) {                                                      // tavoli aperti da altri giocatori: si entra con un tocco (come le lobby aperte del Grand Prix)
+      body.appendChild(el("div", "rc-sec", "TAVOLI APERTI")); var ob = el("div", "gl-inv"); body.appendChild(ob); var ot = 0, EO = epoch;
+      var loadO = function () {
+        if (epoch !== EO || !ob.isConnected) { clearInterval(ot); return; }
+        A.api("/api/room/open?game=tables", "GET").then(function (j) {
+          if (epoch !== EO || !ob.isConnected) return; ob.innerHTML = ""; var rows = 0;
+          ((j && j.rooms) || []).forEach(function (r) {
+            var kk = r.game === "poker" ? "pk" : r.game === "bj" ? "bj" : "sc", T2 = TBL[kk], x = r.cfg.x || {}, hp = r.players.filter(function (q) { return q.uid === r.host; })[0] || r.players[0] || {};
+            var row = el("div", "lb-open"), d = el("div", "d"); rows++;
+            d.appendChild(el("b", "", T2.name + " di " + (hp.name || "un amico")));
+            d.appendChild(el("span", "", kk === "pk" ? "buy-in " + A.fmt(r.cfg.stake) + " $SDG · ante " + A.fmt(x.u || 5) : kk === "bj" ? "puntata " + A.fmt(x.bet || 50) + " $SDG a mano" : "posta " + A.fmt(r.cfg.stake) + " $SDG"));
+            row.appendChild(d); row.appendChild(el("em", "", r.players.length + (x.bots ? "+" + x.bots + "🤖" : "") + "/" + (r.cfg.max || T2.max)));
+            var g2 = el("button", "lb-j", "ENTRA"); g2.type = "button";
+            g2.addEventListener("click", function () { g2.disabled = true; A.api("/api/room/join", "POST", { id: r.id }).then(function (k2) { if (k2 && k2.success) guestJoin(k2.room); else { g2.disabled = false; A.toast((k2 && k2.error) || "Non riesco a entrare"); } }).catch(function (e) { g2.disabled = false; A.toast((e && e.message) || "Non riesco a entrare"); }); });
+            row.appendChild(g2); ob.appendChild(row);
+          });
+          if (!rows) ob.appendChild(el("div", "rc-note", "Nessun tavolo aperto al momento: creane uno e scegli \"Aperto a tutti\", lo vedranno tutti."));
+        }).catch(function () {});
+      };
+      loadO(); ot = setInterval(loadO, 5000);
+    }
   }
   // ---- lobby di un tavolo: posti (tu, amici invitati, bot) + regole + AVVIA. Stessa schermata che userà il server.
   function tblFromRoom(k, room, host) {                                // ricostruisce posti e regole dalla stanza (host dopo una partita, ospite sempre)
-    var c = room.cfg || {}, x = c.x || {}, L = { k: k, hands: c.hands || 0, seats: [null, null, null, null], mode: "4s", rm: room.id, view: room };
+    var c = room.cfg || {}, x = c.x || {}, L = { k: k, hands: c.hands || 0, seats: [null, null, null, null], mode: "4s", rm: room.id, view: room, vis: x.vis ? 1 : 0 };
     var hs = room.players.filter(function (p) { return p.uid === room.host; })[0] || room.players[0] || {};
     L.seats[0] = host ? { t: "me" } : { t: "friend", host: true, human: true, uid: hs.uid, name: hs.name, style: hs.style, rdy: true, you: room.me === hs.uid };
     room.players.filter(function (p) { return p.uid !== room.host; }).forEach(function (p) { var fi = L.seats.indexOf(null); if (fi >= 0) L.seats[fi] = { t: "friend", human: true, uid: p.uid, pid: p.pid, name: p.name, style: p.style, rdy: !!p.ready, you: p.uid === room.me }; });
@@ -153,9 +174,9 @@
     function addBot(i) { var n = L.seats.filter(function (x) { return x && x.t === "bot"; }).length + 1; L.seats[i] = { t: "bot", name: "Bot " + n }; A.haptic("light"); paint(); }
     function tlCfg() {
       var bn = L.seats.filter(function (x) { return x && x.t === "bot"; }).length;
-      if (k === "pk") return { stake: L.buy, hands: L.hands || 10, max: T.max, x: { u: L.rich ? 50 : 5, bots: bn } };
-      if (k === "bj") return { stake: (L.bet || 50) * 20, hands: L.hands || 10, max: T.max, x: { bet: L.bet || 50, bots: bn } };
-      return { stake: L.pot || 50, max: 4, x: { tgt: L.target || 0, m4: L.mode === "4c" ? 1 : 0, bots: bn } };
+      if (k === "pk") return { stake: L.buy, hands: L.hands || 10, max: T.max, x: { u: L.rich ? 50 : 5, bots: bn, vis: L.vis ? 1 : 0 } };
+      if (k === "bj") return { stake: (L.bet || 50) * 20, hands: L.hands || 10, max: T.max, x: { bet: L.bet || 50, bots: bn, vis: L.vis ? 1 : 0 } };
+      return { stake: L.pot || 50, max: 4, x: { tgt: L.target || 0, m4: L.mode === "4c" ? 1 : 0, bots: bn, vis: L.vis ? 1 : 0 } };
     }
     function tlWatch() {
       if (L._pt) return; L._pt = setInterval(function () {
@@ -194,7 +215,15 @@
         seatsE.appendChild(c);
       })(i);
     }
-    function paintRules() { paintRules0(); if (!ro && L.rm) pushCfg(); }
+    function addVis() {                                                // apertura del tavolo: lo vedono tutti in "Tavoli aperti" oppure solo gli amici invitati
+      if (ro || !isReal()) return; var r = el("div", "tl-row"); r.appendChild(el("span", "", "Apertura")); var c = el("div", "mp-rowc"); r.appendChild(c); rules.appendChild(r);
+      chips(c, [[1, "🌐 Aperto a tutti"], [0, "🔒 Solo amici"]], L.vis ? 1 : 0, function (it) {
+        L.vis = it[0];
+        if (L.vis && !L.rm) { A.api("/api/room/create", "POST", { game: GK, cfg: tlCfg() }).then(function (j) { L.rm = j.room.id; L.view = j.room; tlWatch(); paint(); }).catch(function (x) { L.vis = 0; A.toast((x && x.message) || "Server non raggiungibile"); paint(); }); return; }
+        paint();
+      });
+    }
+    function paintRules() { paintRules0(); addVis(); if (!ro && L.rm) pushCfg(); }
     function paintRules0() {
       rules.innerHTML = ""; var n = count();
       if (k === "pk") {
@@ -243,6 +272,7 @@
         var bots = Math.max(1, count() - 1);
         if (k === "pk") pkTable(bots, { buy: L.buy, wallet: wallet - L.buy, u: L.rich ? 50 : 5, hands: L.hands }); else if (k === "bj") bjTable(bots); else scopaTable(count() > 2 ? L.mode : "2", L.target);
       }); go.appendChild(b);
+      if (L.rm) { var cx = el("button", "mp-go mp-alt", "✕ CHIUDI LA LOBBY"); cx.type = "button"; cx.addEventListener("click", function () { cx.disabled = true; dropTl(); tables(); }); go.appendChild(cx); }
     }
     function tlStart() {                                              // host: manda le regole finali, poi il via: tutti i telefoni partono insieme
       var botsN = L.seats.filter(function (x) { return x && x.t === "bot"; }).length, c0 = tlCfg(); c0.x.bots = botsN;
@@ -325,7 +355,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   function netClose() { if (NET) { NET.dead = true; clearTimeout(NET.t); } NET = null; }
   function netOpen(room, onStart) {
     netClose();
-    var N = NET = { id: room.id, me: room.me, view: room, since: 0, inbox: [], out: [], busy: false, dead: false, waiters: [], seed: 0, order: [], idx: 0, calls: 0, seq: 0, seen: {}, onStart: onStart, t: 0, started: false, R: Math.random, offT: 0 };
+    var N = NET = { id: room.id, me: room.me, view: room, since: (room.status === "lobby" ? (room.n | 0) : 0), first: !(room.status === "lobby"), inbox: [], out: [], busy: false, dead: false, waiters: [], seed: 0, order: [], idx: 0, calls: 0, seq: 0, seen: {}, onStart: onStart, t: 0, started: false, R: Math.random, offT: 0 };
     function handle(e) {
       var key = e.u + ":" + e.s; if (e.s != null) { if (N.seen[key]) return; N.seen[key] = 1; }
       if (e.k === "start") { if (N.started) return; N.started = true; N.seed = e.seed; N.order = e.order || []; N.idx = Math.max(0, N.order.indexOf(N.me)); N.opp = N.order[1 - N.idx]; if (N.onStart) N.onStart(e); return; }
@@ -339,7 +369,8 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
         N.busy = false; if (N.dead) return;
         if (j.gone) N.gone = true;
         if (j.room) N.view = j.room; if (typeof j.n === "number") N.since = j.n;
-        (j.events || []).forEach(handle); sched();
+        var evs = j.events || []; if (N.first) { N.first = false; var ls = -1; evs.forEach(function (q, qi) { if (q.k === "start") ls = qi; }); if (ls > 0) evs = evs.slice(ls); }      // aperto a partita già avviata: contano solo gli eventi dell'ultimo giro (non le mosse dei giri precedenti)
+        evs.forEach(handle); sched();
       }).catch(function () { N.busy = false; if (ev) N.out.unshift(ev); if (!N.dead) N.t = setTimeout(pump, 1200); });
     }
     function sched() { if (N.dead) return; clearTimeout(N.t); N.t = setTimeout(pump, N.out.length ? 0 : 420); }
@@ -873,7 +904,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   function bjTable(bots, net) {
     fit(true); epoch++; var E = epoch; body.innerHTML = "";
     var HS = [], deck = newDeck(), profit = 0, bet = net ? net.bet : st.bet, hn = 0, hands = net ? net.hands : 0, c = el("div", "mp-card"); body.appendChild(c);
-    c.appendChild(el("div", "mp-sec", "BLACKJACK · " + A.fmt(bet) + " $SDG a mano" + (net ? " · mano 1/" + hands : "")));
+    c.appendChild(el("div", "mp-sec", "BLACKJACK · " + A.fmt(bet) + " $SDG a mano" + (net ? " · mano 1/" + hands : ""))); tblExit(c, E);
     var felt = el("div", "mx-felt bj"), shoe = el("div", "mx-shoe"), msg = el("div", "pg-me", ""), area = el("div", "mp-area"), tot = el("div", "pg-me", "");
     c.appendChild(felt); c.appendChild(msg); c.appendChild(area); c.appendChild(tot);
     var P = [];
@@ -1042,7 +1073,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
   function scopaTable(mode, target, tot, rn, net) {
     fit(true); epoch++; var E = epoch; body.innerHTML = ""; target = target || 0; rn = rn || 1;
     var N = mode === "2" ? 2 : 4, c = el("div", "mp-card"); body.appendChild(c); tot = tot || (mode === "4s" ? [0, 0, 0, 0] : [0, 0]);
-    c.appendChild(el("div", "mp-sec", "SCOPA · " + (mode === "2" ? "1 contro 1" : mode === "4s" ? "1v1v1v1" : "2 contro 2") + (target ? " · a " + target + " · mano " + rn : "") + " · " + A.fmt(net ? net.stake : st.bet) + " $SDG"));
+    c.appendChild(el("div", "mp-sec", "SCOPA · " + (mode === "2" ? "1 contro 1" : mode === "4s" ? "1v1v1v1" : "2 contro 2") + (target ? " · a " + target + " · mano " + rn : "") + " · " + A.fmt(net ? net.stake : st.bet) + " $SDG")); tblExit(c, E);
     var felt = el("div", "mx-felt bl sc-felt"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea"); c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
     var names = N === 2 ? ["Tu", "🤖 Bot"] : ["Tu", "🤖 Bot 1", mode === "4c" ? "🤖 Bot 2 (socio)" : "🤖 Bot 2", "🤖 Bot 3"];
     var P = names.map(function (n, i) { return { name: n, me: i === 0, ent: mode === "4c" ? i % 2 : i, hand: [], cap: [] }; });
@@ -1166,6 +1197,13 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     }
     paint(); next();
   }
+  function tblExit(c, E) {                                           // pulsante per lasciare il tavolo in corso (due tocchi per evitare errori)
+    var sec = c.firstChild; if (!sec) return; var b = el("button", "tbl-x", "✕ ESCI"), t = 0; b.type = "button"; sec.appendChild(b);
+    b.addEventListener("click", function () {
+      if (!t) { b.textContent = NET ? "SICURO? Abbandoni" : "SICURO?"; t = setTimeout(function () { t = 0; b.textContent = "✕ ESCI"; }, 3000); return; }
+      clearTimeout(t); epoch++; if (NET) { try { A.api("/api/room/leave", "POST", { id: NET.id }).catch(function () {}); } catch (e) {} netClose(); } tables();
+    });
+  }
   function pkTable(bots, cfg, net) {
     cfg = cfg || { buy: 100, wallet: 0, u: 5 };
     fit(true); epoch++; var E = epoch; body.innerHTML = "";
@@ -1176,7 +1214,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     var POS = P.length === 2 ? ["b", "t"] : P.length === 3 ? ["b", "l", "r"] : ["b", "l", "t", "r"];          // io in basso, avversari a sinistra / di fronte / a destra
     var PS = { b: "left:50%;bottom:8px;transform:translateX(-50%)", t: "left:50%;top:8px;transform:translateX(-50%)", l: "left:2px;top:36%", r: "right:2px;top:36%" };
     var c = el("div", "mp-card"); body.appendChild(c);
-    c.appendChild(el("div", "mp-sec", "POKER TEXAS · ante " + A.fmt(u) + " $SDG" + (net ? "" : " (simulato)") + (u >= 50 ? " 💎" : "")));
+    c.appendChild(el("div", "mp-sec", "POKER TEXAS · ante " + A.fmt(u) + " $SDG" + (net ? "" : " (simulato)") + (u >= 50 ? " 💎" : ""))); tblExit(c, E);
     var felt = el("div", "mx-felt pk"), shoe = el("div", "mx-shoe"), msg = el("div", "pg-me", ""), area = el("div", "mp-area pkarea");
     shoe.style.cssText = "right:46%;top:46%;width:1px;height:1px;opacity:0;box-shadow:none"; 
     c.appendChild(felt); c.appendChild(msg); c.appendChild(area);
