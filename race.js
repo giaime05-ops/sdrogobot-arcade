@@ -537,7 +537,8 @@
     var root = el("div", "rc-root"); host.appendChild(root);
     function hook(fn) { window.ArcadeBackHook = fn; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} }
     function top(title, back, label) { var t0 = el("div", "mp-top"), bk = el("button", "mp-back", label || "‹ Indietro"); bk.type = "button"; bk.addEventListener("click", back); t0.appendChild(bk); t0.appendChild(el("div", "mp-title", title)); root.appendChild(t0); return t0; }
-    function exitAll() { root.remove(); hook(null); onExit(); }
+    function tcx() { var tc = window.__tournCtx; if (tc && window.ArcadeTourn) { window.__tournCtx = null; try { root.remove(); } catch (e) {} hook(null); window.ArcadeTourn.open(tc); return true; } return false; }       // gara di torneo: si torna sempre alla lobby del torneo
+    function exitAll() { if (tcx()) return; root.remove(); hook(null); onExit(); }
     function thumb(tr) { if (!tr._th) { build(tr); try { tr._th = art(tr).toDataURL("image/jpeg", 0.82); } catch (e) { tr._th = ""; } } return tr._th; }
     function hero(cls, tri, ico, ttl, sub, tag, fn) {                                                        // grande scheda con il disegno della pista sullo sfondo
       var c = el("button", "rc-hero " + cls); c.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[tri]); im.alt = ""; c.appendChild(im); c.appendChild(el("div", "sh"));
@@ -565,6 +566,7 @@
     }
     function newLobby() { return { col: 0, ti: 0, laps: 3, diff: 3, vis: 1, tab: 0, obst: true, pads: true, slip: false, assist: false, qual: false, coll: true, prize: 0, slots: [{ t: "me", name: myNm() }] }; }
     function lobbyHub() {
+      if (tcx()) return;
       act("gp_lobby");
       root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; });
       top("LOBBY", menu, "‹ Grand Prix");
@@ -677,7 +679,7 @@
     function rmPush() { var L = LB; if (L && L.rm && real()) A.api("/api/room/cfg", "POST", { id: L.rm, cfg: rmCfg(L) }).catch(function () {}); }
     function lbFromRoom(room) {                                                                                    // ricostruisce la lobby dell'host da quella sul server (rientro dopo aver chiuso l'app)
       var L = newLobby(), c = room.cfg || {}, x = c.x || {}; L.rm = room.id; L.ti = Math.max(0, TRACKS.findIndex(function (t) { return t.id === c.track; })); L.laps = c.laps || 3; L.prize = c.prize | 0; L.rain = x.rain | 0; L.obst = !!x.obst; L.pads = !!x.pads; L.slip = !!x.slip; L.coll = x.coll !== 0; L.lng = !!x.lng; L.qual = !!x.qual; L.vis = x.vis === 0 ? 0 : 1; L.col = x.hcol | 0;
- L.tourn = c.tourn || 0;      room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready, col: p.col }); }); return L;
+ L.tourn = c.tourn || 0; if (c.tourn) window.__tournCtx = c.tourn;      room.players.forEach(function (p) { if (p.uid !== room.me) L.slots.push({ t: "friend", name: p.name, style: p.style, pid: p.pid, uid: p.uid, human: true, on: p.online, rdy: p.ready, col: p.col }); }); return L;
     }
     function rmWatch() {                                                                                            // l'host segue la stanza: chi entra (anche senza invito), chi esce, chi è online / pronto
       var L = LB; if (!L || !L.rm || L._pt) return; var busy = 0;
@@ -686,9 +688,9 @@
         if (busy && Date.now() - busy < 4000) return; busy = Date.now();
         A.api("/api/room/sync", "POST", { id: L.rm, since: 1e9 }).then(function (j) {
           busy = 0; if (LB !== L || !L.rm) return;
-          if (j && j.gone) { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; lobby(); return; }
+          if (j && j.gone) { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; if (L.tourn && tcx()) return; lobby(); return; }
           if (!j || !j.success || !j.room) return; var rm = j.room;
-          if (rm.status !== "lobby") { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; lobby(); return; }
+          if (rm.status !== "lobby") { clearInterval(L._pt); L._pt = 0; L.rm = 0; L._ens = 0; L.slots = [L.slots[0]]; if (L.tourn) { L.tourn = 0; } lobby(); return; }
                     var stB = JSON.stringify(L.slots.map(function (q) { return [q.uid, q.t, q.on, q.rdy, q.col]; }));
           rm.players.forEach(function (p) {
             if (p.uid === rm.me) return; var sl = L.slots.filter(function (q) { return q.uid === p.uid || (q.pid && q.pid === p.pid && q.t !== "bot"); })[0];
@@ -711,13 +713,13 @@
           if (!root.isConnected || !nt.isConnected) return;
           if (k && k.wait) { nt.textContent = "Aspetto che tutti finiscano la gara…"; setTimeout(go, 1500); return; }
           if (!k || !k.success) { rejoin(); return; }
-          if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room);
+          if (k.room.cfg && k.room.cfg.tourn) window.__tournCtx = k.room.cfg.tourn; if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room);
         }).catch(function (e) { if (e && e.status === 409) { rejoin(); return; } if (++tries < 3) { setTimeout(go, 1200); return; } rejoin(); });
       })();
       function rejoin() {                                                                                                  // il server non ti ha più in lista: se la lobby esiste ancora si rientra come un normale ingresso
         A.api("/api/room/join", "POST", { id: room.id }).then(function (k) {
           if (!root.isConnected) return;
-          if (k && k.success) { if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room); } else { A.toast("La lobby è già ripartita o chiusa"); lobbyHub(); }
+          if (k && k.success) { if (k.room.cfg && k.room.cfg.tourn) window.__tournCtx = k.room.cfg.tourn; if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room); } else { A.toast("La lobby è già ripartita o chiusa"); lobbyHub(); }
         }).catch(function () { A.toast("La lobby è già ripartita o chiusa"); lobbyHub(); });
       }
     }
@@ -728,7 +730,7 @@
       var roster = ord.map(function (i) { return { name: ps[i].name, col: cols[i], uid: ps[i].uid }; }), grid = [], map = {};
       ord.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
       var tr = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1]; build(tr);
-      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, coll: x.coll !== 0, assist: false, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, lng: !!x.lng, tyre0: (lsGet("arc_lng_t0") || {}).c, room: { id: room.id, uid: room.me, ws: room.ws || "", map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
+      race(tr, "race", { n: ps.length, roster: roster, grid: grid, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, coll: x.coll !== 0, assist: !!x.assist, rain: x.rain | 0, prize: room.cfg.prize | 0, diff: 1, qualPhase: !!x.qual, lng: !!x.lng, tyre0: (lsGet("arc_lng_t0") || {}).c, room: { id: room.id, uid: room.me, ws: room.ws || "", map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
     }
     function guestLobby(room) {                                                                                    // lobby di chi è entrato (invitato o dalla lista pubblica): segna PRONTO e aspetta che l'host avvii
       root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1], busy = 0, myRdy = false, lastRm = room;
@@ -1013,7 +1015,7 @@
       function rank() { return cars.slice().sort(function (a, b) { return (b.fin ? 1e6 - b.finT : b.prog) - (a.fin ? 1e6 - a.finT : a.prog); }); }
       function stop(keepFs) { done = true; if (RT) clearInterval(RT); try { if (typeof wsStop === "function") wsStop(); } catch (e) {} AU.end(); cancelAnimationFrame(raf); window.removeEventListener("keydown", kdown); window.removeEventListener("keyup", kup); window.removeEventListener("resize", layout); try { if (TGW && TGW.offEvent) ["fullscreenChanged", "safeAreaChanged", "contentSafeAreaChanged"].forEach(function (ev) { TGW.offEvent(ev, layout); }); } catch (e) {} try { if (TGW) { if (TGW.disableClosingConfirmation) TGW.disableClosingConfirmation(); if (!keepFs && TGW.exitFullscreen && TGW.isFullscreen) TGW.exitFullscreen(); } if (!keepFs && screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
         if (!keepFs) window.ArcadeBackHide = false; window.ArcadeBackHook = null; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} full.remove(); }
-      function goBack() { if (opts.back) opts.back(); else tracks(opts.lng ? "long" : mode); }
+      function goBack() { if (tcx()) return; if (opts.back) opts.back(); else tracks(opts.lng ? "long" : mode); }
       var paused = false, pbox = null, lqBub = null;
       function pause(on) {
         if (state === "end") return; paused = on && !opts.room; if (pbox) { pbox.remove(); pbox = null; } if (!on) { last = performance.now(); return; }
@@ -1117,7 +1119,7 @@
         if (opts.tourn && !qual && !LQ && !RMT) {                                                                          // torneo di prova: l'ordine d'arrivo e i giri migliori vanno al server
           var rkT = rank(), blT = {}, ordT = rkT.map(function (c) { return opts.tourn.map[cars.indexOf(c)]; });
           rkT.forEach(function (c) { var m0 = Math.min.apply(null, (c.lapTs || []).length ? c.lapTs.slice(0) : [1e9]); if (m0 < 1e8) blT[opts.tourn.map[cars.indexOf(c)]] = m0; });
-          A.api("/api/tourn/report", "POST", { id: opts.tourn.id, order: ordT, bl: blT }).then(function (j) { A.toast(j && j.success ? "🏆 Punti del torneo registrati" : ((j && j.error) || "Punti non registrati")); }).catch(function () { A.toast("Punti non registrati"); });
+          A.api("/api/tourn/report", "POST", { id: opts.tourn.id, order: ordT, bl: blT, track: opts.tourn.track }).then(function (j) { A.toast(j && j.success ? "🏆 Punti del torneo registrati" : ((j && j.error) || "Punti non registrati")); }).catch(function () { A.toast("Punti non registrati"); });
         }
         if (wxb.parentNode) wxb.parentNode.removeChild(wxb); if (wxbub.parentNode) wxbub.parentNode.removeChild(wxbub);
         var tb = el("div", "rc2-tbl lt"), lcol = el("div", "lt-l"), rcol = el("div", "lt-r"), rin = el("div", "lt-in"), hd = el("div", "lr h");      // sinistra: posizione, nome, totale; destra: i giri, a gruppi di 5
@@ -1144,7 +1146,7 @@
           tgl.addEventListener("click", function () { onPod = !onPod; pod.style.display = onPod ? "" : "none"; pg2.style.display = onPod ? "none" : ""; tgl.textContent = onPod ? "TEMPI SUL GIRO ›" : "‹ PODIO"; });
         }
         box.appendChild(pg2);
-        var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIGIOCA"), b = el("button", "mp-go mp-alt", opts.back ? "TORNA ALLA LOBBY" : "PISTE"); a.type = b.type = "button";
+        var rw = el("div", "mp-end"), a = el("button", "mp-go", "RIGIOCA"), b = el("button", "mp-go mp-alt", window.__tournCtx ? "TORNA AL TORNEO" : opts.back ? "TORNA ALLA LOBBY" : "PISTE"); a.type = b.type = "button";
         a.addEventListener("click", function () { stop(true); race(tr, mode, opts); }); b.addEventListener("click", function () { stop(); goBack(); }); if (tgl) rw.insertBefore(tgl, rw.firstChild); if (!opts.back) rw.appendChild(a); rw.appendChild(b); box.appendChild(rw); full.appendChild(box);
       }
       // ---------- proiezione: camera alta dietro l'auto, inclinata verso il basso ----------
@@ -1604,16 +1606,16 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
       raf = requestAnimationFrame(function (n) { last = n; frame(n); });
     }
     menu();
-    if (tl && tl.t) {                                                                                                    // gara di torneo di prova contro i bot (solo account admin di prova)
+    if (tl && tl.t) { window.__tournCtx = tl.t.id;                                                                                                    // gara di torneo di prova contro i bot (solo account admin di prova)
       var tt = tl.t, tk = tt.tracks[tt.results.length], trT = TRACKS.filter(function (x) { return x.id === tk; })[0] || TRACKS[1], bt = tt.standings.filter(function (p) { return p.bot; }).slice(0, 7), me0 = tt.standings.filter(function (p) { return p.uid === tt.me; })[0];
       var mapT = [tt.me].concat(bt.map(function (p) { return p.uid; })), cl = ["#ff2fa8", "#35e6ff", "#ffd23b", "#a855f7", "#ff8a3b", "#4ade80", "#f87171", "#60a5fa"];
-      var oT = { n: mapT.length, roster: mapT.map(function (u, i) { var pp = tt.standings.filter(function (p) { return p.uid === u; })[0]; return { name: i ? String((pp || {}).name || "Bot").replace("🤖 ", "") : "Tu", col: cl[i] }; }), diff: 1, laps: tt.laps, obst: true, pads: true, slip: false, assist: false, coll: true, rain: tt.lng ? 3 : 0, prize: 0, lng: !!tt.lng, tourn: { id: tt.id, map: mapT } };
+      var oT = { n: mapT.length, roster: mapT.map(function (u, i) { var pp = tt.standings.filter(function (p) { return p.uid === u; })[0]; return { name: i ? String((pp || {}).name || "Bot").replace("🤖 ", "") : "Tu", col: cl[i] }; }), diff: 1, laps: tt.laps, obst: (tt.o || {}).obst !== false, pads: (tt.o || {}).pads !== false, slip: !!(tt.o || {}).slip, assist: !!(tt.o || {}).assist, coll: (tt.o || {}).coll !== false, rain: tt.lng ? 3 : 0, prize: 0, lng: !!tt.lng, tourn: { id: tt.id, map: mapT, track: tk } };
       if (tt.qual === "long" && tt.lng) { oT.lqPhase = true; oT.tyre0 = 0; } else oT.qualPhase = true;
       build(trT); race(trT, "race", oT);
     }
     if (joinId) {                                                                                                       // arrivo dal pulsante del gruppo / dell'invito: entro subito nella lobby
       A.api("/api/room/join", "POST", { id: String(joinId) }).then(function (k) {
-        if (k && k.success) { if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room); }
+        if (k && k.success) { if (k.room.cfg && k.room.cfg.tourn) window.__tournCtx = k.room.cfg.tourn; if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room); }
         else A.toast((k && k.error) || "La lobby non c'è più");
       }).catch(function (e) { A.toast((e && e.message) || "La lobby non c'è più"); });
     }

@@ -1917,3 +1917,16 @@ html.guest .tn-pills{display:none}
 .rc2-tower .tr{grid-template-columns:14px 6px auto 1fr!important;gap:4px!important}
 .rc2-tower .tr span{white-space:nowrap;display:inline-flex;align-items:center}
 .rc2-tower .tr .flm{display:inline-block;font-size:11px;line-height:1;margin-left:3px}
+
+/* tornei: lobby, regole per gara, podio finale */
+.tn-setup .tn-tog{display:flex;justify-content:space-between;align-items:center;width:100%;margin:6px 0;padding:10px 12px}
+.tn-setup .tn-tog em{font-style:normal;font-weight:800;opacity:.7}.tn-setup .tn-tog.on em{color:#7dffb0;opacity:1}
+.tn-time{display:flex;gap:8px;align-items:center}.tn-time select,.tn-time input{flex:1;min-width:0}
+.tn-lobby{margin:12px 0}.tn-lr{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin:4px 0;border-radius:12px;background:rgba(255,255,255,.06)}
+.tn-lr .nm{font-weight:700}.tn-lr em{font-style:normal;font-size:12px;opacity:.8}.tn-lr em.ok{color:#7dffb0;opacity:1}.tn-lr em.wt{color:#ffd23b;opacity:1}
+.tn-pod{margin:12px 0;padding:16px 12px;border-radius:18px;background:linear-gradient(160deg,rgba(168,85,247,.35),rgba(255,47,168,.25));text-align:center}
+.tn-pod-t{font-weight:900;letter-spacing:.08em;margin-bottom:12px}
+.tn-pod-r{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+.tn-pb{flex:1;max-width:120px;padding:10px 6px;border-radius:14px;background:rgba(0,0,0,.3);display:flex;flex-direction:column;gap:3px;align-items:center}
+.tn-pb i{font-style:normal;font-size:30px}.tn-pb b{font-size:13px;word-break:break-word}.tn-pb span{opacity:.85;font-size:12px}.tn-pb em{font-style:normal;color:#7dffb0;font-weight:800;font-size:12px}
+.tn-pb.p1{padding-top:20px;padding-bottom:20px;background:rgba(255,210,59,.22)}

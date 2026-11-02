@@ -64,7 +64,7 @@
   function card(t) {
     var c = el("div", "tn-card " + t.status); c.setAttribute("data-id", t.id);
     var h = el("div", "tn-h"); h.appendChild(el("b", "", t.name)); h.appendChild(el("em", "tn-st " + t.status, t.status === "sched" ? "IN PROGRAMMA" : (t.status === "open" ? "IN CORSO" : "CHIUSO"))); c.appendChild(h);
-    c.appendChild(el("div", "tn-sub", "👤 " + t.hostName + " · 🏁 " + t.races + " gare × " + t.laps + " giri · " + (t.qual === "long" ? "Qualifica lunga" : "Qualifica breve")));
+    c.appendChild(el("div", "tn-sub", "👤 " + t.hostName + " · 🏁 " + t.races + " gare · regole scelte prima di ogni gara"));
     c.appendChild(el("div", "tn-sub", "💳 Quota " + (t.fee ? A.fmt(t.fee) : "gratis") + " · 💰 Montepremi " + A.fmt(t.pot) + (t.bonus ? " + bonus " + A.fmt(t.bonus) : "") + " · 👥 " + t.n));
     var cdn = el("div", "tn-cd"); cdn.setAttribute("data-t", t.status === "sched" ? t.start : t.expires); cdn.setAttribute("data-k", t.status); c.appendChild(cdn);
     var row = el("div", "tn-btns"), go = el("button", "mp-go tn-go", ""); go.type = "button"; go.setAttribute("data-start", t.start); go.setAttribute("data-st", t.status);
@@ -89,9 +89,8 @@
     var ov = el("div", "tn-ov"), bx = el("div", "tn-sheet"); ov.appendChild(bx);
     bx.appendChild(el("b", "tn-it", "ℹ " + t.name));
     var rows = [
-      ["Gare", t.races + " gare da " + t.laps + " giri" + (t.laps >= 10 ? " (con pit stop)" : "")],
-      ["Piste", (t.tracks || []).map(tname).join(" → ")],
-      ["Qualifica", t.qual === "long" ? "Lunga (5 minuti)" : "Breve (un giro lanciato)"],
+      ["Gare", t.races + " gare: pista, giri e regole le sceglie l'host nella lobby prima di ognuna"],
+      ["Piste giocate", (t.tracks || []).filter(Boolean).map(tname).join(" → ") || "ancora da scegliere"],
       ["Partenza", new Date(t.start * 1000).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })],
       ["Durata", "fino a " + new Date(t.expires * 1000).toLocaleString("it-IT", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })],
       ["Iscrizione", t.fee ? A.fmt(t.fee) + " $SDG (vanno nel montepremi)" : "Gratis"],
@@ -120,22 +119,24 @@
     var sc = body.scrollTop; body.innerHTML = "";
     var bk = el("button", "tn-back", "‹ Tornei"); bk.type = "button"; bk.addEventListener("click", back); body.appendChild(bk);
     var c = el("div", "tn-card " + t.status), h = el("div", "tn-h"); h.appendChild(el("b", "", t.name)); h.appendChild(el("em", "tn-st " + t.status, t.status === "sched" ? "IN PROGRAMMA" : (t.status === "open" ? "IN CORSO" : "CHIUSO"))); c.appendChild(h);
-    c.appendChild(el("div", "tn-sub", "👤 " + t.hostName + " · 🏁 " + t.races + " gare × " + t.laps + " giri · " + (t.qual === "long" ? "Qualifica lunga" : "Qualifica breve")));
+    c.appendChild(el("div", "tn-sub", "👤 " + t.hostName + " · 🏁 " + t.races + " gare · regole scelte prima di ogni gara"));
     c.appendChild(el("div", "tn-sub", "💰 Montepremi " + A.fmt(t.pot) + (t.bonus ? " + bonus " + A.fmt(t.bonus) : "") + " · 👥 " + t.n + " piloti"));
     var cdn = el("div", "tn-cd"); cdn.id = "tnDetCd"; cdn.setAttribute("data-t", t.status === "sched" ? t.start : t.expires); cdn.setAttribute("data-k", t.status); if (t.status !== "closed") c.appendChild(cdn); body.appendChild(c);
     var host = t.host === t.me, done = t.results.length;
+    if (t.status === "closed") body.appendChild(podium(t));
     if (t.status === "open") {
-      var gb = el("div", "tn-race");
+      var gb = el("div", "tn-race"), rcN = (t.rc || [])[done] || {};
       if (t.room) {
         gb.appendChild(el("b", "", "🏁 GARA " + (done + 1) + "/" + t.races + " · " + tname(t.tracks[done]))); gb.appendChild(el("span", "", "La lobby è aperta: entra, premi PRONTO e aspetta il via."));
         var eb = el("button", "mp-go", "ENTRA NELLA LOBBY"); eb.type = "button"; eb.addEventListener("click", function () { enterRoom(t.room); }); gb.appendChild(eb);
       } else if (done >= t.races) {
         gb.appendChild(el("b", "", "🏆 Tutte le gare sono state corse")); gb.appendChild(el("span", host ? "Chiudi il torneo per pagare i premi." : "L'host chiude il torneo e pagano i premi."));
       } else if (host) {
-        gb.appendChild(el("b", "", "Prossima: GARA " + (done + 1) + "/" + t.races + " · " + tname(t.tracks[done]))); gb.appendChild(el("span", "", "Quando sono pronti lancia la gara: si apre la lobby senza bot."));
-        var lb = el("button", "mp-go", "▶ LANCIA GARA " + (done + 1) + (t.bots ? " (contro i bot)" : "")); lb.type = "button"; lb.addEventListener("click", function () { if (t.bots) { enterLocal(t); return; } lb.disabled = true; api("/api/tourn/race", { id: t.id }).then(function (j) { if (j && j.success) enterRoom(j.room); else { lb.disabled = false; A.toast((j && j.error) || "Non riesco a lanciare la gara"); } }).catch(function (e) { lb.disabled = false; err(e); }); }); gb.appendChild(lb);
-      } else { gb.appendChild(el("b", "", "Prossima: GARA " + (done + 1) + "/" + t.races + " · " + tname(t.tracks[done]))); gb.appendChild(el("span", "", "Aspetta che l'host lanci la gara: comparirà qui il pulsante per entrare.")); }
-      body.appendChild(gb);
+        gb.appendChild(el("b", "", "Lobby · GARA " + (done + 1) + "/" + t.races)); gb.appendChild(el("span", "", "Scegli pista e regole di questa gara, poi lancia: si apre la lobby dove i piloti premono PRONTO."));
+        body.appendChild(gb); gb = null; body.appendChild(setupPanel(t, done));
+      } else { gb.appendChild(el("b", "", "Lobby · GARA " + (done + 1) + "/" + t.races)); gb.appendChild(el("span", "", "L'host sta scegliendo pista e regole. Appena lancia la gara comparirà qui il pulsante per entrare.")); }
+      if (gb) body.appendChild(gb);
+      body.appendChild(lobbyList(t));
     }
     // classifica
     body.appendChild(el("div", "mp-lab", "CLASSIFICA DEL TORNEO"));
@@ -162,56 +163,110 @@
     }
     body.scrollTop = sc; tickCd();
   }
-  function enterLocal(t) {
-    var tb = document.querySelector('.tab[data-tab="mp"]'); if (tb) tb.click();
-    setTimeout(function () { if (window.ArcadeMulti && window.ArcadeMulti.openGP) window.ArcadeMulti.openGP("", { t: t }); }, 350);
+  function enterLocal(t, o) {
+    var done = t.results.length, tr2 = (t.tracks || []).slice(); tr2[done] = o.track; var t2 = Object.assign({}, t, { tracks: tr2, laps: o.laps, lng: o.laps >= 10, qual: o.qual, o: o });
+    var bots = t.standings.filter(function (p) { return p.bot; }); if (o.bots < bots.length) { t2.standings = t.standings.filter(function (p) { return !p.bot; }).concat(bots.slice(0, o.bots)); }
+    window.__tournCtx = t.id; var tb = document.querySelector('.tab[data-tab="mp"]'); if (tb) tb.click();
+    setTimeout(function () { if (window.ArcadeMulti && window.ArcadeMulti.openGP) window.ArcadeMulti.openGP("", { t: t2 }); }, 350);
   }
   function enterRoom(rid) {
+    window.__tournCtx = cur;
     var tb = document.querySelector('.tab[data-tab="mp"]'); if (tb) tb.click();
     setTimeout(function () { if (window.ArcadeMulti && window.ArcadeMulti.openGP) window.ArcadeMulti.openGP(rid); }, 350);
   }
 
-  // ---------- creazione
+  // ---------- lobby del torneo: opzioni della prossima gara (host) e partecipanti con stato pronto
+  var rs = {};
+  function setupPanel(t, done) {
+    var FREE = !!(A.isSandbox && A.isSandbox()), k = t.id + ":" + done, T = tracks();
+    var o = rs[k] || (rs[k] = { track: t.tracks[done] || (T[(done * 3 + 1) % Math.max(1, T.length)] || {}).id || "", laps: 5, coll: true, slip: false, assist: false, obst: true, pads: true, qual: "short", bots: 0 });
+    var c = el("div", "mp-card tn-setup");
+    c.appendChild(el("div", "mp-sec", "REGOLE DELLA GARA " + (done + 1)));
+    c.appendChild(el("div", "mp-lab", "Pista"));
+    var s = el("select", "tn-sel"); T.forEach(function (x) { var op = el("option", "", x.name); op.value = x.id; if (o.track === x.id) op.selected = true; s.appendChild(op); }); s.addEventListener("change", function () { o.track = s.value; }); c.appendChild(s);
+    function seg(lab, opts, get, set) { c.appendChild(el("div", "mp-lab", lab)); var r = el("div", "dl-seg tn-seg"); opts.forEach(function (x) { var b = el("button", get() === x[0] ? "on" : "", x[1]); b.type = "button"; b.addEventListener("click", function () { set(x[0]); Array.prototype.forEach.call(r.children, function (q) { q.classList.remove("on"); }); b.classList.add("on"); if (lapsHook) lapsHook(); }); r.appendChild(b); }); c.appendChild(r); }
+    var lapsHook = null, qb = el("div", "");
+    if (FREE) { c.appendChild(el("div", "mp-lab", "Giri · 1-60 (da 10: gara lunga con pit)")); var ni = el("input", "tn-num"); ni.type = "number"; ni.min = 1; ni.max = 60; ni.value = o.laps; ni.addEventListener("change", function () { o.laps = Math.max(1, Math.min(60, Math.round(+ni.value || 5))); ni.value = o.laps; if (o.laps < 10) o.qual = "short"; paintQ(); }); c.appendChild(ni); }
+    else seg("Giri", [3, 5, 10, 15, 20].map(function (n) { return [n, String(n)]; }), function () { return o.laps; }, function (v) { o.laps = v; });
+    c.appendChild(qb);
+    function paintQ() { qb.innerHTML = ""; if (FREE && o.laps >= 10) { qb.appendChild(el("div", "mp-lab", "Qualifica")); var r = el("div", "dl-seg tn-seg"); [["short", "Breve"], ["long", "Lunga 5 min"]].forEach(function (x) { var b = el("button", o.qual === x[0] ? "on" : "", x[1]); b.type = "button"; b.addEventListener("click", function () { o.qual = x[0]; paintQ(); }); r.appendChild(b); }); qb.appendChild(r); } else qb.appendChild(el("div", "rc-note", "Qualifica breve: un giro lanciato decide la griglia.")); }
+    paintQ();
+    [["coll", "Contatti tra le auto"], ["slip", "Scia"], ["assist", "Assistenza di guida"], ["obst", "Ostacoli (olio e acqua)"], ["pads", "Boost sulla pista"]].forEach(function (x) {
+      var r = el("button", "lb-tog tn-tog" + (o[x[0]] ? " on" : ""), ""); r.type = "button"; r.appendChild(el("span", "", x[1])); r.appendChild(el("em", "", o[x[0]] ? "ON" : "OFF"));
+      r.addEventListener("click", function () { o[x[0]] = !o[x[0]]; r.classList.toggle("on", o[x[0]]); r.lastChild.textContent = o[x[0]] ? "ON" : "OFF"; }); c.appendChild(r);
+    });
+    if (FREE) { c.appendChild(el("div", "mp-lab", "Bot in gara · 0-7, solo prova")); var bi = el("input", "tn-num"); bi.type = "number"; bi.min = 0; bi.max = 7; bi.value = o.bots; bi.addEventListener("change", function () { o.bots = Math.max(0, Math.min(7, Math.round(+bi.value || 0))); bi.value = o.bots; }); c.appendChild(bi); }
+    var lb = el("button", "mp-go", "▶ LANCIA GARA " + (done + 1) + (FREE && o.bots ? " (contro i bot)" : "")); lb.type = "button";
+    lb.addEventListener("click", function () {
+      var botsList = (t.standings || []).filter(function (p) { return p.bot; }).length;
+      if (FREE && (o.bots > 0 || botsList)) { enterLocal(t, o); return; }
+      lb.disabled = true; api("/api/tourn/race", { id: t.id, opts: { track: o.track, laps: o.laps, qual: o.qual, coll: o.coll, slip: o.slip, assist: o.assist, obst: o.obst, pads: o.pads } }).then(function (j) { if (j && j.success) enterRoom(j.room); else { lb.disabled = false; A.toast((j && j.error) || "Non riesco a lanciare la gara"); } }).catch(function (e) { lb.disabled = false; err(e); });
+    });
+    c.appendChild(lb); return c;
+  }
+  function lobbyList(t) {
+    var c = el("div", "tn-lobby"), L = t.lobby, ps = t.standings.filter(function (r) { return r.in; });
+    c.appendChild(el("div", "mp-lab", "👥 PARTECIPANTI " + ps.length));
+    ps.forEach(function (r) {
+      var inRoom = L && L.players.filter(function (q) { return q.uid === r.uid; })[0], row = el("div", "tn-lr");
+      row.appendChild(el("span", "nm", r.name + (r.uid === t.host ? " 👑" : "") + (r.uid === t.me ? " (tu)" : "")));
+      row.appendChild(el("em", inRoom ? (inRoom.ready ? "ok" : "wt") : "off", L ? (inRoom ? (inRoom.ready ? "✅ PRONTO" : "⏳ in lobby") : "non ancora entrato") : "—"));
+      c.appendChild(row);
+    });
+    if (!ps.length) c.appendChild(el("div", "pg-me", "Nessun pilota ancora."));
+    return c;
+  }
+  function podium(t) {
+    var c = el("div", "tn-pod"), top3 = t.standings.slice(0, 3), med = ["🥇", "🥈", "🥉"], ord = [1, 0, 2];
+    c.appendChild(el("div", "tn-pod-t", "🏆 TORNEO CONCLUSO"));
+    var row = el("div", "tn-pod-r");
+    ord.forEach(function (i) { var r = top3[i]; if (!r) return; var b = el("div", "tn-pb p" + (i + 1)); b.appendChild(el("i", "", med[i])); b.appendChild(el("b", "", r.name)); b.appendChild(el("span", "", r.pts + " pt")); var pr = t.pay && t.pay[r.uid]; if (pr) b.appendChild(el("em", "", "+" + A.fmt(pr) + " $SDG")); row.appendChild(b); });
+    c.appendChild(row);
+    if (!top3.length) c.appendChild(el("div", "pg-me", "Nessuna gara corsa: quote restituite."));
+    return c;
+  }
+
+  // ---------- creazione: solo le impostazioni generali; pista e regole di ogni gara si scelgono nella lobby prima del via
+  var WD = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
+  function dayLabel(d, i) { return (i === 0 ? "Oggi" : i === 1 ? "Domani" : WD[d.getDay()]) + " " + d.getDate() + "/" + (d.getMonth() + 1); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
   function openForm() {
     mode = "form"; stop();
-    var T = tracks(), f = form = { races: 3, laps: 5, qual: "short", start: 0, fee: 100, bonus: 0, dur: 24, bots: 0, tr: [] };
-    function pick(i) { return f.tr[i] || (f.tr[i] = (T[(i * 3 + 1) % Math.max(1, T.length)] || {}).id || ""); }
+    var h0 = new Date(Date.now() + 3600000), f = form = { races: 3, fee: 100, bonus: 0, dur: 24, now: true, day: 0, time: pad2(h0.getHours()) + ":00" };
+    function startTs() { if (f.now) return 0; var p = f.time.split(":"), d = new Date(); d.setDate(d.getDate() + f.day); d.setHours(+p[0] || 0, +p[1] || 0, 0, 0); return Math.round(d.getTime() / 1000) + Math.round(-off / 1000); }
     function paint() {
       body.innerHTML = ""; var bk = el("button", "tn-back", "‹ Tornei"); bk.type = "button"; bk.addEventListener("click", function () { back(); onShow(); }); body.appendChild(bk);
       var c = el("div", "mp-card"); body.appendChild(c); c.appendChild(el("div", "mp-sec", "NUOVO TORNEO"));
       function row(lab, opts, get, set) { c.appendChild(el("div", "mp-lab", lab)); var r = el("div", "dl-seg tn-seg"); opts.forEach(function (o) { var b = el("button", get() === o[0] ? "on" : "", o[1]); b.type = "button"; b.addEventListener("click", function () { set(o[0]); paint(); }); r.appendChild(b); }); c.appendChild(r); }
       var FREE = !!(A.isSandbox && A.isSandbox());
       function num(lab, get, set, mn, mx, hint) { c.appendChild(el("div", "mp-lab", lab + (hint ? " · " + hint : ""))); var i = el("input", "tn-num"); i.type = "number"; i.min = mn; i.max = mx; i.value = get(); i.addEventListener("change", function () { var v = Math.max(mn, Math.min(mx, Math.round(+i.value || 0))); set(v); i.value = v; }); c.appendChild(i); }
-      if (FREE) {
-        num("Numero di gare", function () { return f.races; }, function (v) { f.races = v; paint(); }, 1, 30, "1-30");
-        num("Giri per gara", function () { return f.laps; }, function (v) { f.laps = v; if (v < 10) f.qual = "short"; paint(); }, 1, 60, "1-60 (da 10 in su: gara lunga con pit)");
-        num("Bot nel torneo", function () { return f.bots; }, function (v) { f.bots = v; }, 0, 7, "0-7, solo prova");
+      if (FREE) num("Numero di gare", function () { return f.races; }, function (v) { f.races = v; }, 1, 30, "1-30");
+      else row("Numero di gare", [1, 2, 3, 4, 5, 6, 8].map(function (n) { return [n, String(n)]; }), function () { return f.races; }, function (v) { f.races = v; });
+      row("Partenza", [[true, "Subito"], [false, "Data e ora"]], function () { return f.now; }, function (v) { f.now = v; });
+      if (!f.now) {
+        c.appendChild(el("div", "mp-lab", "Giorno e ora di inizio"));
+        var tr = el("div", "tn-time"), ds = el("select", "tn-sel"); for (var i = 0; i < (FREE ? 30 : 14); i++) { var d = new Date(Date.now() + i * 86400000), o = el("option", "", dayLabel(d, i)); o.value = i; if (f.day === i) o.selected = true; ds.appendChild(o); }
+        ds.addEventListener("change", function () { f.day = +ds.value; }); tr.appendChild(ds);
+        var ti = el("input"); ti.type = "time"; ti.step = 60; ti.value = f.time; ti.addEventListener("change", function () { if (ti.value) f.time = ti.value; }); tr.appendChild(ti); c.appendChild(tr);
       }
-      if (!FREE) row("Numero di gare", [1, 2, 3, 4, 5, 6, 8].map(function (n) { return [n, String(n)]; }), function () { return f.races; }, function (v) { f.races = v; });
-      if (!FREE) row("Giri per gara", [3, 5, 10, 15, 20].map(function (n) { return [n, String(n)]; }), function () { return f.laps; }, function (v) { f.laps = v; if (v < 10) f.qual = "short"; });
-      if (f.laps >= 10) row("Qualifica", [["short", "Breve"], ["long", "Lunga 5 min"]], function () { return f.qual; }, function (v) { f.qual = v; });
-      else c.appendChild(el("div", "rc-note", "Qualifica breve: un giro lanciato decide la griglia. (La lunga è per le gare da 10+ giri.)"));
-      c.appendChild(el("div", "mp-lab", "Piste (una per gara)"));
-      for (var i = 0; i < f.races; i++) (function (i) {
-        var s = el("select", "tn-sel"); T.forEach(function (t) { var o = el("option", "", (i + 1) + "ª · " + t.name); o.value = t.id; if (pick(i) === t.id) o.selected = true; s.appendChild(o); });
-        s.addEventListener("change", function () { f.tr[i] = s.value; }); c.appendChild(s);
-      })(i);
-      if (!FREE) row("Partenza", [[0, "Subito"], [900, "15 min"], [3600, "1 ora"], [10800, "3 ore"], [43200, "12 ore"], [86400, "24 ore"], [172800, "48 ore"]], function () { return f.start; }, function (v) { f.start = v; f.at = 0; });
-      var tr = el("div", "tn-time"); if (FREE) tr.style.display = "none"; tr.appendChild(el("span", "", "oppure alle")); var ti = el("input"); ti.type = "time"; ti.value = f.at || ""; ti.addEventListener("change", function () { if (!ti.value) return; var p = ti.value.split(":"), d = new Date(); d.setHours(+p[0], +p[1], 0, 0); if (d.getTime() < Date.now() + 60000) d.setDate(d.getDate() + 1); f.start = Math.round((d.getTime() - Date.now()) / 1000); f.at = ti.value; paint(); }); tr.appendChild(ti); c.appendChild(tr);
-      if (FREE) { num("Partenza tra (minuti)", function () { return Math.round(f.start / 60); }, function (v) { f.start = v * 60; f.at = 0; }, 0, 43200, "0 = subito, max 30 giorni"); num("Quota d'iscrizione $SDG", function () { return f.fee; }, function (v) { f.fee = v; }, 0, 1000000); num("Bonus dal Banco $SDG", function () { return f.bonus; }, function (v) { f.bonus = v; }, 0, 10000000); num("Durata (ore)", function () { return f.dur; }, function (v) { f.dur = v; }, 1, 720, "1-720"); }
-      if (!FREE) row("Quota d'iscrizione $SDG", [[0, "Gratis"], [50, "50"], [100, "100"], [250, "250"], [500, "500"], [1000, "1000"]], function () { return f.fee; }, function (v) { f.fee = v; });
-      if (!FREE && !A.guest()) row("Bonus dal Banco", [[0, "No"], [2000, "2.000"], [5000, "5.000"], [10000, "10.000"]], function () { return f.bonus; }, function (v) { f.bonus = v; });
-      if (!FREE) row("Durata massima", [[1, "1 h"], [6, "6 h"], [12, "12 h"], [24, "24 h"], [48, "48 h"]], function () { return f.dur; }, function (v) { f.dur = v; });
-      c.appendChild(el("div", "rc-note", "Niente bot. Punti 10-8-6-4-3-2-1-0 +1 al giro veloce. Il montepremi (quote + bonus) va 60/30/10 ai primi tre quando il torneo si chiude."));
+      if (FREE) { num("Quota d'iscrizione $SDG", function () { return f.fee; }, function (v) { f.fee = v; }, 0, 1000000); num("Bonus dal Banco $SDG", function () { return f.bonus; }, function (v) { f.bonus = v; }, 0, 10000000); num("Durata (ore)", function () { return f.dur; }, function (v) { f.dur = v; }, 1, 720, "1-720"); }
+      else {
+        row("Quota d'iscrizione $SDG", [[0, "Gratis"], [50, "50"], [100, "100"], [250, "250"], [500, "500"], [1000, "1000"]], function () { return f.fee; }, function (v) { f.fee = v; });
+        if (!A.guest()) row("Bonus dal Banco", [[0, "No"], [2000, "2.000"], [5000, "5.000"], [10000, "10.000"]], function () { return f.bonus; }, function (v) { f.bonus = v; });
+        row("Durata massima", [[1, "1 h"], [6, "6 h"], [12, "12 h"], [24, "24 h"], [48, "48 h"]], function () { return f.dur; }, function (v) { f.dur = v; });
+      }
+      c.appendChild(el("div", "rc-note", "Pista, giri, contatti, scia, assistenza, ostacoli, boost e qualifica li scegli nella lobby, prima di ogni gara. Punti 10-8-6-4-3-2-1-0 +1 al giro veloce; il montepremi va 60/30/10 ai primi tre."));
       var go = el("button", "mp-go", "🏆 CREA TORNEO"); go.type = "button";
       go.addEventListener("click", function () {
-        go.disabled = true; var tl = []; for (var k = 0; k < f.races; k++) tl.push(pick(k));
-        api("/api/tourn/create", { races: f.races, laps: f.laps, qual: f.qual, start: f.start ? Math.round(now() / 1000) + f.start : 0, fee: f.fee, bonus: f.bonus, dur: f.dur, bots: f.bots, tracks: tl }).then(function (j) { if (j && j.success) { A.haptic("ok"); A.toast("Torneo creato ✅"); mode = "list"; loadList(); onShow(); } else { go.disabled = false; A.toast((j && j.error) || "Non riesco a creare il torneo"); } }).catch(function (e) { go.disabled = false; err(e); });
+        go.disabled = true;
+        api("/api/tourn/create", { races: f.races, laps: 5, qual: "short", start: startTs(), fee: f.fee, bonus: f.bonus, dur: f.dur, bots: 0, tracks: [] }).then(function (j) { if (j && j.success) { A.haptic("ok"); A.toast("Torneo creato ✅"); mode = "list"; loadList(); onShow(); } else { go.disabled = false; A.toast((j && j.error) || "Non riesco a creare il torneo"); } }).catch(function (e) { go.disabled = false; err(e); });
       });
       c.appendChild(go);
     }
     paint();
   }
+
+  window.ArcadeTourn = { open: function (id) { var tb = document.querySelector('.tab[data-tab="lead"]'); if (tb) tb.click(); view = "t"; try { sync(); } catch (e) {} Array.prototype.forEach.call(pg.querySelectorAll(".tn-p"), function (b) { b.classList.toggle("on", b.getAttribute("data-v") === "t"); }); mode = "detail"; cur = id; if (body) { body.innerHTML = ""; body.appendChild(el("div", "pg-me", "Carico il torneo…")); } onShow(); } };
 
   setInterval(sync, 700); sync();
 })();
