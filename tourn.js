@@ -233,7 +233,7 @@
   function openForm() {
     mode = "form"; stop();
     var h0 = new Date(Date.now() + 3600000), f = form = { races: 3, fee: 100, bonus: 0, dur: 24, now: true, day: 0, time: pad2(h0.getHours()) + ":00" };
-    function startTs() { if (f.now) return 0; var p = f.time.split(":"), d = new Date(); d.setDate(d.getDate() + f.day); d.setHours(+p[0] || 0, +p[1] || 0, 0, 0); return Math.round(d.getTime() / 1000) + Math.round(-off / 1000); }
+    function startTs() { if (f.now) return 0; var p = f.time.split(":"), d = new Date(); d.setDate(d.getDate() + f.day); d.setHours(+p[0] || 0, +p[1] || 0, 0, 0); return Math.round(d.getTime() / 1000) + Math.round(off / 1000); }
     function paint() {
       body.innerHTML = ""; var bk = el("button", "tn-back", "‹ Tornei"); bk.type = "button"; bk.addEventListener("click", function () { back(); onShow(); }); body.appendChild(bk);
       var c = el("div", "mp-card"); body.appendChild(c); c.appendChild(el("div", "mp-sec", "NUOVO TORNEO"));
