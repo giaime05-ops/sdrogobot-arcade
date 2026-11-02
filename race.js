@@ -260,7 +260,7 @@
     car.x -= nx * o; car.y -= ny * o; vn = car.vx * nx + car.vy * ny; if (o > 0 ? vn > 0 : vn < 0) { car.vx -= nx * vn; car.vy -= ny * vn; }
     car.vx *= 0.93; car.vy *= 0.93; car.hit = 0.3; if (car.dd) endDrift(car, true); return true;
   }
-  function pitSwap(c, k) { c.tyc = k; c.tyw = 0; c.pitN = (c.pitN || 0) + 1; c.tyU = (c.tyU || 0) | (1 << k); (c.stints = c.stints || []).push({ c: k, l: c.lap + (c.pitPre ? 1 : 0), p: c.lap }); c.pitBeep = 1; }
+  function pitSwap(c, k) { c.tyc = k; c.tyw = 0; c.pitN = (c.pitN || 0) + 1; c.tyU = (c.tyU || 0) | (1 << k); (c.stints = c.stints || []).push({ c: k, l: (c.pitIn != null ? c.pitIn : c.lap) + (c.pitPre ? 1 : 0), p: c.pitIn != null ? c.pitIn : c.lap }); c.pitBeep = 1; }
   function psStep(c) {                                                                                         // auto ferma sulla pedana: scelta gomme (ph 1), poi sosta di durata uguale per tutti (ph 2)
     var s = c.ps; c.vx = 0; c.vy = 0; c.dd = 0; c.boostT = 0; c.gh = 1; if (c.hit > 0) c.hit -= DT;
     if (s.ph === 2) { s.ts += DT; if (!s.sw && s.ts >= PIT_SWAP) { s.sw = 1; pitSwap(c, s.next); } if (s.ts >= PIT_STOP) { c.ps = null; c.pdone = 1; c.rec = 0; c.pitCool = 3; } }
@@ -269,14 +269,14 @@
   var _pp = { x: 0, y: 0, a: 0 };
   function pitMove(tr, c) {                                                                                    // sosta AUTOMATICA e deterministica: entri, ti fermi al box, cambi le gomme, riparti
     var p = pitInfo(tr), s = c.pit, sp = tr.sp, hwx = tr.hw * 0.5 * p.side;
-    c.pitPre = c.idx > tr.N / 2 ? 1 : 0;                                                                       // sosta a cavallo del traguardo: le gomme nuove contano dal giro dopo
+    if (c.pitS !== s) { c.pitS = s; c.pitPre = c.idx > tr.N / 2 ? 1 : 0; c.pitIn = c.lap; }                                                                       // sosta a cavallo del traguardo: le gomme nuove contano dal giro dopo
     if (s.ph === 0) {
       var rem = (p.b - s.f) * sp, vlim = Math.sqrt(Math.max(0, 2 * 430 * rem)) + 10;                       // si rallenta fino a 210 u/s e si frena per fermarsi esattamente sul box
       if (s.v > PIT_V) s.v = Math.max(PIT_V, s.v - 650 * DT); else s.v = Math.min(PIT_V, s.v + 300 * DT); s.v = Math.min(s.v, vlim);
       s.f += s.v * DT / sp; s.tin += DT; if (rem <= 2 || s.f >= p.b) { s.f = p.b; s.ph = 1; s.v = 0; s.ts = 0; }
     } else if (s.ph === 1) {
       s.v = 0; s.ts += DT;
-      if (!s.sw && s.ts >= PIT_SWAP) { s.sw = 1; c.tyc = s.next; c.tyw = 0; c.pitN = (c.pitN || 0) + 1; c.tyU = (c.tyU || 0) | (1 << c.tyc); (c.stints = c.stints || []).push({ c: c.tyc, l: c.lap + (c.idx > tr.N / 2 ? 1 : 0), p: c.lap }); c.pitBeep = 1; }
+      if (!s.sw && s.ts >= PIT_SWAP) { s.sw = 1; c.tyc = s.next; c.tyw = 0; c.pitN = (c.pitN || 0) + 1; c.tyU = (c.tyU || 0) | (1 << c.tyc); (c.stints = c.stints || []).push({ c: c.tyc, l: (c.pitIn != null ? c.pitIn : c.lap) + (c.pitPre ? 1 : 0), p: c.pitIn != null ? c.pitIn : c.lap }); c.pitBeep = 1; }
       if (s.ts >= PIT_STOP) s.ph = 2;
     } else {
       s.v = Math.min(PIT_V, s.v + 300 * DT); s.f += s.v * DT / sp;
