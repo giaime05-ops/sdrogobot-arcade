@@ -1906,3 +1906,8 @@ html.mo .hbtns:not(.has)::after{content:"";flex:1 1 0;min-height:0;width:46px;bo
 .tn-time input{padding:6px 10px;border-radius:10px;background:rgba(8,4,20,.7);color:#fff;border:1px solid rgba(255,61,176,.4)}
 .rc2-wxbub.l{top:calc(150px + var(--st,0px))}
 .tn-num{width:100%;padding:9px 10px;margin:3px 0;border-radius:10px;background:rgba(8,4,20,.7);color:#fff;border:1px solid rgba(255,61,176,.4);font:700 16px Rajdhani,sans-serif}
+
+/* demo ospite: solo Multiplayer e Tornei */
+html.guest .tab[data-tab="shop"],html.guest .tab[data-tab="act"],html.guest .tab[data-tab="hub"],html.guest #wheelChip,html.guest #bancoChip,html.guest #folliaChip,html.guest .tn-p[data-v="c"]{display:none!important}
+html.guest #pgHub,html.guest #pgShop,html.guest #pgAct{visibility:hidden;pointer-events:none}
+html.guest .tn-pills{display:none}

@@ -40,7 +40,7 @@
   }
   function poll() {
     try { localStorage.setItem("arc_mo", A.multiOn() ? "1" : "0"); } catch (e) {}
-    if (!A.multiOn()) { btn.hidden = true; document.documentElement.classList.remove("mo"); setNames([]); return; }
+    if (!A.multiOn() || (A.guest && A.guest())) { btn.hidden = true; document.documentElement.classList.remove("mo"); setNames([]); return; }
     btn.hidden = false;
     A.api("/api/social/friends").then(function (j) {
       list = j.friends || [];

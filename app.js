@@ -89,6 +89,8 @@
       stars_old: +(j && j.stars_old) || 0,
       isnew:  !!(j && j.new),
       multi:  !!(j && j.multi),
+      gpx:    !!(j && j.gpx),
+      guest:  !!(j && j.guest),
       style:  (j && j.style) || {},
       maint:  (j && j.maintenance) || "off"
     };
@@ -173,7 +175,7 @@
 
   function render(me, opts) {
     opts = opts || {};
-    ME.admin = !!me.admin; ME.isnew = !!me.isnew; ME.multi = !!me.multi; try { localStorage.setItem("arc_flags", JSON.stringify({ n: ME.isnew ? 1 : 0, m: ME.multi ? 1 : 0 })); } catch (e) {}
+    ME.admin = !!me.admin; ME.isnew = !!me.isnew; ME.multi = !!me.multi; ME.gpx = !!me.gpx; var wasG = ME.guest; ME.guest = !!me.guest; document.documentElement.classList.toggle("guest", ME.guest); if (ME.guest && !wasG && window.ArcadeTabs) setTimeout(function () { window.ArcadeTabs.show("mp"); }, 0); try { localStorage.setItem("arc_flags", JSON.stringify({ n: ME.isnew ? 1 : 0, m: ME.multi ? 1 : 0 })); } catch (e) {}
     try { if (window.Arcade3D && window.Arcade3D.setHeist) window.Arcade3D.setHeist(SBX || ME.isnew); } catch (e) {}
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     ME.style = me.style || {}; maintBanner(me.maint);
@@ -295,7 +297,7 @@
     return refreshMe();
   }
 
-  window.Arcade = { multiOn: function () { return !!(SBX || ME.multi); }, newOn: function () { return !!(SBX || ME.isnew); }, gpxOn: function () { return !!(SBX || ME.gpx); }, tip: tip, avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, vib: vib, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
+  window.Arcade = { guest: function () { return !!ME.guest; }, multiOn: function () { return !!(SBX || ME.multi || ME.guest); }, newOn: function () { return !!(SBX || ME.isnew); }, gpxOn: function () { return !!(SBX || ME.gpx || ME.guest); }, tip: tip, avatars: AV, avStyle: avStyle, nameEl: nameEl, styleAvatar: styleAvatar, styleRow: styleRow, applyAvatar: applyAvatar, badgeEl: badgeEl, starEl: starEl, me: function () { return ME; }, api: api, setSandbox: setSandbox, isSandbox: function () { return SBX; }, isAdmin: function () { return ME.admin; }, fmt: fmt, haptic: haptic, vib: vib, toast: toast, inTelegram: inTelegram, refreshMe: refreshMe, tg: tg,
     setCoins: function (n) { $("pcoins").textContent = fmt(n); } };
   window.ArcadeGames = window.ArcadeGames || {};
 

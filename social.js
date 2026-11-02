@@ -77,6 +77,7 @@
     }).catch(function () {});
   }
   function show(name, fromUser) {
+    if (A.guest && A.guest() && name !== "mp" && name !== "lead") name = "mp";      // demo ospite: solo Multiplayer e Tornei
     var idx = ORDER.indexOf(name); if (idx < 0) return;
     var prev = cur; cur = name; pos = idx;
     if (name !== "lead") cat = "coins";                 // uscendo dalla classifica, al ritorno si riparte dai Ricconi
@@ -85,7 +86,7 @@
     paint(idx, true); settle(idx);
     if (fromUser) A.haptic("light");
     syncCoins();
-    if (name === "lead") loadLead();
+    if (name === "lead" && !(A.guest && A.guest())) loadLead();
     if (name === "act") { loadAct(); lsSet("arc_q_seen", dayKey()); refreshBadge(); }
     if (name === "shop" && window.ArcadeShop) window.ArcadeShop.load();
     if (name === "mp" && window.ArcadeMulti && (prev !== "mp" || fromUser)) window.ArcadeMulti.load();   // uno swipe annullato non ti riporta alla home del multiplayer
@@ -397,7 +398,7 @@
   var g = null, app = $("app");
   function W() { return app.clientWidth || innerWidth; }
   app.addEventListener("touchstart", function (e) {
-    if (gameOpen() || e.touches.length !== 1) { g = null; return; }
+    if (gameOpen() || e.touches.length !== 1 || (A.guest && A.guest())) { g = null; return; }
     if (e.target.closest && e.target.closest(".pg-cats,.scroll,input,.rc2,.rc-root")) { g = null; return; }   // le categorie scorrono da sole
     g = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), lock: 0, base: ORDER.indexOf(cur) };
   }, { passive: true });

@@ -41,7 +41,7 @@
   function applyVol() {
     if (!ctx) return;
     var t = ctx.currentTime;
-    gHub.gain.setTargetAtTime(mode === "hub" ? cfg.mHub * 0.5 : 0, t, 0.25);
+    gHub.gain.setTargetAtTime(mode === "hub" && !RC ? cfg.mHub * 0.5 : 0, t, 0.25);
     gGame.gain.setTargetAtTime(0, t, 0.2);          // nei giochi niente musica di fondo: solo gli effetti
     gSfx.gain.setTargetAtTime(cfg.sfx, t, 0.05);
   }
@@ -180,7 +180,7 @@
   function tick() {
     if (!ctx || ctx.state !== "running") return;
     var now = ctx.currentTime;
-    if (mode === "hub" && cfg.mHub > 0.001) {
+    if (mode === "hub" && !RC && cfg.mHub > 0.001) {
       if (lounge.next < now) lounge.next = now + 0.1;
       while (lounge.next < now + 0.7) lounge.next += loungeBar(lounge.next);
     } else lounge.next = 0;
@@ -360,8 +360,10 @@
     }
     // musica: sala o gioco
     var secs = ["avi", "gm", "g4", "heist"].map(function (id) { return document.getElementById(id); }).filter(Boolean);
-    function upd() { setMode(secs.some(function (s) { return !s.hidden; }) ? "game" : "hub"); }
+    var pgMp = document.getElementById("pgMp");                      // il Multiplayer (tavoli, Grand Prix) non ha musica di sala: i suoni li regola il suo cursore
+    function upd() { setMode(secs.some(function (s) { return !s.hidden; }) || (pgMp && !pgMp.classList.contains("off")) ? "game" : "hub"); }
     secs.forEach(function (s) { new MutationObserver(upd).observe(s, { attributes: true, attributeFilter: ["hidden"] }); });
+    if (pgMp) new MutationObserver(upd).observe(pgMp, { attributes: true, attributeFilter: ["class"] });
     upd();
   }
 
@@ -395,6 +397,7 @@
     var ec = ctx.createGain(), dl = ctx.createDelay(1.2), fb = ctx.createGain(), elp = ctx.createBiquadFilter(); ec.gain.value = 0.5; dl.delayTime.value = 60 / 106 * 0.75; fb.gain.value = 0.3; elp.type = "lowpass"; elp.frequency.value = 2200;
     ec.connect(dl); dl.connect(elp); elp.connect(fb); fb.connect(dl); elp.connect(gm);
     RC = { g: g, gs: gs, gm: gm, o1: o1, o2: o2, f: f, eg: eg, lfo: lfo, sq: sq, rb: rb, gr: gr, rn: rn, sqLfo: sqLfo, ec: ec, rainLv: o.rain || 0, sv: o.sfx == null ? 0.7 : o.sfx, mv: o.music == null ? 0.5 : o.music, step: 0, next: ctx.currentTime + 0.2, iv: 0, nextDrop: 0 };
+    applyVol();
     var C1 = [[53, 57, 60, 64], [55, 59, 62, 64], [52, 55, 59, 62], [57, 60, 64, 67]], C2 = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 52, 55, 59], [55, 59, 62, 65]], PENT = [72, 74, 76, 79, 81, 84], ARP = [0, 2, 1, 3, 2, 1, 3, 2];
     var beat = 60 / 106, sd = beat / 4;
     RC.iv = setInterval(function () {
@@ -419,7 +422,7 @@
     }, 90);
   }
   function raceEnd() {
-    if (!RC) return; var R0 = RC; RC = null; clearInterval(R0.iv); var t = ctx.currentTime;
+    if (!RC) return; var R0 = RC; RC = null; applyVol(); clearInterval(R0.iv); var t = ctx.currentTime;
     R0.g.gain.setTargetAtTime(0, t, 0.15); setTimeout(function () { try { R0.o1.stop(); R0.o2.stop(); R0.lfo.stop(); R0.sqLfo.stop(); R0.sq.s.stop(); R0.rb.s.stop(); R0.gr.s.stop(); if (R0.rn) R0.rn.s.stop(); R0.g.disconnect(); } catch (e) {} }, 700);
   }
   function raceEngine(v, boost, drift, off, still) {                                                          // v = velocità 0..1.1, still = ferma al semaforo
