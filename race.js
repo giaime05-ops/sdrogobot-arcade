@@ -530,7 +530,7 @@
     return cv;
   }
   var RLL = (lsGet("arc_race4_lng") || {}).n || 10, RL = lsGet("arc_race4_laps") || 3, RD = lsGet("arc_race4_diff"); if (RD == null || RD < 0 || RD > 3) RD = 1;
-  function open(host, onExit, joinId) {
+  function open(host, onExit, joinId, tl) {
     var root = el("div", "rc-root"); host.appendChild(root);
     function hook(fn) { window.ArcadeBackHook = fn; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} }
     function top(title, back, label) { var t0 = el("div", "mp-top"), bk = el("button", "mp-back", label || "‹ Indietro"); bk.type = "button"; bk.addEventListener("click", back); t0.appendChild(bk); t0.appendChild(el("div", "mp-title", title)); root.appendChild(t0); return t0; }
@@ -1111,6 +1111,11 @@
             A.api("/api/room/result", "POST", { id: RMT.id, order: ord2, bl: Math.min.apply(null, (me.lapTs || []).length ? me.lapTs.slice(0) : [1e9]) }).then(function (j) { if (j && j.success && j.settled && resLn && !resLn._d) { resLn._d = 1; var py = ((j.result || {}).pay || {})[RMT.uid] || 0; resLn.textContent = py ? "💰 Premio ricevuto: +" + A.fmt(py) + " $SDG" : "Classifica confermata"; try { A.refreshMe(); } catch (e) {} } }).catch(function () {});
           } else if (opts.prize) { var pz = [opts.prize, Math.round(opts.prize * 0.75), Math.round(opts.prize * 0.5)][p0] || 0; box.appendChild(el("div", "rc-lap", pz ? "💰 Premio: +" + A.fmt(pz) + " $SDG (simulato)" : "Premi: 1° " + A.fmt(opts.prize) + " · 2° " + A.fmt(Math.round(opts.prize * 0.75)) + " · 3° " + A.fmt(Math.round(opts.prize * 0.5)))); }
         }
+        if (opts.tourn && !qual && !LQ && !RMT) {                                                                          // torneo di prova: l'ordine d'arrivo e i giri migliori vanno al server
+          var rkT = rank(), blT = {}, ordT = rkT.map(function (c) { return opts.tourn.map[cars.indexOf(c)]; });
+          rkT.forEach(function (c) { var m0 = Math.min.apply(null, (c.lapTs || []).length ? c.lapTs.slice(0) : [1e9]); if (m0 < 1e8) blT[opts.tourn.map[cars.indexOf(c)]] = m0; });
+          A.api("/api/tourn/report", "POST", { id: opts.tourn.id, order: ordT, bl: blT }).then(function (j) { A.toast(j && j.success ? "🏆 Punti del torneo registrati" : ((j && j.error) || "Punti non registrati")); }).catch(function () { A.toast("Punti non registrati"); });
+        }
         if (wxb.parentNode) wxb.parentNode.removeChild(wxb); if (wxbub.parentNode) wxbub.parentNode.removeChild(wxbub);
         var tb = el("div", "rc2-tbl lt"), lcol = el("div", "lt-l"), rcol = el("div", "lt-r"), rin = el("div", "lt-in"), hd = el("div", "lr h");      // sinistra: posizione, nome, totale; destra: i giri, a gruppi di 5
         lcol.appendChild(el("div", "lr h", "")); for (var gi = 1; gi <= laps; gi++) { var hi = el("i", "", "G" + gi); hi.setAttribute("data-p", String(Math.floor((gi - 1) / 5))); hd.appendChild(hi); } rin.appendChild(hd);
@@ -1596,6 +1601,13 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
       raf = requestAnimationFrame(function (n) { last = n; frame(n); });
     }
     menu();
+    if (tl && tl.t) {                                                                                                    // gara di torneo di prova contro i bot (solo account admin di prova)
+      var tt = tl.t, tk = tt.tracks[tt.results.length], trT = TRACKS.filter(function (x) { return x.id === tk; })[0] || TRACKS[1], bt = tt.standings.filter(function (p) { return p.bot; }).slice(0, 7), me0 = tt.standings.filter(function (p) { return p.uid === tt.me; })[0];
+      var mapT = [tt.me].concat(bt.map(function (p) { return p.uid; })), cl = ["#ff2fa8", "#35e6ff", "#ffd23b", "#a855f7", "#ff8a3b", "#4ade80", "#f87171", "#60a5fa"];
+      var oT = { n: mapT.length, roster: mapT.map(function (u, i) { var pp = tt.standings.filter(function (p) { return p.uid === u; })[0]; return { name: i ? String((pp || {}).name || "Bot").replace("🤖 ", "") : "Tu", col: cl[i] }; }), diff: 1, laps: tt.laps, obst: true, pads: true, slip: false, assist: false, coll: true, rain: tt.lng ? 3 : 0, prize: 0, lng: !!tt.lng, tourn: { id: tt.id, map: mapT } };
+      if (tt.qual === "long" && tt.lng) { oT.lqPhase = true; oT.tyre0 = 0; } else oT.qualPhase = true;
+      build(trT); race(trT, "race", oT);
+    }
     if (joinId) {                                                                                                       // arrivo dal pulsante del gruppo / dell'invito: entro subito nella lobby
       A.api("/api/room/join", "POST", { id: String(joinId) }).then(function (k) {
         if (k && k.success) { if (k.room.host === k.room.me) { LB = lbFromRoom(k.room); LB._ens = 1; lobby(); } else guestLobby(k.room); }

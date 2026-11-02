@@ -1367,7 +1367,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
     if (!(A.multiOn && A.multiOn())) { soon(); return; }
     if (NET && !NET.dead && NET.started && body.firstChild) { fit(true); return; }                 // partita in corso: tornando sulla scheda si rientra nel tavolo, non si ricostruisce la home
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
-  }, openGP: function (rid) { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby, rid || ""); return true; } };
+  }, openGP: function (rid, tl) { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby, rid || "", tl); return true; } };
   // link diretto dal gruppo (t.me/…?startapp=multiplayer oppure grandprix): apre il Multiplayer (o subito il Grand Prix), già col tuo account
   (function () {
     var sp = ""; try { sp = String((window.Telegram.WebApp.initDataUnsafe || {}).start_param || ""); } catch (e) {}
