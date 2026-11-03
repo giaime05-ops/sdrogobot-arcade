@@ -490,6 +490,10 @@
     }).catch(function () { SRV.ok = true; cb(); });
   }
   function myRec(tr) { if (isSbx()) return lsGet("arc_race4_" + tr.id); var m = SRV.mine[tr.id]; return m ? { t: m / 1000 } : null; }   // il TUO record sui 3 giri
+  function myGhost(tr) {                                                                                      // fantasma locale del tuo record: vale solo se è proprio quello del tempo registrato dal server (altrimenti è vecchio o di un altro dispositivo)
+    var o = lsGet(PF() + "g_" + tr.id); if (!o || !o.g || o.g.length < 7) return null; if (isSbx()) return o.g;
+    var m = myRec(tr); if (!m) return null; return o.t != null && Math.abs(o.t - Math.round(m.t * 1000)) <= 1 ? o.g : null;
+  }
   function absRec(tr) {                                                                                      // record della pista (di tutti): nessuno finché qualcuno non lo fa
     if (isSbx()) { var m = lsGet("arc_race4_" + tr.id); return m && m.t ? { t: m.t, n: "Tu", me: true } : null; }
     var r = SRV.rec[tr.id]; return r ? { t: r.t / 1000, n: r.n, me: !!r.me } : null;
@@ -835,7 +839,7 @@
         var go = el("button", "mp-go", "▶ " + (mode === "single" ? "GIOCA · 3 giri" : (UL ? "PARTI" : (mode === "long" ? "GARA LUNGA · " + RLL + " giri" : "GARA · " + RL + " giri")))); go.type = "button";
         function startIt() {
           var o = mode === "single" ? undefined : { rain: mode === "long" ? (RO.rainL == null ? 3 : RO.rainL) : RO.rain, obst: !!RO.obst, pads: !!RO.pads, slip: !!RO.slip, assist: !!RO.assist }, ab = absRec(tr); if (mode === "long") { o.lng = true; o.laps = RLL; o.coll = true; if (RO.lq !== 0 && isSbx()) { o.lqPhase = true; o.tyre0 = 0; } }
-          if (mode === "single" && !isSbx() && ab && !ab.me && !tr._absG) { A.api("/api/race/ghost?track=" + tr.id, "GET").then(function (j) { tr._absG = (j && j.g) || null; race(tr, mode, o); }).catch(function () { race(tr, mode, o); }); }
+          if (mode === "single" && !isSbx() && ab && (!ab.me || !myGhost(tr)) && !tr._absG) { A.api("/api/race/ghost?track=" + tr.id, "GET").then(function (j) { tr._absG = (j && j.g) || null; race(tr, mode, o); }).catch(function () { race(tr, mode, o); }); }
           else race(tr, mode === "long" ? "race" : mode, o);
         }
         if (lk) {
@@ -983,9 +987,9 @@
       AU.begin({ rain: RAIN === 3 ? 0 : RAIN, sfx: SN.sfx, music: SN.music });
       var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 1 }, gl = [], grec = [], gtick = 0;
       if (solo) {
-        var gm = (lsGet(PF() + "g_" + tr.id) || {}).g, ab0 = GPf.best ? absRec(tr) : null;
+        var gm = myGhost(tr), abA = absRec(tr), ab0 = GPf.best ? abA : null; var gmHz = 0; if (gm == null && abA && abA.me && tr._absG && tr._absG.length > 6) { gm = tr._absG; var nn0 = gm.length / 3, rr0 = abA.t > 1 ? nn0 / abA.t : 20; gmHz = Math.abs(rr0 - 10) < Math.abs(rr0 - 20) ? 10 : 20; }
         var iAmRec = !!(ab0 && ab0.me);                                                                              // se il record assoluto è tuo, il fantasma è uno solo (il tuo)
-        if ((GPf.mine || iAmRec) && gm && gm.length > 6) gl.push({ arr: gm, o: { x: 0, y: 0, a: 0, col: iAmRec ? "#ffd23b" : "#cfe6ff", name: iAmRec ? "Il tuo record 🏆" : "Il tuo record", ghost: true, hit: 0 } });
+        if ((GPf.mine || iAmRec) && gm && gm.length > 6) gl.push({ arr: gm, hz: gmHz || undefined, o: { x: 0, y: 0, a: 0, col: iAmRec ? "#ffd23b" : "#cfe6ff", name: iAmRec ? "Il tuo record 🏆" : "Il tuo record", ghost: true, hit: 0 } });
         if (ab0 && !ab0.me && tr._absG && tr._absG.length > 6) gl.push({ arr: tr._absG, hz: (function () { var nn = tr._absG.length / 3, rr = ab0.t > 1 ? nn / ab0.t : 20; return Math.abs(rr - 10) < Math.abs(rr - 20) ? 10 : 20; })(), o: { x: 0, y: 0, a: 0, col: "#ffd23b", name: "Record · " + ab0.n, ghost: true, hit: 0 } });
       }
       var sbest = (solo && lsGet(PF() + "s_" + tr.id)) || [0, 0, 0], secNo = 0, secStart = 0, secPrev = [], secLast = [], secCols = [];
@@ -1088,7 +1092,7 @@
           g0.addEventListener("click", function () { stop(true); race(tr0, "race", Object.assign({}, opts, { qualPhase: false, grid: qres.map(function (q) { return q.id; }) })); });
           g1.addEventListener("click", function () { stop(true); race(tr0, "race", opts); }); rw0.appendChild(g0); rw0.appendChild(g1); box.appendChild(rw0); full.appendChild(box); return;
         }
-        if (rec) { if (isSbx() && laps === 3) lsSet("arc_race4_" + tr.id, { t: total }); lsSet(PF() + "g_" + tr.id, { g: grec }); } A.haptic("ok");
+        if (rec) { if (isSbx() && laps === 3) lsSet("arc_race4_" + tr.id, { t: total }); lsSet(PF() + "g_" + tr.id, { g: grec, t: Math.round(total * 1000) }); } A.haptic("ok");
         if (!solo) {                                                                                               // gli altri finiscono la gara (veloce, senza disegnare) così hai la classifica completa coi giri
           var t2 = t, g = 0;
           while (g++ < 60 * 300 && cars.some(function (c) { return !c.fin && !c.remote; })) {
