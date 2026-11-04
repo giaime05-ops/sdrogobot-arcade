@@ -1365,6 +1365,7 @@ var REV = '<svg viewBox="0 0 180 90" width="100%" height="100%"><defs><linearGra
 
   window.ArcadeMulti = { friendSheet: function (ex, pick) { friendSheet(ex || [], pick); }, myName: function () { return myName(); }, load: function () {
     if (!(A.multiOn && A.multiOn())) { soon(); return; }
+    if (A.guest && A.guest() && window.ArcadeRace) { if (body.querySelector(".rc-root")) { fit(true); return; } window.ArcadeMulti.openGP(); return; }          // demo ospite: si entra direttamente nel Grand Prix, senza passare dalla home del multiplayer
     if (NET && !NET.dead && NET.started && body.firstChild) { fit(true); return; }                 // partita in corso: tornando sulla scheda si rientra nel tavolo, non si ricostruisce la home
     A.api("/api/social/donors").then(function (j) { st.players = j.players || []; st.opp = null; lobby(); }).catch(function () { lobby(); });
   }, openGP: function (rid, tl) { if (!(A.multiOn && A.multiOn()) || !window.ArcadeRace) return false; fit(true); epoch++; body.innerHTML = ""; window.ArcadeRace.open(body, lobby, rid || "", tl); return true; } };

@@ -479,34 +479,36 @@
   var ORD = ["1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°"];
 
   function isSbx() { return !!(A.isSandbox && A.isSandbox()); }
-  function PF() { return isSbx() ? "arc_race4" : "arc_race6"; }                                              // account di prova e account vero hanno dati separati
+  function isGst() { return !!(A.guest && A.guest()); }
+  function lcl() { return isSbx() || isGst(); }                                                              // dati solo sul telefono (prova admin e demo ospiti): niente classifiche, record o premi veri
+  function PF() { return lcl() ? "arc_race4" : "arc_race6"; }                                              // account di prova e account vero hanno dati separati
   var SRV = { ok: false, unlocked: {}, top: {}, mine: {}, rec: {}, fl: {} };                                         // stato vero dal server (solo account vero)
   function loadSrv(cb) {
-    if (isSbx()) { cb(); return; }
+    if (lcl()) { cb(); return; }
     A.api("/api/race/state", "GET").then(function (j) {
       if (j && j.success) { SRV.unlocked = {}; (j.unlocked || []).forEach(function (id) { SRV.unlocked[id] = 1; }); SRV.top = j.top || {}; SRV.mine = j.mine || {}; SRV.rec = j.rec || {}; SRV.fl = j.fl || {}; }
       TRACKS.forEach(function (t) { var r = SRV.rec[t.id]; if (!r || t._absT !== r.t) { t._absG = null; t._absT = r && r.t; } });
       SRV.ok = true; cb();
     }).catch(function () { SRV.ok = true; cb(); });
   }
-  function myRec(tr) { if (isSbx()) return lsGet("arc_race4_" + tr.id); var m = SRV.mine[tr.id]; return m ? { t: m / 1000 } : null; }   // il TUO record sui 3 giri
+  function myRec(tr) { if (lcl()) return lsGet("arc_race4_" + tr.id); var m = SRV.mine[tr.id]; return m ? { t: m / 1000 } : null; }   // il TUO record sui 3 giri
   function myGhost(tr) {                                                                                      // fantasma locale del tuo record: vale solo se è proprio quello del tempo registrato dal server (altrimenti è vecchio o di un altro dispositivo)
-    var o = lsGet(PF() + "g_" + tr.id); if (!o || !o.g || o.g.length < 7) return null; if (isSbx()) return o.g;
+    var o = lsGet(PF() + "g_" + tr.id); if (!o || !o.g || o.g.length < 7) return null; if (lcl()) return o.g;
     var m = myRec(tr); if (!m) return null; return o.t == null || Math.abs(o.t - Math.round(m.t * 1000)) <= 1 ? o.g : null;
   }
   function absRec(tr) {                                                                                      // record della pista (di tutti): nessuno finché qualcuno non lo fa
-    if (isSbx()) { var m = lsGet("arc_race4_" + tr.id); return m && m.t ? { t: m.t, n: "Tu", me: true } : null; }
+    if (lcl()) { var m = lsGet("arc_race4_" + tr.id); return m && m.t ? { t: m.t, n: "Tu", me: true } : null; }
     var r = SRV.rec[tr.id]; return r ? { t: r.t / 1000, n: r.n, me: !!r.me } : null;
   }
   function board(tr) {                                                                                       // classifica vera: righe vuote finché nessuno fa un tempo
     var L;
-    if (isSbx()) { var m = lsGet("arc_race4_" + tr.id); L = m && m.t ? [{ n: "Tu", t: m.t, me: true }] : []; }
+    if (lcl()) { var m = lsGet("arc_race4_" + tr.id); L = m && m.t ? [{ n: "Tu", t: m.t, me: true }] : []; }
     else L = (SRV.top[tr.id] || []).map(function (r) { return { n: r.n, t: r.t / 1000, me: !!r.me }; });
     return L;
   }
   function tIdx(tr) { for (var i = 0; i < TRACKS.length; i++) if (TRACKS[i].id === tr.id) return i; return 0; }
   function lapTarget(tr) { build(tr); if (!tr._ut) tr._ut = Math.round(botLap(tr, 1, 1) * 1.08 * 10) / 10; return tr._ut; }
-  function isUnlocked(tr) { return tr.sbx || tIdx(tr) < 3 || (isSbx() ? !!lsGet("arc_race4u_" + tr.id) : !!SRV.unlocked[tr.id]); }
+  function isUnlocked(tr) { return tr.sbx || isGst() || tIdx(tr) < 3 || (lcl() ? !!lsGet("arc_race4u_" + tr.id) : !!SRV.unlocked[tr.id]); }
   (function () { try { if (!localStorage.getItem("arc_race5_mig")) { ["canyon", "costa", "downtown", "skyline"].forEach(function (id) { ["arc_race4_", "arc_race4g_", "arc_race4s_", "arc_race4b_"].forEach(function (p) { localStorage.removeItem(p + id); }); }); localStorage.setItem("arc_race5_mig", "1"); } } catch (e) {} })();     // fantasmi/record delle piste rifatte: azzerati una volta
   var PRICE = [0, 0, 0, 500, 750, 950, 1150, 1400, 1700, 2000], REWARD = [150, 150, 150, 300, 350, 400, 500, 600, 800, 1000];     // sblocco a pagamento e premio per ogni record battuto
   function price(tr) { return PRICE[tIdx(tr)] || 0; }
@@ -545,9 +547,9 @@
   function open(host, onExit, joinId, tl) {
     var root = el("div", "rc-root"); host.appendChild(root);
     function hook(fn) { window.ArcadeBackHook = fn; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} }
-    function top(title, back, label) { var t0 = el("div", "mp-top"), bk = el("button", "mp-back", label || "‹ Indietro"); bk.type = "button"; bk.addEventListener("click", back); t0.appendChild(bk); t0.appendChild(el("div", "mp-title", title)); root.appendChild(t0); return t0; }
+    function top(title, back, label) { var t0 = el("div", "mp-top"), bk = el("button", "mp-back", label || "‹ Indietro"); bk.type = "button"; bk.addEventListener("click", back); if (!(isGst() && label === "‹ Multi")) t0.appendChild(bk); t0.appendChild(el("div", "mp-title", title)); root.appendChild(t0); return t0; }
     function tcx() { var tc = window.__tournCtx; if (tc && window.ArcadeTourn) { window.__tournCtx = null; try { root.remove(); } catch (e) {} hook(null); window.ArcadeTourn.open(tc); return true; } return false; }       // gara di torneo: si torna sempre alla lobby del torneo
-    function exitAll() { if (tcx()) return; root.remove(); hook(null); onExit(); }
+    function exitAll() { if (tcx() || isGst()) return; root.remove(); hook(null); onExit(); }
     function thumb(tr) { if (!tr._th) { build(tr); try { tr._th = art(tr).toDataURL("image/jpeg", 0.82); } catch (e) { tr._th = ""; } } return tr._th; }
     function hero(cls, tri, ico, ttl, sub, tag, fn) {                                                        // grande scheda con il disegno della pista sullo sfondo
       var c = el("button", "rc-hero " + cls); c.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[tri]); im.alt = ""; c.appendChild(im); c.appendChild(el("div", "sh"));
@@ -559,8 +561,8 @@
       act("gp");
       root.innerHTML = ""; root.className = "rc-root home"; hook(function () { exitAll(); return true; });
       top("GRAND PRIX", exitAll, "‹ Multi");
-      hero("h1", 0, "👤", "SINGOLO", "Contro il tempo, col fantasma del tuo record e le classifiche", TRACKS.length + " PISTE", function () { tracks("single"); });
-      hero("h2", 4, "🏁", "LOBBY", "Crea una lobby o entra in una aperta: fino a 8 piloti", "MULTIPLAYER", function () { lobbyHub(); });
+      hero("h1", 0, "👤", "SINGOLO", (isGst() ? "Contro il tempo, col fantasma del tuo record" : "Contro il tempo, col fantasma del tuo record e le classifiche"), TRACKS.length + " PISTE", function () { tracks("single"); });
+      hero("h2", 4, "🏁", "LOBBY", (isGst() ? "Crea una lobby e correte contro i bot: fino a 8 piloti" : "Crea una lobby o entra in una aperta: fino a 8 piloti"), "MULTIPLAYER", function () { lobbyHub(); });
       if (isSbx()) hero("h3", 5, "🏁", "GARA", "Rapida o lunga, contro i bot", "2 MODI", function () { raceHub(); });
       else hero("h3", 5, "⚡", "GARA RAPIDA", "Subito in pista contro 3 bot, senza preparare nulla", "VS BOT", function () { tracks("race"); });
     }
@@ -679,7 +681,7 @@
       if (real()) { if (!L.rm) { if (!L._ens) { L._ens = 1; rmEnsure(function (ok) { if (ok && LB === L) { rmPush(); rmWatch(); } else { if (ok && L.rm && L._gone) A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); L._ens = 0; } }); } } else { rmPush(); rmWatch(); } }
     }
     // ---------- stanze online (account vero): invito dal server, lobby condivisa, auto degli altri in tempo reale ----------
-    function real() { return !isSbx() || !!(LB && LB.tourn); }
+    function real() { return !lcl() || !!(LB && LB.tourn); }
     function rmCfg(L) { return { track: TRACKS[L.ti].id, laps: L.laps, prize: L.prize | 0, max: 8, x: { rain: L.rain | 0, obst: L.obst ? 1 : 0, pads: L.pads ? 1 : 0, slip: L.slip ? 1 : 0, coll: L.coll ? 1 : 0, qual: L.qual ? 1 : 0, vis: L.vis ? 1 : 0, hcol: L.col | 0, lng: L.lng ? 1 : 0 } }; }
     function rmEnsure(cb) {
       var L = LB; if (L.rm) return cb(true);
@@ -779,7 +781,7 @@
     function slotMenu() {                                                                                           // il "+" di un posto libero: invita un amico o aggiungi un bot
       var L = LB; if (L.slots.length >= 8) return; var ov = el("div", "lb-pal-ov"), bx = el("div", "lb-pal sm");
       bx.appendChild(el("b", "", "AGGIUNGI AL POSTO LIBERO"));
-      [["👥 Invita un amico", function () { inviteSheet(); }], ["🤖 Aggiungi un bot", function () { L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }], ["🤖🤖 Riempi tutti i posti con bot", function () { while (L.slots.length < 8) L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }]].forEach(function (a) {
+      [isGst() ? null : ["👥 Invita un amico", function () { inviteSheet(); }], ["🤖 Aggiungi un bot", function () { L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }], ["🤖🤖 Riempi tutti i posti con bot", function () { while (L.slots.length < 8) L.slots.push({ t: "bot", name: NAMES[L.slots.length % 8] }); lobby(); }]].filter(Boolean).forEach(function (a) {
         var b = el("button", "mp-go lb-smb", a[0]); b.type = "button"; b.addEventListener("click", function () { ov.remove(); a[1](); }); bx.appendChild(b); });
       ov.appendChild(bx); ov.addEventListener("click", function (e) { if (e.target === ov) ov.remove(); }); root.appendChild(ov);
     }
@@ -798,7 +800,7 @@
     function raceHub() { tracks(lsGet("arc_race4_lm") === "long" ? "long" : "race"); }                           // lobby unica GARA (solo account admin di prova): rapida e lunga si scelgono con due tasti
     var RO = lsGet("arc_race4_ro") || { rain: 0, obst: 1, pads: 1, slip: 1, assist: 0 };
     function tracks(mode) {
-      if (!isSbx() && !SRV.ok) { root.innerHTML = ""; top(mode === "single" ? "SINGOLO" : (mode === "long" ? "GARA LUNGA" : "GARA RAPIDA"), isSbx() ? raceHub : menu, "‹ Grand Prix"); root.appendChild(el("div", "rc-note", "Carico piste e record…")); loadSrv(function () { tracks(mode); }); return; }
+      if (!lcl() && !SRV.ok) { root.innerHTML = ""; top(mode === "single" ? "SINGOLO" : (mode === "long" ? "GARA LUNGA" : "GARA RAPIDA"), isSbx() ? raceHub : menu, "‹ Grand Prix"); root.appendChild(el("div", "rc-note", "Carico piste e record…")); loadSrv(function () { tracks(mode); }); return; }
       root.innerHTML = ""; root.className = "rc-root"; var bk = menu, UL = isSbx() && mode !== "single"; hook(function () { bk(); return true; });
       var tpb = top(mode === "single" ? "SINGOLO" : (UL ? "GARA" : (mode === "long" ? "GARA LUNGA" : "GARA RAPIDA")), bk, "‹ Grand Prix"); if (A.isSandbox && A.isSandbox()) { try { tpb.appendChild(el("span", "rc-wal", "💰 " + A.fmt(wal()) + " (prova)")); } catch (e) {} }
       if (UL) {                                                                                                 // due tasti grandi: gara rapida / gara lunga
@@ -830,7 +832,7 @@
         c.appendChild(el("div", "mp-ttl", (lk ? "🔒 " : "🏁 ") + tr.name));
         if (mode === "single") {
           c.appendChild(el("div", "rc-t", "Tuo record: " + fmt(best && best.t) + "  ·  Miglior giro: " + fmt(bl && bl.t)));
-          var ab = absRec(tr), fb = isSbx() ? null : SRV.fl[tr.id]; c.appendChild(el("div", "rc-t abs", "🏆 Record: " + (ab ? fmt(ab.t) + " (" + (ab.me ? "Tu" : ab.n) + ")" : "nessuno ancora") + (isSbx() ? "" : "  ·  ⚡ Miglior giro: " + (fb ? fmt(fb.t / 1000) + " (" + (fb.me ? "Tu" : fb.n) + ")" : "nessuno ancora"))));
+          var ab = absRec(tr), fb = lcl() ? null : SRV.fl[tr.id]; c.appendChild(el("div", "rc-t abs", "🏆 Record: " + (ab ? fmt(ab.t) + " (" + (ab.me ? "Tu" : ab.n) + ")" : "nessuno ancora") + (lcl() ? "" : "  ·  ⚡ Miglior giro: " + (fb ? fmt(fb.t / 1000) + " (" + (fb.me ? "Tu" : fb.n) + ")" : "nessuno ancora"))));
         } else c.appendChild(el("div", "rc-t", mode === "long" ? "Gara lunga: " + RLL + " giri con gomme e pit stop" : tr.day ? "Circuito cittadino di giorno, con il lungomare" : tr.theme === "city" ? "Circuito cittadino notturno" : tr.id === "zigzag" ? "Pista stretta con curve veloci" : tr.id === "canyon" ? "Canyon: curve larghe e veloci" : tr.id === "costa" ? "Lungomare con saliscendi di curve" : tr.id === "gp" ? "Lunga, di tutto un po'" : tr.id === "tornanti" ? "Con tornanti" : tr.jump ? "Con salti sul fiume" : "Con curve"));
         if (lk) c.appendChild(el("div", "rc-lock", "🔒 Pista da sbloccare · " + A.fmt(price(tr)) + " $SDG" + (mode === "single" ? "" : " (nelle gare rapide vale solo se sbloccata)")));
         else if (mode === "single" && price(tr)) c.appendChild(el("div", "rc-lock ok", "💰 Premio per ogni record: " + A.fmt(reward(tr)) + " $SDG"));
@@ -839,7 +841,7 @@
         var go = el("button", "mp-go", "▶ " + (mode === "single" ? "GIOCA · 3 giri" : (UL ? "PARTI" : (mode === "long" ? "GARA LUNGA · " + RLL + " giri" : "GARA · " + RL + " giri")))); go.type = "button";
         function startIt() {
           var o = mode === "single" ? undefined : { rain: mode === "long" ? (RO.rainL == null ? 3 : RO.rainL) : RO.rain, obst: !!RO.obst, pads: !!RO.pads, slip: !!RO.slip, assist: !!RO.assist }, ab = absRec(tr); if (mode === "long") { o.lng = true; o.laps = RLL; o.coll = true; if (RO.lq !== 0 && isSbx()) { o.lqPhase = true; o.tyre0 = 0; } }
-          if (mode === "single" && !isSbx() && ab && !tr._absG) { A.api("/api/race/ghost?track=" + tr.id, "GET").then(function (j) { tr._absG = (j && j.g) || null; race(tr, mode, o); }).catch(function () { race(tr, mode, o); }); }
+          if (mode === "single" && !lcl() && ab && !tr._absG) { A.api("/api/race/ghost?track=" + tr.id, "GET").then(function (j) { tr._absG = (j && j.g) || null; race(tr, mode, o); }).catch(function () { race(tr, mode, o); }); }
           else race(tr, mode === "long" ? "race" : mode, o);
         }
         if (lk) {
@@ -1092,7 +1094,7 @@
           g0.addEventListener("click", function () { stop(true); race(tr0, "race", Object.assign({}, opts, { qualPhase: false, grid: qres.map(function (q) { return q.id; }) })); });
           g1.addEventListener("click", function () { stop(true); race(tr0, "race", opts); }); rw0.appendChild(g0); rw0.appendChild(g1); box.appendChild(rw0); full.appendChild(box); return;
         }
-        if (rec) { if (isSbx() && laps === 3) lsSet("arc_race4_" + tr.id, { t: total }); var og0 = lsGet(PF() + "g_" + tr.id); if (!(og0 && og0.t != null && Math.round(total * 1000) >= og0.t)) lsSet(PF() + "g_" + tr.id, { g: grec, t: Math.round(total * 1000) }); } A.haptic("ok");
+        if (rec) { if (lcl() && laps === 3) lsSet("arc_race4_" + tr.id, { t: total }); var og0 = lsGet(PF() + "g_" + tr.id); if (!(og0 && og0.t != null && Math.round(total * 1000) >= og0.t)) lsSet(PF() + "g_" + tr.id, { g: grec, t: Math.round(total * 1000) }); } A.haptic("ok");
         if (!solo) {                                                                                               // gli altri finiscono la gara (veloce, senza disegnare) così hai la classifica completa coi giri
           var t2 = t, g = 0;
           while (g++ < 60 * 300 && cars.some(function (c) { return !c.fin && !c.remote; })) {
@@ -1109,8 +1111,8 @@
           var recLn = el("div", "rc-lap me", ""); box.appendChild(el("b", "", recAll ? "🏆 NUOVO RECORD DELLA PISTA!" : (rec ? "🏁 NUOVO TUO RECORD!" : "ARRIVO!"))); box.appendChild(el("div", "rc-big", fmt(total))); box.appendChild(recLn);
           if (recPay) recLn.textContent = "💰 Record della pista: +" + A.fmt(recPay) + " $SDG"; else if (laps !== 3) recLn.textContent = "Il record vale solo sui 3 giri";
           var lts = (me.lapTs || []).slice(0, laps).map(function (q) { return Math.round(q * 1000); }), fbs = SRV.fl[tr0.id];
-          var flBeat = !isSbx() && laps === 3 && lts.length === 3 && (!fbs || Math.min.apply(null, lts) < fbs.t);        // giro più veloce della pista: si manda la corsa anche se non è un record
-          if (!isSbx() && laps === 3 && (rec || recAll || flBeat)) {
+          var flBeat = !lcl() && laps === 3 && lts.length === 3 && (!fbs || Math.min.apply(null, lts) < fbs.t);        // giro più veloce della pista: si manda la corsa anche se non è un record
+          if (!lcl() && laps === 3 && (rec || recAll || flBeat)) {
             var gs = grec.length > 6000 ? grec.filter(function (v, i) { return Math.floor(i / 3) % 2 === 0; }) : grec;
             A.api("/api/race/record", "POST", { track: tr0.id, t: Math.round(total * 1000), g: gs, lt: lts.length === 3 ? lts : undefined }).then(function (j) {
               if (j && j.success) { if (j.reward) recLn.textContent = "💰 Record della pista: +" + A.fmt(j.reward) + " $SDG"; else if (j.record) recLn.textContent = "Record della pista battuto (premio non pagato: limite giornaliero raggiunto)"; else if (j.pos) recLn.textContent = "In classifica sei " + j.pos + "° su " + j.of; tr0._absG = null; SRV.ok = false; try { A.refreshMe(); } catch (e) {} }

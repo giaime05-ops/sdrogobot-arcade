@@ -1930,3 +1930,7 @@ html.guest .tn-pills{display:none}
 .tn-pb{flex:1;max-width:120px;padding:10px 6px;border-radius:14px;background:rgba(0,0,0,.3);display:flex;flex-direction:column;gap:3px;align-items:center}
 .tn-pb i{font-style:normal;font-size:30px}.tn-pb b{font-size:13px;word-break:break-word}.tn-pb span{opacity:.85;font-size:12px}.tn-pb em{font-style:normal;color:#7dffb0;font-weight:800;font-size:12px}
 .tn-pb.p1{padding-top:20px;padding-bottom:20px;background:rgba(255,210,59,.22)}
+
+/* demo ospite: solo Grand Prix, niente barra schede né intestazione Multiplayer */
+html.guest #tabs,html.guest #pgMp>.pg-head{display:none!important}
+html.guest .pg{bottom:0}

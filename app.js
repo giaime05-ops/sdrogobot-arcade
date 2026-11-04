@@ -175,7 +175,7 @@
 
   function render(me, opts) {
     opts = opts || {};
-    ME.admin = !!me.admin; ME.isnew = !!me.isnew; ME.multi = !!me.multi; ME.gpx = !!me.gpx; var wasG = ME.guest; ME.guest = !!me.guest; document.documentElement.classList.toggle("guest", ME.guest); if (ME.guest && !wasG && window.ArcadeTabs) setTimeout(function () { window.ArcadeTabs.show("mp"); }, 0); try { localStorage.setItem("arc_flags", JSON.stringify({ n: ME.isnew ? 1 : 0, m: ME.multi ? 1 : 0 })); } catch (e) {}
+    ME.admin = !!me.admin; ME.isnew = !!me.isnew; ME.multi = !!me.multi; ME.gpx = !!me.gpx; var wasG = ME.guest; ME.guest = !!me.guest; document.documentElement.classList.toggle("guest", ME.guest); if (ME.guest && !window.__gst0 && window.ArcadeTabs) { window.__gst0 = 1; setTimeout(function () { window.ArcadeTabs.show("mp"); }, 0); } try { localStorage.setItem("arc_flags", JSON.stringify({ n: ME.isnew ? 1 : 0, m: ME.multi ? 1 : 0, g: ME.guest ? 1 : 0 })); } catch (e) {}
     try { if (window.Arcade3D && window.Arcade3D.setHeist) window.Arcade3D.setHeist(SBX || ME.isnew); } catch (e) {}
     var name = me.name || (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || "Giocatore";
     ME.style = me.style || {}; maintBanner(me.maint);
@@ -242,7 +242,7 @@
   }
 
   // ---------- Chiamate al bot (generiche, usate dai giochi) ----------
-  var SBX = false, ME = { admin: false }; try { var ca = JSON.parse(localStorage.getItem("arc_flags") || "{}"); ME.isnew = !!ca.n; ME.multi = !!ca.m; } catch (e) {}      // ultimi interruttori noti: la home esce subito con l'aspetto giusto, senza aspettare il server
+  var SBX = false, ME = { admin: false }; try { var ca = JSON.parse(localStorage.getItem("arc_flags") || "{}"); ME.isnew = !!ca.n; ME.multi = !!ca.m; ME.guest = !!ca.g; } catch (e) {}      // ultimi interruttori noti: la home esce subito con l'aspetto giusto, senza aspettare il server
   function api(path, method, body) {
     var url = (CFG.API_BASE || "") + path;
     var init = { method: method || "GET", headers: {}, cache: "no-store" };
