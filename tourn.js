@@ -165,7 +165,7 @@
   }
   function enterLocal(t, o) {
     var done = t.results.length, tr2 = (t.tracks || []).slice(); tr2[done] = o.track; var t2 = Object.assign({}, t, { tracks: tr2, laps: o.laps, lng: o.laps >= 10, qual: o.qual, o: o });
-    var bots = t.standings.filter(function (p) { return p.bot; }); if (o.bots < bots.length) { t2.standings = t.standings.filter(function (p) { return !p.bot; }).concat(bots.slice(0, o.bots)); }
+    var BNm = ["Zap", "Rex", "Turbo", "Nova", "Blitz", "Fox", "Ace"], bots = t.standings.filter(function (p) { return p.bot; }); if (o.bots > bots.length) { t2.standings = t.standings.slice(); for (var bq = bots.length; bq < Math.min(7, o.bots); bq++) t2.standings.push({ uid: "bot" + (bq + 1), name: "🤖 " + BNm[bq], bot: true, in: true, pts: 0, rs: [] }); bots = t2.standings.filter(function (p) { return p.bot; }); } if (o.bots < bots.length) { t2.standings = t2.standings.filter(function (p) { return !p.bot; }).concat(bots.slice(0, o.bots)); }
     window.__tournCtx = t.id; var tb = document.querySelector('.tab[data-tab="mp"]'); if (tb) tb.click();
     setTimeout(function () { if (window.ArcadeMulti && window.ArcadeMulti.openGP) window.ArcadeMulti.openGP("", { t: t2 }); }, 350);
   }
