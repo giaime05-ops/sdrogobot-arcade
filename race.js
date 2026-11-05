@@ -377,7 +377,9 @@
       var it = tr.items[i]; if (it.gone && it.gone > 0) { it.gone -= DT; if (it.gone > 0) continue; }
       var di = ((car.idx - it.idx + tr.N * 1.5) % tr.N) - tr.N / 2; if (Math.abs(di) > 3 || car.air > 0) continue;
       var dd = Math.hypot(car.x - it.x, car.y - it.y), sp = Math.hypot(car.vx, car.vy);
-      if (it.t === "jump") { if (di >= 1 && di <= 2 && dd < tr.hw + 20) { var v0 = Math.max(sp, 330), kf = sp > 1 ? v0 / sp : 0; if (kf) { car.vx *= kf; car.vy *= kf; } else { car.vx = Math.cos(car.a) * v0; car.vy = Math.sin(car.a) * v0; } car.airT = car.air = Math.max(0.5, Math.min(1.5, ((it.idx + 9 - car.idx) * tr.sp) / v0)); car.ta0 = tr.ta[car.idx]; car.lat0 = Math.max(-tr.hw * 0.8, Math.min(tr.hw * 0.8, (car.x - tr.P[car.idx][0]) * tr.nx[car.idx] + (car.y - tr.P[car.idx][1]) * tr.ny[car.idx])); car.off = false; car.jumped = 1; } }
+      if (it.t === "cone") { if (!it.hit && dd < 19) { it.hit = 1; it.hT = Date.now(); it.hs = (car.x - it.x) * tr.nx[it.idx] + (car.y - it.y) * tr.ny[it.idx] > 0 ? -1 : 1; car.cones = (car.cones || 0) + 1; car.vx *= 0.86; car.vy *= 0.86; } continue; }
+      if (it.t === "coin") { if (dd < 26) { it.gone = 1e9; it.cT = Date.now(); car.coins = (car.coins || 0) + 1; } continue; }
+      if (it.t === "jump") { if (di >= 1 && di <= 2 && dd < tr.hw + 20) { car.jumps = (car.jumps || 0) + 1; var v0 = Math.max(sp, 330), kf = sp > 1 ? v0 / sp : 0; if (kf) { car.vx *= kf; car.vy *= kf; } else { car.vx = Math.cos(car.a) * v0; car.vy = Math.sin(car.a) * v0; } car.airT = car.air = Math.max(0.5, Math.min(1.5, ((it.idx + 9 - car.idx) * tr.sp) / v0)); car.ta0 = tr.ta[car.idx]; car.lat0 = Math.max(-tr.hw * 0.8, Math.min(tr.hw * 0.8, (car.x - tr.P[car.idx][0]) * tr.nx[car.idx] + (car.y - tr.P[car.idx][1]) * tr.ny[car.idx])); car.off = false; car.jumped = 1; } }
       else if (dd < 30) {
         if (it.t === "oil" || it.t === "water") { if (car.spin <= 0 && !(car.boostT > 0.2)) { car.spin = 0.85; car.oil = it; car.vx *= 0.5; car.vy *= 0.5; } }
         else { var big = it.t === "turbo"; car.boostT = Math.max(car.boostT, big ? 0.8 : 0.5); car.meter = Math.min(1, car.meter + (big ? 0.12 : 0.06)); it.gone = 5; }
@@ -549,6 +551,42 @@
     return cv;
   }
   var RLL = (lsGet("arc_race4_lng") || {}).n || 10, RL = lsGet("arc_race4_laps") || 3, RD = lsGet("arc_race4_diff"); if (RD == null || RD < 0 || RD > 3) RD = 1; if (A.isSandbox && A.isSandbox() && RD > 2) RD = 2;
+
+  // ---------------- Rush: livelli ad hoc (coni, monete, salti, tempo) e sfida del giorno (solo account admin di prova) ----------------
+  var LVK = ["cones", "coins", "stunt", "time", "cones", "coins", "stunt", "mix", "time", "mix"], LVN = ["Slalom base", "Caccia alle monete", "Primo salto", "Contro il tempo", "Slalom stretto", "Pioggia d'oro", "Doppio salto", "Tutto in uno", "Tempo record", "Gran finale"];
+  function lvTrack(n) { var L = TRACKS.filter(function (t) { return !t.hill && !t.bridge && !t.tunP && t.id !== "puszta"; }); return L[(n * 5 + 2) % L.length]; }
+  function lvDef(n) {
+    var tr = lvTrack(n); build(tr); var N = tr.N, kind = LVK[n - 1], items = [], gap = {}, H = function (a, b) { return hh(n * 7919 + a * 131 + b * 17); };
+    var ref = qualSim(tr, 1.0, 1, 0).t, nCone = 0, nCoin = 0, nJump = 0, hw = tr.hw;
+    var cfg = { cones: { 1: [8, .38, 6, 3, 1], 5: [14, .55, 7, 4, 2], 8: [8, .5, 6, 3, 1], 10: [12, .55, 7, 4, 2] }[n], coins: { 2: [18, 0], 6: [30, 0], 8: [16, 0], 10: [22, 0] }[n], jumps: { 3: 1, 7: 3, 8: 1, 10: 2 }[n] || 0 };
+    var curv = function (k0, len) { var a = 0; for (var q = 0; q < len; q++) a += Math.abs(tr.sg[(k0 + q) % N]); return a; };
+    var busy = [];                                                                                                                  // zone occupate dai salti: niente coni né monete lì
+    if (cfg.jumps) { var best = [], want = cfg.jumps, minD = Math.floor((N - 160) / (want + 0.5)); for (var j = 0; j < want; j++) { var tgt = 90 + Math.floor(j * (N - 180) / want) + 20, bk = -1, bv = 1e9; for (var k = tgt - 40; k < tgt + 40; k++) { var kk = (k + N) % N; if (kk < 80 || kk > N - 60) continue; var cv2 = curv(kk - 6, 26); if (cv2 < bv) { bv = cv2; bk = kk; } } if (bk < 0) continue; best.push(bk); items.push({ t: "jump", idx: bk, lat: 0, x: tr.P[bk][0], y: tr.P[bk][1] }); for (var q2 = 3; q2 <= 7; q2++) gap[(bk + q2) % N] = true; busy.push([bk - 5, bk + 16]); nJump++; } }
+    var free = function (k) { return !busy.some(function (b) { return k >= b[0] && k <= b[1]; }); };
+    if (cfg.cones) { var cn = cfg.cones[0], amp = cfg.cones[1], st = (N - 150) / cn; for (var c = 0; c < cn; c++) { var kc = Math.floor(60 + c * st + st * 0.3); if (!free(kc)) continue; var lat = (c % 2 ? 1 : -1) * amp * hw * (0.8 + 0.4 * H(c, 1)); items.push({ t: "cone", idx: kc, lat: lat, x: tr.P[kc][0] + tr.nx[kc] * lat, y: tr.P[kc][1] + tr.ny[kc] * lat }); nCone++; } }
+    if (cfg.coins) { var cc = cfg.coins[0], grp = Math.ceil(cc / 6), gs = (N - 150) / grp, made = 0; for (var g = 0; g < grp && made < cc; g++) { var k0 = Math.floor(70 + g * gs), ph = H(g, 3) * 6.28; for (var q = 0; q < 6 && made < cc; q++) { var kq = k0 + q * 4; if (!free(kq)) continue; var lt = Math.sin(ph + q * 0.7) * hw * 0.55; items.push({ t: "coin", idx: kq, lat: lt, x: tr.P[kq][0] + tr.nx[kq] * lt, y: tr.P[kq][1] + tr.ny[kq] * lt }); made++; nCoin++; } } }
+    var T3 = ref * (1.32 - 0.012 * n), T2 = ref * (1.5 - 0.012 * n), T1 = ref * (1.8 - 0.02 * n), tf = ref * (2.4 - 0.05 * n);
+    var d = { n: n, kind: kind, name: LVN[n - 1], track: tr, items: items, gap: gap, laps: 1, nCone: nCone, nCoin: nCoin, nJump: nJump, ref: ref, tF: tf, T: [T3, T2, T1] };
+    d.goal = { cones: "Evita i coni: massimo " + (cfg.cones ? cfg.cones[2] : 0) + " abbattuti", coins: "Raccogli le monete e arriva al traguardo", stunt: "Salta e atterra sulla strada, poi taglia il traguardo", time: "Taglia il traguardo in " + fmt(T2) + " o meno per 2 stelle", mix: "Coni, monete e salti: tutto in un giro" }[kind];
+    d.hud = function (me, t) { var o = []; if (nCone) o.push("🚧 " + (me.cones || 0) + "/" + cfg.cones[2]); if (nCoin) o.push("🪙 " + (me.coins || 0) + "/" + nCoin); if (nJump) o.push("🚀 " + (me.jumps || 0) + "/" + nJump); if (kind === "time" || kind === "stunt" || kind === "mix" || t > tf * 0.6) { var rem = Math.max(0, (kind === "time" ? T1 : tf) - t); o.push("⏱ " + Math.floor(rem / 60) + ":" + ("0" + Math.floor(rem % 60)).slice(-2)); } return o.join("  "); };
+    d.early = function (me, t) { if (nCone && (me.cones || 0) > cfg.cones[2]) return "Hai abbattuto troppi coni"; var lim = kind === "time" ? T1 : tf; if (t > lim) return "Tempo scaduto"; return null; };
+    d.eval = function (me, tot) {
+      var why = d.early(me, tot); if (why) return { stars: 0, why: why };
+      var st = 3, rr = [];
+      if (nCone) { var h = me.cones || 0; var s1 = h <= cfg.cones[4] ? 3 : (h <= cfg.cones[3] ? 2 : 1); st = Math.min(st, s1); rr.push("Coni abbattuti: " + h + "/" + nCone); }
+      if (nCoin) { var pc = (me.coins || 0) / nCoin; if (pc < 0.4) return { stars: 0, why: "Troppe monete perse (" + (me.coins || 0) + "/" + nCoin + ")" }; st = Math.min(st, pc >= 0.9 ? 3 : (pc >= 0.65 ? 2 : 1)); rr.push("Monete: " + (me.coins || 0) + "/" + nCoin); }
+      if (nJump) { if ((me.jumps || 0) < nJump) return { stars: 0, why: "Salti mancati" }; rr.push("Salti: " + me.jumps + "/" + nJump); }
+      if (kind !== "cones" && kind !== "coins") { st = Math.min(st, tot <= T3 ? 3 : (tot <= T2 ? 2 : 1)); rr.push("Tempo: " + fmt(tot)); } else rr.push("Tempo: " + fmt(tot));
+      return { stars: st, lines: rr };
+    };
+    return d;
+  }
+  function rushDay() { var n = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" })); return { key: n.getFullYear() * 10000 + (n.getMonth() + 1) * 100 + n.getDate(), left: 86400 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()) }; }
+  function dailyDef() {
+    var dd = rushDay(), L = TRACKS.filter(function (t) { return t.sbx && !t.bridge; }), tr = L[Math.floor(hh(dd.key) * L.length) % L.length], rain = hh(dd.key + 5) < 0.5 ? 1 : 0;
+    build(tr); var ref = qualSim(tr, 0.97, 1, 0).t * 3.05 + 4, names = ["Turbo", "Zap", "Rex", "Blitz", "Nova", "Fox", "Ace", "Drift", "Luna"], rv = names.map(function (nm, i) { return { name: nm, t: ref * (0.97 + 0.5 * Math.pow(hh(dd.key * 3 + i * 41), 0.8)) * (rain ? 1.04 : 1) }; });
+    return { key: dd.key, tr: tr, rain: rain, ref: ref, rivals: rv, prize: 5000 };
+  }
   function open(host, onExit, joinId, tl) {
     var root = el("div", "rc-root"); host.appendChild(root);
     function hook(fn) { window.ArcadeBackHook = fn; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {} }
@@ -558,7 +596,7 @@
     function thumb(tr) { if (!tr._th) { build(tr); try { tr._th = art(tr).toDataURL("image/jpeg", 0.82); } catch (e) { tr._th = ""; } } return tr._th; }
     function hero(cls, tri, ico, ttl, sub, tag, fn) {                                                        // grande scheda con il disegno della pista sullo sfondo
       var c = el("button", "rc-hero " + cls); c.type = "button"; var im = el("img", "bg"); im.src = thumb(TRACKS[tri]); im.alt = ""; c.appendChild(im); c.appendChild(el("div", "sh"));
-      var tx = el("div", "tx"); tx.appendChild(el("i", "", ico)); var bx = el("div", "bx"); bx.appendChild(el("b", "", ttl)); bx.appendChild(el("span", "", sub)); tx.appendChild(bx); c.appendChild(tx); c.appendChild(el("em", "", tag)); c.addEventListener("click", fn); root.appendChild(c); return c;
+      var tx = el("div", "tx"); tx.appendChild(el("i", "", ico)); var bx = el("div", "bx"); bx.appendChild(el("b", "", ttl)); if (sub) bx.appendChild(el("span", "", sub)); tx.appendChild(bx); c.appendChild(tx); c.appendChild(el("em", "", tag)); c.addEventListener("click", fn); root.appendChild(c); return c;
     }
     var lastAct = {};
     function act(k) { try { if (!real() || (lastAct[k] && Date.now() - lastAct[k] < 15000)) return; lastAct[k] = Date.now(); A.api("/api/act", "POST", { a: k }).catch(function () {}); } catch (e) {} }
@@ -566,10 +604,66 @@
       act("gp");
       root.innerHTML = ""; root.className = "rc-root home"; hook(function () { exitAll(); return true; });
       top("GRAND PRIX", exitAll, "‹ Multi");
+      if (isSbx()) {                                                                                               // account admin di prova: 4 schede identiche (Rush in cima), senza sottotitoli, con il dato essenziale nel riquadro in alto a destra
+        root.classList.add("p4");
+        var rc = hero("h5", 0, "🔥", "RUSH", "", "", function () { rushHub(); }); rc.querySelector(".bg").src = rushArt(); var rt = rc.querySelector("em"); rt.className = "rt";
+        var rtick = function () { if (!rc.isConnected) return; var l = rushDay().left; rt.textContent = "⏱ " + ("0" + Math.floor(l / 3600)).slice(-2) + ":" + ("0" + Math.floor(l % 3600 / 60)).slice(-2) + ":" + ("0" + l % 60).slice(-2); setTimeout(rtick, 1000); }; rtick();
+        hero("h1", 0, "👤", "SINGOLO", "", TRACKS.length + " PISTE", function () { tracks("single"); });
+        hero("h2", 4, "🏁", "LOBBY", "", "MULTIPLAYER", function () { lobbyHub(); });
+        hero("h3", 5, "🏆", "GARA", "", "2 MODI", function () { raceHub(); });
+        return;
+      }
       hero("h1", 0, "👤", "SINGOLO", (isGst() ? "Contro il tempo, col fantasma del tuo record" : "Contro il tempo, col fantasma del tuo record e le classifiche"), TRACKS.length + " PISTE", function () { tracks("single"); });
       hero("h2", 4, "🏁", "LOBBY", (isGst() ? "Crea una lobby e correte contro i bot: fino a 8 piloti" : "Crea una lobby o entra in una aperta: fino a 8 piloti"), "MULTIPLAYER", function () { lobbyHub(); });
-      if (isSbx()) hero("h3", 5, "🏁", "GARA", "Rapida o lunga, contro i bot", "2 MODI", function () { raceHub(); });
-      else hero("h3", 5, "⚡", "GARA RAPIDA", "Subito in pista contro 3 bot, senza preparare nulla", "VS BOT", function () { tracks("race"); });
+      hero("h3", 5, "⚡", "GARA RAPIDA", "Subito in pista contro 3 bot, senza preparare nulla", "VS BOT", function () { tracks("race"); });
+    }
+    // ---------------- Rush (solo account admin di prova) ----------------
+    var _rArt = "";
+    function rushArt() {                                                                                           // disegno "cinematico": tramonto, rampa e auto in volo con scia di polvere
+      if (_rArt) return _rArt; var cv = document.createElement("canvas"); cv.width = 640; cv.height = 240; var g = cv.getContext("2d");
+      var sk = g.createLinearGradient(0, 0, 0, 240); sk.addColorStop(0, "#1a0b3d"); sk.addColorStop(.45, "#6a1b9a"); sk.addColorStop(.75, "#ff4fa3"); sk.addColorStop(1, "#ffb347"); g.fillStyle = sk; g.fillRect(0, 0, 640, 240);
+      for (var i = 0; i < 40; i++) { g.fillStyle = "rgba(255,255,255," + (0.2 + hh(i) * 0.6) + ")"; g.fillRect(hh(i * 3) * 640, hh(i * 5) * 100, 1.6, 1.6); }
+      g.fillStyle = "#ffe27a"; g.beginPath(); g.arc(470, 150, 54, 0, 7); g.fill(); g.fillStyle = "rgba(255,226,122,.25)"; g.beginPath(); g.arc(470, 150, 80, 0, 7); g.fill();
+      g.fillStyle = "#3a0f5e"; g.beginPath(); g.moveTo(0, 190); for (var x = 0; x <= 640; x += 40) g.lineTo(x, 150 + 30 * hh(x + 3) + (x > 250 ? 0 : 10)); g.lineTo(640, 240); g.lineTo(0, 240); g.fill();
+      g.fillStyle = "#1c0a33"; g.fillRect(0, 196, 640, 44); g.strokeStyle = "rgba(255,255,255,.55)"; g.setLineDash([22, 18]); g.lineWidth = 3; g.beginPath(); g.moveTo(0, 218); g.lineTo(250, 218); g.stroke(); g.setLineDash([]);
+      g.fillStyle = "#ff5aa8"; g.beginPath(); g.moveTo(250, 196); g.lineTo(350, 196); g.lineTo(350, 150); g.closePath(); g.fill(); g.fillStyle = "#ffe2f1"; g.beginPath(); g.moveTo(300, 196); g.lineTo(350, 196); g.lineTo(350, 172); g.closePath(); g.fill();
+      for (var k = 0; k < 7; k++) { g.strokeStyle = "rgba(255,255,255," + (0.5 - k * 0.06) + ")"; g.lineWidth = 3; g.beginPath(); g.moveTo(130 - k * 6, 120 + k * 9); g.lineTo(270 - k * 14, 98 + k * 11); g.stroke(); }
+      for (var d = 0; d < 14; d++) { g.fillStyle = "rgba(255,210,160," + (0.5 - d * 0.03) + ")"; g.beginPath(); g.arc(262 - d * 15, 190 - d * 1.5 + hh(d) * 8, 7 + d * 1.1, 0, 7); g.fill(); }
+      g.save(); g.translate(390, 98); g.rotate(-0.38); g.fillStyle = "#1a1228"; [[-30, 12], [26, 12]].forEach(function (w) { g.beginPath(); g.ellipse(w[0], w[1], 12, 8, 0, 0, 7); g.fill(); });
+      g.fillStyle = "#ff2fa8"; g.beginPath(); g.moveTo(-42, 8); g.lineTo(-30, -10); g.lineTo(8, -14); g.lineTo(26, -2); g.lineTo(44, 6); g.lineTo(40, 14); g.lineTo(-40, 14); g.closePath(); g.fill();
+      g.fillStyle = "#35e6ff"; g.beginPath(); g.moveTo(-6, -12); g.lineTo(8, -12); g.lineTo(16, -3); g.lineTo(-12, -3); g.closePath(); g.fill(); g.fillStyle = "#ffd23b"; g.fillRect(-42, -4, 8, 6); g.restore();
+      try { _rArt = cv.toDataURL("image/jpeg", 0.85); } catch (e) { _rArt = ""; } return _rArt;
+    }
+    function lvSt() { var o = lsGet("arc_rush_lv"); return (o && o.s) || []; }
+    function lvUnlocked(n) { var st = lvSt(); return n === 1 || (st[n - 2] || 0) >= 2; }
+    function rushHub() {
+      act("gp_rush"); root.innerHTML = ""; root.className = "rc-root"; hook(function () { menu(); return true; }); top("RUSH", menu, "‹ Grand Prix");
+      var D = dailyDef(), got = (lsGet("arc_daily_" + D.key) || {}).t, st = lvSt(), tot = st.reduce(function (a, b) { return a + (b || 0); }, 0);
+      var c1 = el("button", "rc-hero h5 rush-big"); c1.type = "button"; var im = el("img", "bg"); im.src = rushArt(); c1.appendChild(im); c1.appendChild(el("div", "sh")); var tx = el("div", "tx"); tx.appendChild(el("i", "", "🔥")); var bx = el("div", "bx"); bx.appendChild(el("b", "", "SFIDA DEL GIORNO")); bx.appendChild(el("span", "", D.tr.name + " · 3 giri · " + (D.rain ? "🌧 pioggia" : "☀️ sereno"))); tx.appendChild(bx); c1.appendChild(tx); var em = el("em", "rt", ""); c1.appendChild(em);
+      var tk = function () { if (!c1.isConnected) return; var l = rushDay().left; em.textContent = "⏱ " + ("0" + Math.floor(l / 3600)).slice(-2) + ":" + ("0" + Math.floor(l % 3600 / 60)).slice(-2) + ":" + ("0" + l % 60).slice(-2); setTimeout(tk, 1000); }; tk();
+      c1.addEventListener("click", function () { dailyScreen(); }); root.appendChild(c1);
+      var c2 = el("button", "rc-hero h4 rush-big"); c2.type = "button"; var im2 = el("img", "bg"); im2.src = thumb(lvTrack(3)); c2.appendChild(im2); c2.appendChild(el("div", "sh")); var tx2 = el("div", "tx"); tx2.appendChild(el("i", "", "⭐")); var bx2 = el("div", "bx"); bx2.appendChild(el("b", "", "LIVELLI")); bx2.appendChild(el("span", "", "Coni, monete, salti e tempo: 10 sfide a stelle")); tx2.appendChild(bx2); c2.appendChild(tx2); c2.appendChild(el("em", "", "★ " + tot + "/30")); c2.addEventListener("click", function () { lvList(); }); root.appendChild(c2);
+      if (got) root.appendChild(el("div", "rc-note", "Il tuo miglior tempo di oggi: " + fmt(got)));
+    }
+    function dailyScreen() {
+      var D = dailyDef(); root.innerHTML = ""; root.className = "rc-root"; hook(function () { rushHub(); return true; }); top("SFIDA DEL GIORNO", rushHub, "‹ Rush");
+      var got = (lsGet("arc_daily_" + D.key) || {}).t, info = el("div", "rc-lap", D.tr.name + " · 3 giri · " + (D.rain ? "🌧 pioggia" : "☀️ sereno") + " · il migliore del giorno vince " + A.fmt(D.prize) + " $SDG"); root.appendChild(info);
+      var go = el("button", "mp-go", "▶ GIOCA"); go.type = "button"; go.addEventListener("click", function () { build(D.tr); race(D.tr, "single", { rain: D.rain, daily: { key: D.key, rivals: D.rivals, prize: D.prize, back: dailyScreen } }); }); root.appendChild(go);
+      var rows = D.rivals.map(function (r) { return { name: r.name, t: r.t }; }); if (got) rows.push({ name: "Tu", t: got, me: 1 }); rows.sort(function (a, b) { return a.t - b.t; });
+      var tb = el("div", "rc2-tbl"); rows.forEach(function (r, i) { var rr = el("div", "rr" + (r.me ? " me" : "")); rr.appendChild(el("span", "pn", String(i + 1))); rr.appendChild(el("span", "nm", r.name)); rr.appendChild(el("span", "tt", fmt(r.t))); tb.appendChild(rr); }); root.appendChild(tb);
+      root.appendChild(el("div", "rc-note", "In prova la classifica è simulata (sfidanti virtuali): a gioco aperto a tutti conterà il tempo vero dei giocatori."));
+    }
+    function lvList() {
+      root.innerHTML = ""; root.className = "rc-root"; hook(function () { rushHub(); return true; }); top("LIVELLI", rushHub, "‹ Rush"); var st = lvSt(), gr = el("div", "lv-grid");
+      for (var n = 1; n <= 10; n++) (function (n) {
+        var ok = lvUnlocked(n), b = el("button", "lv-cell" + (ok ? "" : " lk")); b.type = "button"; b.appendChild(el("b", "", ok ? String(n) : "🔒")); var s3 = el("span", ""); for (var q = 1; q <= 3; q++) s3.appendChild(el("i", q <= (st[n - 1] || 0) ? "on" : "", "★")); b.appendChild(s3); b.appendChild(el("small", "", LVN[n - 1]));
+        b.addEventListener("click", function () { if (!ok) { A.toast("Prendi almeno 2 stelle nel livello " + (n - 1)); return; } lvPlay(n); }); gr.appendChild(b);
+      })(n);
+      root.appendChild(gr); root.appendChild(el("div", "rc-note", "Servono almeno 2 stelle per sbloccare il livello successivo."));
+    }
+    function lvPlay(n) {
+      var L = lvDef(n); L.back = lvList; L.next = n < 10 ? function () { lvPlay(n + 1); } : null; L.onDone = function (stars) { var o = lsGet("arc_rush_lv") || { s: [] }; o.s = o.s || []; if (stars > (o.s[n - 1] || 0)) o.s[n - 1] = stars; lsSet("arc_rush_lv", o); };
+      race(L.track, "single", { lvl: L, noIntro: false, rain: 0 });
     }
     // ---------------- lobby (prototipo) ----------------
     var LB = null, FRIENDS = ["Marco", "Spoleto", "maicol", "Lorenzo", "albe", "Gabbo"];
@@ -862,8 +956,8 @@
     function race(tr, mode, opts) {
       act("gara:" + mode + ":" + tr.id);
       opts = opts || {}; var tr0 = tr, qual = !!opts.qualPhase, LQ = !!opts.lqPhase && !!opts.lng && isSbx() && mode !== "single", LQT = 300, RAIN = (qual || (!!opts.lqPhase && !!opts.lng && isSbx())) ? 0 : opts.rain, nCar = mode === "single" ? 1 : (qual ? (opts.n || 4) : (opts.n || 4));
-      var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); if (RAIN) { var rq = 0; itl = itl.filter(function () { return rq++ % 2 === 0; }); } tr = Object.assign({}, tr, { items: itl, rain: RAIN ? (RAIN === true ? 1 : (RAIN === 3 ? 0 : RAIN)) : 0 });
-      var solo = mode === "single", laps = qual ? 1 : (solo ? 3 : (LQ ? 40 : (opts.laps || RL))), full = el("div", "rc2"), cv = el("canvas", "rc2-cv"), hud = el("div", "rc2-hud"), cd = el("div", "rc2-cd"), tip = el("div", "rc2-tip");
+      var itl = (qual || opts.noItems) ? [] : tr.items.map(function (it) { return Object.assign({}, it, { gone: 0 }); }).filter(function (it) { var pd = it.t === "oil" || it.t === "water"; return pd ? opts.obst !== false : opts.pads !== false; }); if (RAIN) { var rq = 0; itl = itl.filter(function () { return rq++ % 2 === 0; }); } if (opts.lvl) itl = opts.lvl.items.map(function (it) { return Object.assign({}, it, { gone: 0, hit: 0 }); }); tr = Object.assign({}, tr, { items: itl, gap: opts.lvl ? Object.assign({}, tr.gap, opts.lvl.gap) : tr.gap, rain: RAIN ? (RAIN === true ? 1 : (RAIN === 3 ? 0 : RAIN)) : 0 });
+      var solo = mode === "single", laps = qual ? 1 : (solo ? (opts.lvl ? opts.lvl.laps : 3) : (LQ ? 40 : (opts.laps || RL))), full = el("div", "rc2"), cv = el("canvas", "rc2-cv"), hud = el("div", "rc2-hud"), cd = el("div", "rc2-cd"), tip = el("div", "rc2-tip");
       var left = el("div", "rc2-pad l"), right = el("div", "rc2-pad r"), rev = el("div", "rc2-rev"), rfill = el("i"), bbar = el("div", "rc2-boost"), bfill = el("i"); rev.appendChild(rfill); bbar.appendChild(bfill);
       var gasb = el("button", "rc2-gas", "ACCELERA"), lch = el("div", "rc2-lch"), lchF = el("i"), lchZ = el("u"), intro = el("div", "rc2-intro"), holdG = false, rev2 = 0, flooded = false, introT = 0, INTRO = opts.noIntro ? 0 : (opts.afterQual ? 4 : 8);
       gasb.type = "button"; lch.appendChild(lchZ); lch.appendChild(lchF); lch.appendChild(el("em", "", "GAS")); intro.innerHTML = "<small></small><b></b><span></span>"; intro.children[0].textContent = qual ? "🏁 SESSIONE UFFICIALE 🏁" : (opts.grid ? "🏆 GRAN PREMIO 🏆" : "CIRCUITO"); intro.children[1].textContent = qual ? "QUALIFICA" : (opts.grid ? "GARA" : tr.name); intro.children[2].textContent = qual ? "⏱ " + tr.name.toUpperCase() + " · 1 GIRO LANCIATO · DECIDE LA GRIGLIA" : (solo ? "CONTRO IL TEMPO" : (opts.grid ? "🏎 " + tr.name.toUpperCase() : "GARA")) + " · " + laps + " GIRI" + (opts.grid ? " · SI PARTE DALLA GRIGLIA" : ""); if (qual) intro.classList.add("qual");
@@ -1013,7 +1107,7 @@
       AU.begin({ rain: RAIN === 3 ? 0 : RAIN, sfx: SN.sfx, music: SN.music });
       var GPf = lsGet("arc_race4_gp") || { mine: 1, best: 1 }, gl = [], grec = [], gtick = 0;
       if (solo) {
-        var gm = myGhost(tr), abA = absRec(tr), ab0 = GPf.best ? abA : null; var gmHz = 0; if (abA && abA.me && tr._absG && tr._absG.length > 6) { gm = tr._absG; var nn0 = gm.length / 3, rr0 = abA.t > 1 ? nn0 / abA.t : 20; gmHz = Math.abs(rr0 - 10) < Math.abs(rr0 - 20) ? 10 : 20; }
+        var gm = (opts.lvl || opts.daily) ? null : myGhost(tr), abA = (opts.lvl || opts.daily) ? null : absRec(tr), ab0 = GPf.best ? abA : null; var gmHz = 0; if (abA && abA.me && tr._absG && tr._absG.length > 6) { gm = tr._absG; var nn0 = gm.length / 3, rr0 = abA.t > 1 ? nn0 / abA.t : 20; gmHz = Math.abs(rr0 - 10) < Math.abs(rr0 - 20) ? 10 : 20; }
         var iAmRec = !!(ab0 && ab0.me);                                                                              // se il record assoluto è tuo, il fantasma è uno solo (il tuo)
         if ((GPf.mine || iAmRec) && gm && gm.length > 6) gl.push({ arr: gm, hz: gmHz || undefined, o: { x: 0, y: 0, a: 0, col: iAmRec ? "#ffd23b" : "#cfe6ff", name: iAmRec ? "Il tuo record 🏆" : "Il tuo record", ghost: true, hit: 0 } });
         if (ab0 && !ab0.me && tr._absG && tr._absG.length > 6) gl.push({ arr: tr._absG, hz: (function () { var nn = tr._absG.length / 3, rr = ab0.t > 1 ? nn / ab0.t : 20; return Math.abs(rr - 10) < Math.abs(rr - 20) ? 10 : 20; })(), o: { x: 0, y: 0, a: 0, col: "#ffd23b", name: "Record · " + ab0.n, ghost: true, hit: 0 } });
@@ -1091,7 +1185,34 @@
           setTimeout(tick, 300);
         })();
       }
+      var lvH = null, lvWhy = null;
+      function lvTick() {                                                                                                  // livello Rush: contatori in alto, fallimento immediato se superi i limiti
+        if (!lvH) { lvH = el("div", "rc2-lvh"); full.appendChild(lvH); var gb = el("div", "rc2-lvg", "LIVELLO " + opts.lvl.n + " · " + opts.lvl.goal); full.appendChild(gb); setTimeout(function () { gb.classList.add("off"); }, 5500); }
+        var tt = Math.max(0, t); lvH.textContent = opts.lvl.hud(me, tt);
+        if (state === "run" && !me.fin) { var w = opts.lvl.early(me, tt); if (w) { lvWhy = w; me.fin = true; me.finT = t; } }
+      }
+      function lvEnd() {
+        state = "end"; if (lvH) lvH.style.display = "none"; var L = opts.lvl, tot = me.finT, ev = lvWhy ? { stars: 0, why: lvWhy } : L.eval(me, tot), box = el("div", "rc2-end res lvend");
+        AU.sfx(ev.stars ? "fin" : "pit"); box.appendChild(el("b", "", ev.stars ? "LIVELLO " + L.n + " COMPLETATO" : "SFIDA FALLITA"));
+        var sr = el("div", "lv-stars"); for (var q = 1; q <= 3; q++) sr.appendChild(el("i", q <= ev.stars ? "on" : "", "★")); box.appendChild(sr);
+        if (ev.why) box.appendChild(el("div", "rc-lap", ev.why)); (ev.lines || []).forEach(function (x) { box.appendChild(el("div", "rc-lap", x)); });
+        if (L.onDone) L.onDone(ev.stars);
+        if (ev.stars && ev.stars < 2) box.appendChild(el("div", "rc-lap", "Servono almeno 2 stelle per sbloccare il livello successivo"));
+        var rw = el("div", "mp-end"), mkb = function (txt, cls, fn) { var b = el("button", "mp-go " + cls, txt); b.type = "button"; b.addEventListener("click", fn); rw.appendChild(b); };
+        if (ev.stars >= 2 && L.next) mkb("▶ PROSSIMO", "", function () { stop(true); L.next(); });
+        mkb("RIPROVA", ev.stars >= 2 && L.next ? "mp-alt" : "", function () { stop(true); race(tr0, "single", opts); }); mkb("LIVELLI", "mp-alt2", function () { stop(); L.back(); }); box.appendChild(rw); full.appendChild(box);
+      }
+      function dailyEnd() {
+        state = "end"; var D = opts.daily, tot = me.finT, bk = "arc_daily_" + D.key, old = lsGet(bk), nb = !old || tot < old.t; if (nb) lsSet(bk, { t: tot }); var mine = nb ? tot : old.t, box = el("div", "rc2-end res");
+        AU.sfx("fin"); box.appendChild(el("b", "", "SFIDA DEL GIORNO")); box.appendChild(el("div", "rc-lap", "Questo giro: " + fmt(tot) + (nb ? " · NUOVO MIGLIORE!" : " · il tuo migliore: " + fmt(mine))));
+        var rows = D.rivals.map(function (r) { return { name: r.name, t: r.t }; }).concat([{ name: "Tu", t: mine, me: 1 }]).sort(function (a, b) { return a.t - b.t; }), tb = el("div", "rc2-tbl");
+        rows.slice(0, 6).forEach(function (r, i) { var rr = el("div", "rr" + (r.me ? " me" : "")); rr.appendChild(el("span", "pn", String(i + 1))); rr.appendChild(el("span", "nm", r.name)); rr.appendChild(el("span", "tt", fmt(r.t))); tb.appendChild(rr); });
+        var my = rows.findIndex(function (r) { return r.me; }); if (my >= 6) { var rr2 = el("div", "rr me"); rr2.appendChild(el("span", "pn", String(my + 1))); rr2.appendChild(el("span", "nm", "Tu")); rr2.appendChild(el("span", "tt", fmt(mine))); tb.appendChild(rr2); }
+        box.appendChild(tb); box.appendChild(el("div", "rc-lap", my === 0 ? "🏆 Sei primo! Premio simulato: " + A.fmt(D.prize) + " $SDG" : "Per il 1° posto: " + A.fmt(D.prize) + " $SDG (simulati in prova)"));
+        var rw = el("div", "mp-end"), b1 = el("button", "mp-go", "RIPROVA"), b2 = el("button", "mp-go mp-alt", "ESCI"); b1.type = b2.type = "button"; b1.addEventListener("click", function () { stop(true); race(tr0, "single", opts); }); b2.addEventListener("click", function () { stop(); D.back(); }); rw.appendChild(b1); rw.appendChild(b2); box.appendChild(rw); full.appendChild(box);
+      }
       function finish() {
+        if (opts.lvl) { lvEnd(); return; } if (opts.daily) { dailyEnd(); return; }
         if (RMT && !finGo && !qual) {
           state = "end";
           if (!finT0) { finT0 = performance.now(); AU.sfx("fin"); wbox = el("div", "rc2-end wait"); wbox.appendChild(el("b", "", "🏁 ARRIVATO!")); wbox.appendChild(el("div", "rc-lap", "Aspetto gli altri piloti: classifica in diretta")); wtbl = el("div", "rc2-tbl wl"); wbox.appendChild(wtbl); full.appendChild(wbox); }
@@ -1409,6 +1530,19 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
             if (wat) { quad(pq(-18, -6, 0.8), pq(-4, -10, 0.8), pq(6, -4, 0.8), pq(-10, 2, 0.8), "rgba(255,255,255,.55)"); quad(pq(6, 8, 0.8), pq(14, 4, 0.8), pq(18, 9, 0.8), pq(9, 12, 0.8), "rgba(255,255,255,.4)"); }
             else { quad(pq(-16, -6, 0.8), pq(-2, -10, 0.8), pq(4, -4, 0.8), pq(-10, 1, 0.8), "rgba(150,230,200,.35)"); quad(pq(2, 6, 0.8), pq(12, 3, 0.8), pq(16, 8, 0.8), pq(6, 11, 0.8), "rgba(220,150,255,.3)"); }
           }
+          else if (it.t === "cone") {                                                                                                       // coni: in piedi (arancio a strisce) o abbattuti con una piccola animazione
+            var u = it.hit ? Math.min(1, (Date.now() - it.hT) / 420) : 0, ar = it.hit ? it.hs * 26 * u : 0, br = it.hit ? 6 * u : 0, hz = 15 * (1 - u) + 2.2 * u + (it.hit ? 9 * Math.sin(Math.PI * u) : 0), rot = it.hit ? u * 1.6 : 0, wc = 6.5;
+            var bx2 = br, by2 = ar;
+            if (!it.hit || u < 1) quad(pq(-8, -8, 0.3), pq(8, -8, 0.3), pq(8, 8, 0.3), pq(-8, 8, 0.3), "rgba(0,0,0,.28)");
+            var ap = pq(bx2 * 0.4, by2 * 0.9, hz), p1 = pq(bx2 - wc, by2 - wc, 0.8), p2 = pq(bx2 + wc, by2 - wc, 0.8), p3 = pq(bx2 + wc, by2 + wc, 0.8), p4 = pq(bx2 - wc, by2 + wc, 0.8);
+            quad(p1, p2, ap, ap, "#ff7a1a"); quad(p2, p3, ap, ap, "#e85d04"); quad(p3, p4, ap, ap, "#ff7a1a"); quad(p4, p1, ap, ap, "#ffa04a");
+            if (!it.hit) { var z7 = 7, w7 = wc * 0.52; quad(pq(-w7, -w7, z7), pq(w7, -w7, z7), pq(w7, -w7, z7 + 2.6), pq(-w7, -w7, z7 + 2.6), "#f5f5f5"); quad(pq(w7, -w7, z7), pq(w7, w7, z7), pq(w7, w7, z7 + 2.6), pq(w7, -w7, z7 + 2.6), "#ddd"); quad(pq(w7, w7, z7), pq(-w7, w7, z7), pq(-w7, w7, z7 + 2.6), pq(w7, w7, z7 + 2.6), "#f5f5f5"); }
+          }
+          else if (it.t === "coin") {                                                                                                       // monete: dischi dorati che girano
+            var cw = 7.5 * Math.abs(Math.cos(Date.now() / 260 + it.idx * 0.7)) + 1.2, cz = 11 + 1.6 * Math.sin(Date.now() / 300 + it.idx);
+            quad(pq(-5, -5, 0.3), pq(5, -5, 0.3), pq(5, 5, 0.3), pq(-5, 5, 0.3), "rgba(0,0,0,.25)");
+            quad(pq(0, -cw, cz), pq(0, 0, cz + 8), pq(0, cw, cz), pq(0, 0, cz - 8), "#e0a800"); quad(pq(0, -cw * 0.62, cz), pq(0, 0, cz + 5), pq(0, cw * 0.62, cz), pq(0, 0, cz - 5), "#ffd23b"); quad(pq(0, -cw * 0.3, cz + 1), pq(0, 0, cz + 3.5), pq(0, cw * 0.3, cz + 1), pq(0, 0, cz - 1), "#fff3b0");
+          }
           else if (it.t === "jump") {
             var ie = (it.idx + 3) % tr.N; quad(pt(ie, -tr.hw, 0), pt(ie, tr.hw, 0), pt(ie, tr.hw, 27.8), pt(ie, -tr.hw, 27.8), "#3b0d26");                      // fronte della rampa sul vuoto (dietro la rampa)
             for (var rq = 0; rq < 3; rq++) { var iq = (it.idx + rq) % tr.N, iq2 = (iq + 1) % tr.N, z0 = rq * 9, z1 = z0 + 9, nb = 6;
@@ -1515,6 +1649,7 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
           lb.forEach(function (e, j) { lrows += "<div class='tr" + (e.me ? " me" : "") + "'><b>" + (j + 1) + "</b><i style='background:" + e.col + "'></i><span>" + (e.me ? "TU" : e.name.slice(0, 3).toUpperCase()) + "</span><em>" + (e.t > 0 && e.t < 1e8 ? fmt(e.t) : "—") + "</em></div>"; });
           tower.innerHTML = lrows;
         }
+        if (opts.lvl) lvTick();
         if (!solo && !LQ && (twc++ % 5 === 0)) {                                                                                       // classifica live stile F1: nome corto e distacco dall'auto davanti (in secondi, tre decimali)
           var rk = rank(), rows = "";
           var mi = rk.indexOf(me), ws = Math.min(Math.max(mi - 2, 1), Math.max(1, rk.length - 4));
