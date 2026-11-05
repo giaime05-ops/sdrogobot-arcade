@@ -488,7 +488,7 @@
   function isSbx() { return !!(A.isSandbox && A.isSandbox()); }
   function isNew() { return isSbx() || (!isGst() && !!(A.gpxOn && A.gpxOn())); }                                  // novità Grand Prix: account admin di prova, oppure tutti quando l'admin preme il bottone in /admin
   function isGst() { return !!(A.guest && A.guest()); }
-  function lcl(tr) { return isSbx() || isGst() || !!(tr && tr.sbx); }                                                              // dati solo sul telefono (prova admin e demo ospiti): niente classifiche, record o premi veri
+  function lcl(tr) { return isSbx() || isGst(); }                                                              // dati solo sul telefono (prova admin e demo ospiti): niente classifiche, record o premi veri
   function PF(tr) { return lcl(tr) ? "arc_race4" : "arc_race6"; }                                              // account di prova e account vero hanno dati separati
   var SRV = { ok: false, unlocked: {}, top: {}, mine: {}, rec: {}, fl: {} };                                         // stato vero dal server (solo account vero)
   function loadSrv(cb) {
@@ -519,7 +519,7 @@
   function isUnlocked(tr) { return tr.sbx || isGst() || tIdx(tr) < 3 || (lcl(tr) ? !!lsGet("arc_race4u_" + tr.id) : !!SRV.unlocked[tr.id]); }
   (function () { try { if (!localStorage.getItem("arc_race5_mig")) { ["canyon", "costa", "downtown", "skyline"].forEach(function (id) { ["arc_race4_", "arc_race4g_", "arc_race4s_", "arc_race4b_"].forEach(function (p) { localStorage.removeItem(p + id); }); }); localStorage.setItem("arc_race5_mig", "1"); } } catch (e) {} })();     // fantasmi/record delle piste rifatte: azzerati una volta
   (function () { try { if (!localStorage.getItem("arc_race7_mig")) { TRACKS.forEach(function (t) { if (!t.sbx) return; ["arc_race4_", "arc_race4g_", "arc_race4s_", "arc_race4b_", "arc_race4u_", "arc_race6g_", "arc_race6s_", "arc_race6b_"].forEach(function (p) { localStorage.removeItem(p + t.id); }); }); localStorage.setItem("arc_race7_mig", "1"); } } catch (e) {} })();     // piste nuove: tempi e fantasmi fatti in prova azzerati una volta (da ora ognuno ha i suoi)
-  var PRICE = [0, 0, 0, 500, 750, 950, 1150, 1400, 1700, 2000], REWARD = [150, 150, 150, 300, 350, 400, 500, 600, 800, 1000];     // sblocco a pagamento e premio per ogni record battuto
+  var PRICE = [0, 0, 0, 500, 750, 950, 1150, 1400, 1700, 2000, 0, 0, 0, 0, 0, 0], REWARD = [150, 150, 150, 300, 350, 400, 500, 600, 800, 1000, 400, 500, 500, 450, 450, 450];     // sblocco a pagamento e premio per ogni record battuto
   function price(tr) { return PRICE[tIdx(tr)] || 0; }
   function reward(tr) { return REWARD[tIdx(tr)] || 150; }
   function wal() { var w = lsGet("arc_race4_w"); return w == null ? 5000 : w; }               // saldo di prova (solo nell'account admin di prova)
