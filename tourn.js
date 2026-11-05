@@ -14,7 +14,7 @@
     sec = Math.max(0, Math.floor(sec)); var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
     return (d ? d + "g " : "") + (h || d ? h + "h " : "") + m + "m " + (s < 10 ? "0" : "") + s + "s";
   }
-  function tracks() { try { return window.ArcadeRace._t.TRACKS.filter(function (t) { return !(t.sbx && !A.isSandbox()) && !(t.hideSbx && A.isSandbox()); }); } catch (e) { return []; } }
+  function tracks() { try { return window.ArcadeRace._t.TRACKS.filter(function (t) { var nw = !!(A.isSandbox() || (A.gpxOn && A.gpxOn() && !(A.guest && A.guest()))); return !(t.sbx && !nw) && !(t.hideSbx && nw); }); } catch (e) { return []; } }
   function tname(id) { var t = tracks().filter(function (x) { return x.id === id; })[0]; return t ? t.name : id; }
   function api(p, b) { return A.api(p, "POST", b || {}).then(function (j) { if (j && j.now) off = j.now * 1000 - Date.now(); return j; }); }
   function err(e) { A.toast((e && e.message) || "Server non raggiungibile"); }
@@ -189,7 +189,7 @@
     if (FREE) { c.appendChild(el("div", "mp-lab", "Giri · 1-60 (da 10: gara lunga con pit)")); var ni = el("input", "tn-num"); ni.type = "number"; ni.min = 1; ni.max = 60; ni.value = o.laps; ni.addEventListener("change", function () { o.laps = Math.max(1, Math.min(60, Math.round(+ni.value || 5))); ni.value = o.laps; if (o.laps < 10) o.qual = "short"; paintQ(); }); c.appendChild(ni); }
     else seg("Giri", [3, 5, 10, 15, 20].map(function (n) { return [n, String(n)]; }), function () { return o.laps; }, function (v) { o.laps = v; });
     c.appendChild(qb);
-    function paintQ() { qb.innerHTML = ""; if (FREE && o.laps >= 10) { qb.appendChild(el("div", "mp-lab", "Qualifica")); var r = el("div", "dl-seg tn-seg"); [["short", "Breve"], ["long", "Lunga 5 min"]].forEach(function (x) { var b = el("button", o.qual === x[0] ? "on" : "", x[1]); b.type = "button"; b.addEventListener("click", function () { o.qual = x[0]; paintQ(); }); r.appendChild(b); }); qb.appendChild(r); } else qb.appendChild(el("div", "rc-note", "Qualifica breve: un giro lanciato decide la griglia.")); }
+    function paintQ() { qb.innerHTML = ""; if ((FREE || !(A.guest && A.guest())) && o.laps >= 10) { qb.appendChild(el("div", "mp-lab", "Qualifica")); var r = el("div", "dl-seg tn-seg"); [["short", "Breve"], ["long", "Lunga 5 min"]].forEach(function (x) { var b = el("button", o.qual === x[0] ? "on" : "", x[1]); b.type = "button"; b.addEventListener("click", function () { o.qual = x[0]; paintQ(); }); r.appendChild(b); }); qb.appendChild(r); } else qb.appendChild(el("div", "rc-note", "Qualifica breve: un giro lanciato decide la griglia.")); }
     paintQ();
     [["coll", "Contatti tra le auto"], ["slip", "Scia"], ["assist", "Assistenza di guida"], ["obst", "Ostacoli (olio e acqua)"], ["pads", "Boost sulla pista"]].forEach(function (x) {
       var r = el("button", "lb-tog tn-tog" + (o[x[0]] ? " on" : ""), ""); r.type = "button"; r.appendChild(el("span", "", x[1])); r.appendChild(el("em", "", o[x[0]] ? "ON" : "OFF"));
