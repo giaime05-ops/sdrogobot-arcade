@@ -518,6 +518,7 @@
   function lapTarget(tr) { build(tr); if (!tr._ut) tr._ut = Math.round(botLap(tr, 1, 1) * 1.08 * 10) / 10; return tr._ut; }
   function isUnlocked(tr) { return tr.sbx || isGst() || tIdx(tr) < 3 || (lcl(tr) ? !!lsGet("arc_race4u_" + tr.id) : !!SRV.unlocked[tr.id]); }
   (function () { try { if (!localStorage.getItem("arc_race5_mig")) { ["canyon", "costa", "downtown", "skyline"].forEach(function (id) { ["arc_race4_", "arc_race4g_", "arc_race4s_", "arc_race4b_"].forEach(function (p) { localStorage.removeItem(p + id); }); }); localStorage.setItem("arc_race5_mig", "1"); } } catch (e) {} })();     // fantasmi/record delle piste rifatte: azzerati una volta
+  (function () { try { if (!localStorage.getItem("arc_race7_mig")) { TRACKS.forEach(function (t) { if (!t.sbx) return; ["arc_race4_", "arc_race4g_", "arc_race4s_", "arc_race4b_", "arc_race4u_", "arc_race6g_", "arc_race6s_", "arc_race6b_"].forEach(function (p) { localStorage.removeItem(p + t.id); }); }); localStorage.setItem("arc_race7_mig", "1"); } } catch (e) {} })();     // piste nuove: tempi e fantasmi fatti in prova azzerati una volta (da ora ognuno ha i suoi)
   var PRICE = [0, 0, 0, 500, 750, 950, 1150, 1400, 1700, 2000], REWARD = [150, 150, 150, 300, 350, 400, 500, 600, 800, 1000];     // sblocco a pagamento e premio per ogni record battuto
   function price(tr) { return PRICE[tIdx(tr)] || 0; }
   function reward(tr) { return REWARD[tIdx(tr)] || 150; }
