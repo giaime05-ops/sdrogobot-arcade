@@ -134,6 +134,7 @@
       var pdl = items.filter(function (q) { return q.t === "pad"; }).sort(function (a, b) { return a.idx - b.idx; });
       var NB = tr.sbx ? Math.max(4, Math.round(N * tr.sp / 3000)) : 4; if (pdl.length > NB) { var keepD = []; for (var qd = 0; qd < NB; qd++) keepD.push(pdl[Math.floor((qd + 0.5) * pdl.length / NB)]); items = items.filter(function (q) { return q.t !== "pad" || keepD.indexOf(q) >= 0; }); }
     }
+    if (tr.bridgeRuns && tr.ub) items = items.filter(function (q) { return q.t !== "pad" || !(q.idx >= tr.bridgeRuns[0][0] - 34 && q.idx <= tr.bridgeRuns[0][1] + 8); });      // niente boost sotto il ponte
     function dmin(x, y) { var m = 1e12; for (var q = 0; q < N; q++) { var dx = x - P[q][0], dy = y - P[q][1], d2 = dx * dx + dy * dy; if (d2 < m) m = d2; } return Math.sqrt(m); }
     function dgap(x, y) { var m = 1e12; for (var q in tr.gap) { var dx = x - P[q][0], dy = y - P[q][1], d2 = dx * dx + dy * dy; if (d2 < m) m = d2; } return Math.sqrt(m); }
     var hasGap = jp.length > 0, occ = [];
@@ -217,7 +218,7 @@
     return g * (1 - 0.16 * Math.min(1, w) - (w > 0.8 ? 1.2 * (w - 0.8) : 0)) * (c.tg || 1);
   }
   function tyTick(tr, c, human) {                                                                              // usura: base della mescola × (derapata, scivolate, fuori pista)
-    var m = human ? 1 + 0.5 * (c.dd ? 1 : 0) + 0.8 * Math.min(1, c.slip || 0) + 0.8 * (c.off ? 1 : 0) : 1.3; if (human && tr.lq) m += (c.tt > 0.62 ? 1.6 * (c.tt - 0.62) / 0.38 : 0) + (c.tt < 0.3 ? 1.0 * (0.3 - c.tt) / 0.3 : 0) + 0.8 * (c.kb ? 1 : 0);
+    var m = human ? 1 + 0.5 * (c.dd ? 1 : 0) + 0.8 * Math.min(1, c.slip || 0) + 0.8 * (c.off ? 1 : 0) : 1.3; if (human && tr.lq) m += 0.8 * (c.kb ? 1 : 0);
     if (c.tyc === 3) { if (!tr.rain) { var dy2 = Math.max(0, (tr.dryT == null ? 99 : tr.dryT) - 12); m *= 1.8 + 3.4 * Math.min(1, dy2 / 20); } else m *= 0.55; }      // bagnato: sull'asciutto si consuma molto più in fretta (dopo 12 s fino a ×5), sul bagnato molto meno
     else if (tr.rain) m *= 0.8;
     c.tyw += DT * TYC[c.tyc].w * m * (tr.tyK || 1);
@@ -667,7 +668,7 @@
       if (actN < 2) go.textContent = L.tourn ? "Servono almeno 2 piloti del torneo" : "Servono almeno 2 piloti: aggiungi un bot o invita un amico"; else if (pend.length) go.textContent = "In attesa che siano pronti: " + pend.slice(0, 3).map(function (x) { return x.name; }).join(", ");
       go.addEventListener("click", function () {
         var act = L.slots.filter(function (x) { return x.t !== "wait"; }), o = { n: act.length, roster: act.map(function (x, i) { return { name: x.name, col: lbCols({ col: L.col, slots: act })[i] }; }), diff: L.diff, laps: L.laps, obst: L.obst, pads: L.pads, slip: L.slip, assist: L.assist, coll: L.coll, rain: L.rain, qual: L.qual, prize: L.prize, lng: !!L.lng, tyre0: L.lng ? (lsGet("arc_lng_t0") || {}).c : undefined, back: lobby };
-        if (L.qual) o.qualPhase = true;
+        if (L.qual) { if (L.lng && isSbx()) { o.lqPhase = true; o.tyre0 = 0; } else o.qualPhase = true; }
         var hum = L.slots.filter(function (x) { return x.t === "friend" && x.uid; });
         if (real() && L.rm && hum.length) { A.api("/api/room/start", "POST", { id: L.rm }).then(function (j) { if (j && j.success) { clearInterval(L._pt); L._pt = 0; runRoom(j.room); } else A.toast((j && j.error) || "Non riesco ad avviare"); }).catch(function () { A.toast("Server non raggiungibile"); }); return; }
         if (real() && L.rm) { A.api("/api/room/leave", "POST", { id: L.rm }).catch(function () {}); if (L._pt) { clearInterval(L._pt); L._pt = 0; } L.rm = 0; L._ens = 0; }   // gara solo con bot: la lobby online si chiude
@@ -746,7 +747,7 @@
       ord.forEach(function (ci, ck) { grid[ci] = ck; if (ck) map[ck] = ps[ci].uid; });
       for (var bj = 0; bj < nbt; bj++) { roster.push({ name: "🤖 " + NAMES[(bj + 1) % 8], col: COLS[(ps.length + bj) % COLS.length] }); grid[ps.length + bj] = ps.length + bj; }
       var tr = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1]; build(tr);
-      race(tr, "race", { n: ps.length + nbt, roster: roster, grid: grid, diff: x.bd == null ? 1 : x.bd | 0, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, coll: x.coll !== 0, assist: !!x.assist, rain: x.rain | 0, prize: room.cfg.prize | 0, qualPhase: !!x.qual, lng: !!x.lng, tyre0: (lsGet("arc_lng_t0") || {}).c, room: { id: room.id, uid: room.me, ws: room.ws || "", map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
+      race(tr, "race", { n: ps.length + nbt, roster: roster, grid: grid, diff: x.bd == null ? 1 : x.bd | 0, laps: room.cfg.laps || 3, obst: !!x.obst, pads: !!x.pads, slip: !!x.slip, coll: x.coll !== 0, assist: !!x.assist, rain: x.rain | 0, prize: room.cfg.prize | 0, qualPhase: !!x.qual && !(x.lng && isSbx()), lqPhase: !!x.qual && !!x.lng && isSbx(), lng: !!x.lng, tyre0: (lsGet("arc_lng_t0") || {}).c, room: { id: room.id, uid: room.me, ws: room.ws || "", map: map, since: n0 != null ? n0 : (room.n || 0), rtt: 1e9, off: 0, q: [], sy: room.sy || {}, pl: room.players }, back: back || function () { afterRace(room); }, exit: function () { A.api("/api/room/leave", "POST", { id: room.id }).catch(function () {}); lobbyHub(); } });
     }
     function guestLobby(room) {                                                                                    // lobby di chi è entrato (invitato o dalla lista pubblica): segna PRONTO e aspetta che l'host avvii
       root.innerHTML = ""; root.className = "rc-root lobby"; var since = room.n || 0, alive = true, trk = TRACKS.filter(function (t) { return t.id === room.cfg.track; })[0] || TRACKS[1], busy = 0, myRdy = false, lastRm = room;
@@ -952,7 +953,7 @@
       if (LNG) {                                                                                                  // HUD gomme: mescola + usura, avviso "BOX BOX", pop-up della sosta e scelta delle gomme di partenza
         var tyb = el("div", "rc2-tyre"), tyI = el("span", "ico"), tyW = el("span", "tw"), tyN = el("b", ""), tyBar = el("span", "wb"), tyF = el("i", ""), tyS = el("em", ""), tyBn = el("div", "rc2-boxb"), pop = el("div", "rc2-pitpop");
         tyBar.appendChild(tyF); tyW.appendChild(tyN); tyW.appendChild(tyBar); tyW.appendChild(tyS); tyb.appendChild(tyI); tyb.appendChild(tyW); full.appendChild(tyb); full.appendChild(pop); full.appendChild(tyBn);
-        var popK = "", lqT = el("div", "rc2-lqt"), lqG = el("div", "rc2-ttg"), lqM = el("i", ""); lqG.appendChild(el("em", "z1", "")); lqG.appendChild(el("em", "z2", "")); lqG.appendChild(el("em", "z3", "")); lqG.appendChild(lqM); lqG.appendChild(el("small", "", "TEMP. GOMME")); if (LQ) { tyW.appendChild(lqG); }
+        var popK = "", lqT = el("div", "rc2-lqt"), lqG0 = 0;
         function popFill() {
           pop.innerHTML = ""; var bx = el("div", "bx"); bx.appendChild(el("b", "tt", "🛞 SOSTA AI BOX")); bx.appendChild(el("small", "", (tr.rain ? (tr.rain > 1 ? "🌧 Pioggia forte" : "🌦 Pioggia leggera") : "☀️ Asciutto") + " · giro " + me.lap + "/" + laps + " · la sosta dura sempre uguale per tutti"));
           bx.appendChild(tyOpts(function (k) { if (pitChoose(me, k)) { A.haptic("medium"); AU.sfx("pit"); } }, me.tyc, me.tyU || 0, "pit"));
@@ -961,7 +962,7 @@
         }
         updTyre = function () {
           var gone = state === "end" || me.fin; tyb.style.display = gone ? "none" : ""; if (gone) { tyBn.style.display = "none"; return; }              // a fine gara la scheda gomme sparisce
-          if (LQ) { if (me.ps && me.ps.ph === 1) { pitChoose(me, 0); A.haptic("medium"); AU.sfx("pit"); } var rem = Math.max(0, LQT - Math.max(0, t)), mm = Math.floor(rem / 60), ss = Math.floor(rem % 60); lqT.textContent = (state === "run" && rem <= 0 && !me.fin) ? "ULTIMO GIRO" : "⏱ " + mm + ":" + (ss < 10 ? "0" : "") + ss; lqT.className = "rc2-lqt" + (rem <= 30 ? " red" : ""); var ttp = Math.max(0, Math.min(1, me.tt || 0)); lqM.style.left = Math.round(ttp * 100) + "%"; lqM.className = ttp > 0.72 ? "hot" : (ttp < 0.3 ? "cold" : "ok"); }
+          if (LQ) { if (me.ps && me.ps.ph === 1) { pitChoose(me, 0); A.haptic("medium"); AU.sfx("pit"); } var rem = Math.max(0, LQT - Math.max(0, t)), mm = Math.floor(rem / 60), ss = Math.floor(rem % 60); lqT.textContent = (state === "run" && rem <= 0 && !me.fin) ? "ULTIMO GIRO" : "⏱ " + mm + ":" + (ss < 10 ? "0" : "") + ss; lqT.className = "rc2-lqt" + (rem <= 30 ? " red" : ""); }
           var T = TYC[me.tyc], wp = Math.max(0, Math.min(1, me.tyw));
           tyI.textContent = T.s; tyI.style.background = T.col; tyI.style.color = me.tyc === 2 || me.tyc === 1 ? "#222" : "#fff"; tyN.textContent = T.n + " · " + Math.round((1 - wp) * 100) + "%";
           tyF.style.width = Math.round((1 - wp) * 100) + "%"; tyF.className = wp > 0.8 ? "r" : (wp > 0.6 ? "y" : "g");
@@ -987,8 +988,25 @@
       var best = (myRec(tr) || {}).t || 0, state = LNG ? "tyre" : (opts.noIntro ? "count" : "intro"), cT = 0, t = 0, acc = 0, last = performance.now(), raf = 0, done = false, camA = me.a, camx = me.x, camy = me.y, revv = 0, botDelay = [0, 0.12, 0.2, 0.3, 0.38, 0.46, 0.54, 0.62], lapT = [], lapStart = qual ? 1e9 : 0, msgT = 0, lapB = null, lapS = null, prevAt = -99, mmK = "", wrongT = 0;
       if (WX) { wxStep(1000); wxPaint(); }                                                                      // meteo di partenza già coerente (partenza sul bagnato)
       var qgh = [], qres = [], qT0 = -1;
+      var lqE = null;                                                                                                       // qualifica lunga: elenco piloti con tempo migliore (bot "rivelati" nel corso della sessione, umani dal server)
+      function lqBotT(i) { var o = lqE.bt[i]; if (o == null) { o = lqE.bt[i] = qualSim(tr, sk[i], vmv ? vmv[i] : 1, offs[i] * 0.5).t * 1.012; } return o; }
+      function lqBoard() {
+        var sy = (RMT && RMT.sy && RMT.sy.lq) || {}, tm = Math.max(0, t);
+        if (!lqE) { lqE = { bt: {} }; }
+        var hum = {}; if (RMT && RMT.map) Object.keys(RMT.map).forEach(function (k) { hum[+k] = RMT.map[k]; });
+        var mb = Math.min.apply(null, (me.lapTs || []).length ? me.lapTs.slice(0) : [1e9]), out = [];
+        for (var i = 0; i < (opts.n || 4); i++) {
+          var r = opts.roster && opts.roster[i], e = { name: i === 0 ? "Tu" : (r ? r.name : NAMES[i % NAMES.length]), col: i === 0 ? me.col : (r ? r.col : COLS[i % COLS.length]), me: i === 0, t: 1e9 };
+          if (i === 0) e.t = mb;
+          else if (hum[i] != null) { if (sy[hum[i]] != null) e.t = sy[hum[i]]; }
+          else { var f = lqBotT(i), r1 = 28 + (i * 37) % 90, r2 = r1 + 60 + (i * 29) % 50, r3 = r2 + 55 + (i * 17) % 40; e.t = tm >= r3 || state === "end" ? f : (tm >= r2 ? f * 1.012 : (tm >= r1 ? f * 1.04 : 1e9)); }
+          out.push(e);
+        }
+        out.sort(function (a, b) { return a.t - b.t; });
+        return out;
+      }
       var RM0 = !!opts.room;
-      if (LQ) { me.tyc = 0; me.tyw = 0; me.tyU = 1; me.stints = [{ c: 0, l: 1 }]; me.tt = 0.2; me.tg = 1; state = opts.noIntro ? "count" : "intro"; } else if (LNG && tyPre) tyPre(function () { state = opts.noIntro ? "count" : "intro"; });
+      if (LQ) { me.tyc = 0; me.tyw = 0; me.tyU = 1; me.stints = [{ c: 0, l: 1 }]; me.tt = 0.45; me.tg = 1; state = opts.noIntro ? "count" : "intro"; } else if (LNG && tyPre) tyPre(function () { state = opts.noIntro ? "count" : "intro"; });
       if (qual) { var k0 = tr.N - 14; me.x = tr.P[k0][0]; me.y = tr.P[k0][1]; me.a = tr.ta[k0]; me.vx = 0; me.vy = 0; me.idx = k0; me.prog = -14; me.slot = 0;
         for (var qk = 1; qk < (RM0 ? 1 : nCar); qk++) { var rs0 = opts.roster && opts.roster[qk], qs = qualSim(tr, sk[qk], vmv ? vmv[qk] : 1, offs[qk] * 0.5); qres.push({ id: qk, name: rs0 ? rs0.name : NAMES[qk % NAMES.length], t: qs.t }); qgh.push({ x: qs.path[0], y: qs.path[1], a: qs.path[2], col: rs0 ? rs0.col : COLS[qk % COLS.length], name: rs0 ? rs0.name : NAMES[qk % NAMES.length], ghost: true, hit: 0, path: qs.path }); } }
       var AU = (window.ArcadeAudio || {}).race || { begin: function () {}, end: function () {}, engine: function () {}, sfx: function () {}, set: function () {} }, SN = (function () { var q = lsGet("arc_race4_snd"); if (!q || q.v !== 2) { q = { v: 2, sfx: 0.7, music: 0.5 }; lsSet("arc_race4_snd", q); } return q; })(), pBoost = false, pHit = false, pSpin = false, lastNl = 0;
@@ -1052,9 +1070,9 @@
       }
       window.ArcadeBackHide = false; window.ArcadeBackHook = function () { if (state === "end") return false; pause(!paused); return true; }; try { if (window.ArcadeBackSync) window.ArcadeBackSync(); } catch (e) {}
       function say2(x, sec) { tip.textContent = x; msgT = sec || 1.6; }
-      var RT = 0, rSince = RMT ? (RMT.since || 0) : 0, rInfl = 0, rBusyT = 0, finGo = false, finT0 = 0, wbox = null, wtbl = null, resLn = null;
+      var lqSent = 0, RT = 0, rSince = RMT ? (RMT.since || 0) : 0, rInfl = 0, rBusyT = 0, finGo = false, finT0 = 0, wbox = null, wtbl = null, resLn = null;
       function qualOnline() {                                                                                    // qualifica online: tutti hanno fatto il giro insieme; la griglia la decidono i tempi, poi parte la gara sincronizzata
-        RMT.wantQ = Math.round((me.finT - qT0) * 1000) / 1000; var qb = el("div", "rc2-end res"), t0 = performance.now(), fin2 = false; full.appendChild(qb);
+        RMT.wantQ = LQ ? Math.round(Math.min.apply(null, (me.lapTs || []).length ? me.lapTs.slice(0) : [9000]) * 1000) / 1000 : Math.round((me.finT - qT0) * 1000) / 1000; var qb = el("div", "rc2-end res"), t0 = performance.now(), fin2 = false; full.appendChild(qb);
         (function tick() {
           if (done || fin2) return; var sy = RMT.sy || {}, qm = sy.q || {}, pl = RMT.pl || [], on = pl.filter(function (p) { return p.online !== false; });
           var rows = pl.slice().sort(function (a, b) { return (qm[a.uid] != null ? qm[a.uid] : 1e9) - (qm[b.uid] != null ? qm[b.uid] : 1e9); });
@@ -1067,7 +1085,7 @@
             setTimeout(function () {
               if (done) return; var ukey = {}; ukey[RMT.uid] = 0; Object.keys(RMT.map).forEach(function (k) { ukey[RMT.map[k]] = +k; }); var g = [];
               sy.grid.forEach(function (u) { if (ukey[u] != null && g.indexOf(ukey[u]) < 0) g.push(ukey[u]); }); for (var k = 0; k < (opts.n || 4); k++) if (g.indexOf(k) < 0) g.push(k);
-              RMT.wantQ = undefined; RMT.wantGrid = null; stop(true); race(tr0, "race", Object.assign({}, opts, { qualPhase: false, afterQual: true, grid: g }));
+              RMT.wantQ = undefined; RMT.wantGrid = null; stop(true); race(tr0, "race", Object.assign({}, opts, { qualPhase: false, lqPhase: false, afterQual: true, grid: g }));
             }, 3800); return;
           }
           setTimeout(tick, 300);
@@ -1083,10 +1101,10 @@
           cars.forEach(function (c) { if (c.remote && !c.fin) { c.fin = true; c.dnf = true; c.finT = 9000 + Math.max(0, tr.N * laps - c.prog) / 1000; } });
           finGo = true; if (wbox) wbox.remove(); }
         state = "end"; if (!RMT) AU.sfx("fin"); var total = me.finT, rec = solo && (!best || total < best), ar0 = absRec(tr0), recAll = solo && laps === 3 && (!ar0 || total < ar0.t - 0.005), recPay = recAll && isSbx() ? payRec(tr0, total) : 0, box = el("div", "rc2-end res");
-        if (qual && RMT) { qualOnline(); return; }
+        if ((qual || LQ) && RMT) { qualOnline(); return; }
         if (LQ) {
           var bl = Math.min.apply(null, (me.lapTs || []).length ? me.lapTs.slice(0) : [1e9]), lq = [{ id: 0, name: "Tu", t: bl }];
-          for (var qk2 = 1; qk2 < (opts.n || 4); qk2++) { var rs2 = opts.roster && opts.roster[qk2]; lq.push({ id: qk2, name: rs2 ? rs2.name : NAMES[qk2 % NAMES.length], t: qualSim(tr, sk[qk2], vmv ? vmv[qk2] : 1, offs[qk2] * 0.5).t * 1.012 }); }
+          for (var qk2 = 1; qk2 < (opts.n || 4); qk2++) { var rs2 = opts.roster && opts.roster[qk2]; if (!lqE) lqE = { bt: {} }; var hu2 = RMT && RMT.map && RMT.map[qk2]; lq.push({ id: qk2, name: rs2 ? rs2.name : NAMES[qk2 % NAMES.length], t: hu2 ? ((RMT.sy.lq || {})[hu2] != null ? RMT.sy.lq[hu2] : 1e9) : lqBotT(qk2) }); }
           lq.sort(function (a, b) { return a.t - b.t; }); box.appendChild(el("b", "", "QUALIFICHE · GRIGLIA DI PARTENZA")); var tbq = el("div", "rc2-tbl");
           lq.forEach(function (q, i) { var r = el("div", "rr" + (q.id === 0 ? " me" : "")); r.appendChild(el("span", "pn", String(i + 1))); r.appendChild(el("span", "nm", q.name)); r.appendChild(el("span", "tt", q.t > 1e8 ? "–" : fmt(q.t))); tbq.appendChild(r); }); box.appendChild(tbq);
           var rwq = el("div", "mp-end"), gq0 = el("button", "mp-go", "▶ VAI ALLA GARA"), gq1 = el("button", "mp-go mp-alt", "RIPROVA"); gq0.type = gq1.type = "button";
@@ -1216,7 +1234,7 @@
       function carBox(c) {                                                                                       // auto più grossa e dettagliata; parti ordinate per profondità
         var a = c.a, blink = c.blink > 0 && Math.floor(c.blink * 14) % 2; if (blink) return;
         if (c.ghost) ctx.globalAlpha = 0.42; else if (c.gh || c.pit || c.rpit || c.ps) ctx.globalAlpha = 0.55; if (tr.tunI && inTun(c)) ctx.globalAlpha = c === me ? 0.3 : 0.08;
-        ZO = tr.bh ? (tr.bh[c.idx] || 0) : 0; if (tr.ub && tr.ub[c.idx] && !(ZO > 0)) ctx.globalAlpha = Math.min(ctx.globalAlpha, 0.5); if (c.air > 0) { ZO = 52 * Math.sin(Math.PI * (1 - c.air / c.airT)); var sp0 = pr(c.x, c.y, 0.6), sp1 = sp0 && pr(c.x + Math.cos(c.a) * 17, c.y + Math.sin(c.a) * 17, 0.6); if (sp0 && sp1) { ctx.fillStyle = "rgba(0,0,0,.32)"; ctx.beginPath(); ctx.ellipse(sp0[0], sp0[1], Math.abs(sp1[0] - sp0[0]) * 1.4 + 12, 7, 0, 0, 7); ctx.fill(); } }
+        ZO = tr.bh ? (tr.bh[c.idx] || 0) : 0; if (c.air > 0) { ZO = 52 * Math.sin(Math.PI * (1 - c.air / c.airT)); var sp0 = pr(c.x, c.y, 0.6), sp1 = sp0 && pr(c.x + Math.cos(c.a) * 17, c.y + Math.sin(c.a) * 17, 0.6); if (sp0 && sp1) { ctx.fillStyle = "rgba(0,0,0,.32)"; ctx.beginPath(); ctx.ellipse(sp0[0], sp0[1], Math.abs(sp1[0] - sp0[0]) * 1.4 + 12, 7, 0, 0, 7); ctx.fill(); } }
         if (ZO > 0 && !(c.air > 0) && !c.ghost) { var sh0 = pr(c.x, c.y, ZO + 0.6), sh1 = sh0 && pr(c.x + Math.cos(c.a) * 17, c.y + Math.sin(c.a) * 17, ZO + 0.6); if (sh0 && sh1) { ctx.save(); ctx.fillStyle = "rgba(0,0,0,.26)"; ctx.beginPath(); ctx.ellipse(sh0[0], sh0[1], Math.abs(sh1[0] - sh0[0]) * 1.4 + 11, 6, 0, 0, 7); ctx.fill(); ctx.restore(); } }
         var bl = c.hit > 0 ? shade(c.col, 0.35) : c.col, dk = shade(bl, -0.38), co = Math.cos(a), si = Math.sin(a), parts = [];
         function at(fx, ly) { return [c.x + fx * SC * co - ly * SC * si, c.y + fx * SC * si + ly * SC * co]; }
@@ -1492,7 +1510,12 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
           if (fc0 && fb0 < FLB - 0.0004) { FLB = fb0; FLC = fc0; flN = performance.now() + 3200; fln.textContent = "⏱ Giro veloce " + (fc0 === me ? "Tu" : fc0.name) + " " + Math.floor(fb0 / 60) + ":" + (fb0 % 60).toFixed(3).padStart(6, "0"); twc = 0; }
           fln.className = "rc2-fln" + (performance.now() < flN ? " on" : "");
         }
-        if (!solo && (twc++ % 5 === 0)) {                                                                                       // classifica live stile F1: nome corto e distacco dall'auto davanti (in secondi, tre decimali)
+        if (LQ && (twc++ % 5 === 0)) {                                                                                           // qualifica lunga: tutti i piloti col proprio miglior tempo, ordinati e in tempo reale
+          var lb = lqBoard(), lrows = "";
+          lb.forEach(function (e, j) { lrows += "<div class='tr" + (e.me ? " me" : "") + "'><b>" + (j + 1) + "</b><i style='background:" + e.col + "'></i><span>" + (e.me ? "TU" : e.name.slice(0, 3).toUpperCase()) + "</span><em>" + (e.t > 0 && e.t < 1e8 ? fmt(e.t) : "—") + "</em></div>"; });
+          tower.innerHTML = lrows;
+        }
+        if (!solo && !LQ && (twc++ % 5 === 0)) {                                                                                       // classifica live stile F1: nome corto e distacco dall'auto davanti (in secondi, tre decimali)
           var rk = rank(), rows = "";
           var mi = rk.indexOf(me), ws = Math.min(Math.max(mi - 2, 1), Math.max(1, rk.length - 4));
           rk.forEach(function (c, j) {
@@ -1539,7 +1562,6 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
             if (c.remote) { remStep(c); return; }
             if (c.fin) { c.vx *= 0.99; c.vy *= 0.99; return; }
             if (k === 0) { if (window.__RACE_AUTO) { var pa = pilot(tr, c, 0, 1.2); inp.l = !!pa.l; inp.r = !!pa.r; } if (window.__RACE_INP) { var xi = window.__RACE_INP(c, tr); if (xi) { inp.l = !!xi.l; inp.r = !!xi.r; } } step(tr, c, inp); items(tr, c); if (c.fired) { c.fired = 0; A.haptic("medium"); } } else if (!c.remote && t >= botDelay[k]) { bstep(tr, c, offs[k], sk[k]); }
-            if (LQ && k === 0 && !c.fin) { var vq = Math.hypot(c.vx, c.vy) / VMAX, hq = 0.17 * vq + 0.2 * Math.min(1, c.slip || 0) + 0.12 * (c.dd ? 1 : 0) + 0.55 * (c.off ? 1 : 0) + 0.6 * (c.kb ? 1 : 0) + (c.hit > 0.2 ? 0.8 : 0) + (c.boostT > 0 ? 0.08 : 0); c.tt = Math.max(0, Math.min(1.2, (c.tt || 0.2) + DT * (hq - (0.35 * (c.tt || 0.2) + 0.02)))); var tq2 = c.tt; c.tg = tq2 < 0.3 ? 0.86 + 0.14 * (tq2 / 0.3) : (tq2 < 0.42 ? 1 + 0.03 * (tq2 - 0.3) / 0.12 : (tq2 < 0.62 ? 1.03 : (tq2 < 0.72 ? 1.03 - 0.07 * (tq2 - 0.62) / 0.1 : 0.96 - 0.9 * (tq2 - 0.72)))); }
             if (c.blink > 0) c.blink -= DT;
             if (c.prog >= tr.N * c.lap && !c.fin) { if (k === 0) { AU.sfx("lap"); lapT.push(t - lapStart); if (!opts.qual && lapT.length > 1) { var lt = lapT[lapT.length - 1]; var bb = lsGet(PF() + "b_" + tr.id); if (!bb || !bb.t || lt < bb.t) lsSet(PF() + "b_" + tr.id, { t: lt }); } lapStart = t; prevAt = t; A.haptic("light"); } (c.lapTs = c.lapTs || []).push(t - (c.lapS || 0)); c.lapS = t; c.lap++; }
             if (LQ && k === 0 && !c.fin && t >= LQT && c.lap > 1 && (c.lapS || 0) === t) { c.fin = true; c.pen = 0; c.finT = t; }
@@ -1609,8 +1631,9 @@ quad(pt(i, -hw, zb), pt(i, hw, zb), pt(i2, hw, zb2), pt(i2, -hw, zb2), alt4 ? tr
           var sy = RMT.sy, ev = null, tS = performance.now();
           if (state === "wait") { var rl = (sy.rdy && sy.rdy[PH]) || []; if (rl.indexOf(RMT.uid) < 0) ev = { k: "rdy", ph: PH }; else if (!(sy.go && sy.go[PH] != null) && barrierOK()) ev = { k: "go", ph: PH }; }
           else if (RMT.wantQ !== undefined && !(sy.q && sy.q[RMT.uid] != null)) ev = { k: "q", qt: RMT.wantQ };
+          else if (LQ && state === "run" && (me.lapTs || []).length && Math.min.apply(null, me.lapTs) < (lqSent || 1e9) - 0.0004) { lqSent = Math.min.apply(null, me.lapTs); ev = { k: "lq", bt: Math.round(lqSent * 1000) / 1000 }; }
           else if (RMT.wantGrid && !sy.grid) ev = { k: "grid", g: RMT.wantGrid };
-          else if ((state === "run" || state === "end") && !qual) ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0, tt: Math.round(t * 1000), ss: RMT.rtt < 1e8 ? Math.round(srvNow() * 1000) / 1000 : 0, lt: (me.lapTs || []).map(function (q) { return Math.round(q * 1000); }) }; if (ev && ev.k === "p" && LNG) { ev.ty = me.tyc; ev.tw = Math.round(Math.min(1.2, me.tyw) * 100); ev.pn = me.pitN || 0; ev.pt = (me.pit || me.gh || me.ps) ? 1 : 0; }
+          else if ((state === "run" || state === "end") && !qual && !LQ) ev = { k: "p", x: Math.round(me.x), y: Math.round(me.y), a: Math.round(me.a * 100), pr: Math.round(me.prog * 10), l: me.lap, vx: Math.round(me.vx), vy: Math.round(me.vy), b: me.boostT > 0 ? 1 : 0, d: me.dd ? 1 : 0, f: me.fin ? Math.round(me.finT * 1000) : 0, tt: Math.round(t * 1000), ss: RMT.rtt < 1e8 ? Math.round(srvNow() * 1000) / 1000 : 0, lt: (me.lapTs || []).map(function (q) { return Math.round(q * 1000); }) }; if (ev && ev.k === "p" && LNG) { ev.ty = me.tyc; ev.tw = Math.round(Math.min(1.2, me.tyw) * 100); ev.pn = me.pitN || 0; ev.pt = (me.pit || me.gh || me.ps) ? 1 : 0; }
           if (wsLive()) {
             var q = ++wsQ; wsT[q] = tS; try { WSK.send(JSON.stringify({ t: "s", q: q, since: rSince, ev: ev || undefined })); return; } catch (e) { wsOk = false; delete wsT[q]; }
           }

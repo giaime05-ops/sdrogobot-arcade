@@ -78,7 +78,7 @@
     c.appendChild(b); box.appendChild(c);
     // ---- DONA ----
     var d = el("div", "qcard xcard"); d.appendChild(el("h3", "", "DONA"));
-    d.appendChild(el("div", "qtxt", "Regala da 1 a 50 $SDG a un giocatore del gruppo (una donazione al giorno per persona)."));
+    d.appendChild(el("div", "qtxt", "Regala da 1 a 1000 $SDG a un giocatore del gruppo (fino a 3 volte al giorno, max 1000 in totale alla stessa persona)."));
     var db = el("button", "xbtn alt", "SCEGLI CHI"); db.type = "button"; db.addEventListener("click", function () { openDonate(); });
     d.appendChild(db); box.appendChild(d);
     var mine = box;
