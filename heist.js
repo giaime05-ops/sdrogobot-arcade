@@ -859,10 +859,10 @@
     function setPos(p) { ind.style.left = (p * 100) + "%"; }
     setPos(tri(v.phase0));
     var btn = el("button", "avi-go hs-go hs-hold", "TIENI PREMUTO"); btn.type = "button"; stage.appendChild(btn);
-    var down = -1, raf = 0, sent = false;
-    function loop(now) { if (down < 0 || S.view !== v) return; setPos(tri(v.phase0 + v.speed * (now - down) / 1000)); raf = requestAnimationFrame(loop); }
+    var down = -1, raf = 0, sent = false, shown = -1;                                    // shown = istante dell'ultimo fotogramma DISEGNATO: si valuta ciò che il giocatore ha visto, non l'istante (più tardo) dell'evento
+    function loop(now) { if (down < 0 || S.view !== v) return; shown = now; setPos(tri(v.phase0 + v.speed * (now - down) / 1000)); raf = requestAnimationFrame(loop); }
     btn.addEventListener("pointerdown", function (e) { e.preventDefault(); try { btn.setPointerCapture(e.pointerId); } catch (x) {} if (sent) return; down = performance.now(); btn.classList.add("on"); A.haptic("light"); snd("scratch"); raf = requestAnimationFrame(loop); });
-    function up() { if (down < 0 || sent) return; sent = true; var d = Math.round(performance.now() - down); down = -1; cancelAnimationFrame(raf); btn.classList.remove("on"); A.haptic("med"); act("lk", { d: d }); }
+    function up() { if (down < 0 || sent) return; sent = true; var d = Math.round((shown > down ? shown : performance.now()) - down); down = -1; cancelAnimationFrame(raf); btn.classList.remove("on"); A.haptic("med"); act("lk", { d: d }); }
     ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (n) { btn.addEventListener(n, up); });
   }
 
