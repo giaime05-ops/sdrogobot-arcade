@@ -1074,9 +1074,8 @@
           tyb.classList.toggle("warn", wp > 0.72 || (nUsedT(me.tyU || 0) < 2 && needCh() && me.lap >= laps - 1));
           var bn = "";
           if (me.ps) bn = me.ps.ph === 1 ? "SCEGLI LE GOMME" : "SOSTA · " + Math.max(0, PIT_STOP - me.ps.ts).toFixed(1) + " s";
-          else if (me.pl && me.gh) bn = "CORSIA BOX · ferma l'auto sulla pedana";
           else if (!LQ && state === "run" && me.lap < laps && wp > 0.85) bn = "BOX BOX";
-          if (tyBn.textContent !== bn) tyBn.textContent = bn; tyBn.className = "rc2-boxb" + (bn ? " on" : "") + (me.ps || (me.pl && me.gh) ? " pit" : ""); if (me.pitBeep) { me.pitBeep = 0; A.haptic("ok"); AU.sfx("lap"); }
+          if (tyBn.textContent !== bn) tyBn.textContent = bn; tyBn.className = "rc2-boxb" + (bn ? " on" : "") + (me.ps ? " pit" : ""); if (me.pitBeep) { me.pitBeep = 0; A.haptic("ok"); AU.sfx("lap"); }
           var wantPop = !!(me.ps && me.ps.ph === 1); if (wantPop && popK !== "1") { popK = "1"; popFill(); pop.classList.add("show"); } else if (!wantPop && popK) { popK = ""; pop.classList.remove("show"); }
         };
         tyPre = function (next) {                                                                                  // scelta delle gomme PRIMA del via: meteo e caratteristiche; in gara online gli altri aspettano che tutti abbiano scelto
